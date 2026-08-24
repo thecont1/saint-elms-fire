@@ -1,2 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files
 .env
-node_modules
+.env.local
+.env.development.local
+.env.production.local
+
+# Genkit
+.genkit/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*

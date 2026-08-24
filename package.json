@@ -1,0 +1,23 @@
+{
+  "name": "saint-elms-fire",
+  "version": "0.1.0",
+  "description": "Saint Elms Fire — a Genkit + Firestore AI service.",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "genkit start -- npx tsx watch src/ai/dev.ts",
+    "start": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@genkit-ai/express": "^1.41.0",
+    "@genkit-ai/google-genai": "^1.41.0",
+    "@google-cloud/firestore": "^9.0.0",
+    "genkit": "^1.41.0"
+  },
+  "devDependencies": {
+    "genkit-cli": "^1.41.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
