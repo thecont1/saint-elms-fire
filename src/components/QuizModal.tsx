@@ -96,13 +96,13 @@ export function QuizModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-sky-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in">
+    <div className="fixed inset-0 bg-marine-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div className="bg-white border border-beacon-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <Lightbulb className="w-5 h-5 text-amber-500" />
-            <span className="text-xs uppercase tracking-wider font-extrabold text-sky-800">
-              Concept Mastery Check
+            <Lightbulb className="w-5 h-5 text-beacon-500" />
+            <span className="chart-annotation text-beacon-700 font-semibold">
+              Sounding the depths — mastery check
             </span>
           </div>
           <button
@@ -113,8 +113,8 @@ export function QuizModal({
           </button>
         </div>
 
-        <h3 className="text-base font-extrabold text-slate-900 mb-1">{lesson.title}</h3>
-        <p className="text-xs text-slate-700 font-semibold mb-4 leading-relaxed">
+        <h3 className="font-display text-lg font-semibold text-marine-900 mb-1">{lesson.title}</h3>
+        <p className="text-xs text-marine-700 font-semibold mb-4 leading-relaxed">
           {quizData.question}
         </p>
 
@@ -124,7 +124,7 @@ export function QuizModal({
             const isSelected = selectedOption === i;
             const isCorrectOption = i === quizData.correctIndex;
 
-            let optionStyle = 'border-slate-200 bg-slate-50 text-slate-800 hover:border-sky-300 hover:bg-sky-50/50';
+            let optionStyle = 'border-beacon-100 bg-white text-marine-800 hover:border-beacon-300 hover:bg-beacon-50/50';
             if (hasSubmitted) {
               if (isCorrectOption) {
                 optionStyle = 'border-emerald-400 bg-emerald-50 text-emerald-900 font-bold';
@@ -132,7 +132,7 @@ export function QuizModal({
                 optionStyle = 'border-rose-300 bg-rose-50 text-rose-900 font-bold';
               }
             } else if (isSelected) {
-              optionStyle = 'border-sky-500 bg-sky-50 text-sky-950 font-bold ring-1 ring-sky-300';
+              optionStyle = 'border-beacon-500 bg-beacon-50 text-beacon-900 font-bold ring-1 ring-beacon-300';
             }
 
             return (
@@ -170,18 +170,18 @@ export function QuizModal({
             {quizData.explanation}
             {selectedOption !== quizData.correctIndex && (
               <div className="text-[11px] text-amber-800 mt-2 font-semibold">
-                🧭 Saint Elms Socratic Beacon will formulate a proactive challenge on your dashboard to reinforce this concept!
+                The Socratic Beacon will light a proactive challenge on your dashboard to reinforce this concept.
               </div>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-end space-x-2 pt-3 border-t border-beacon-100">
           {!hasSubmitted ? (
             <button
               onClick={handleSubmit}
               disabled={selectedOption === null || isSubmitting}
-              className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl transition disabled:opacity-40 flex items-center gap-1.5 shadow-md shadow-sky-600/20"
+              className="px-5 py-2.5 bg-beacon-600 hover:bg-beacon-500 text-white text-xs font-bold rounded-full transition disabled:opacity-40 flex items-center gap-1.5 shadow-sm"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Submit Answer</span>
@@ -189,7 +189,7 @@ export function QuizModal({
           ) : (
             <button
               onClick={onClose}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-xs"
+              className="px-5 py-2.5 bg-marine-900 hover:bg-marine-800 text-white text-xs font-bold rounded-full transition"
             >
               Done
             </button>

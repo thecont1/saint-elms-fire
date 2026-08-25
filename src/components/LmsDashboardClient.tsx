@@ -2,28 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Flame,
-  Sparkles,
-  Database,
-  Cpu,
-  Layers,
-  Network,
-  BookOpen,
-  MessageSquare,
-  Shield,
-  User,
   RefreshCw,
-  PlusCircle,
-  CheckCircle2,
-  AlertTriangle,
   Compass,
-  Lightbulb,
-  ChevronRight,
   GraduationCap,
-  Activity,
-  Maximize2,
+  Network,
+  Layers,
+  Anchor,
+  Star,
 } from 'lucide-react';
-import { Navigation } from '@/components/Navigation';
+import { Navigation, CoronaMark } from '@/components/Navigation';
 import { KnowledgeGraphVisualizer } from '@/components/KnowledgeGraphVisualizer';
 import { StudentChat } from '@/components/StudentChat';
 import { MultiFormatViewer } from '@/components/MultiFormatViewer';
@@ -138,54 +125,67 @@ export function LmsDashboardClient({
   const completionPercentage = Math.round((releasedLessons.length / Math.max(1, lessons.length)) * 100);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50/50 via-slate-50 to-white text-slate-900">
+    <div className="min-h-screen flex flex-col bg-transparent text-marine-900">
       {/* 1. TOP HEADER / APP NAVIGATION */}
       <Navigation
         currentRole={role}
         onRoleChange={setRole}
       />
 
-      {/* 2. SUB-HEADER HERO / BRAND METRICS BAR */}
-      <section className="bg-gradient-to-r from-sky-100/70 via-white to-blue-50/60 border-b border-sky-100 py-4 px-4 sm:px-6 lg:px-8 shadow-2xs">
-        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 ring-2 ring-sky-300/40">
-              <Flame className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-extrabold text-slate-900 font-sans tracking-tight">
-                  Saint Elms Fire
-                </span>
-                <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
-                  Multimodal Second Brain LMS
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 hidden sm:block">
-                Illuminating the unknown with incremental drip-feeding, strict release-gated RAG, and proactive Socratic guidance.
+      {/* 2. HERO — the legend of the fire */}
+      <section className="border-b border-beacon-100 bg-white/60">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-2xl">
+              <p className="chart-annotation flex items-center gap-2 mb-3">
+                <Star className="w-3.5 h-3.5 text-beacon-500" />
+                The light sailors trusted at the masthead
+              </p>
+              <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-marine-950 leading-[1.05]">
+                Guidance through<br />the <span className="text-beacon-600 italic">storm</span>.
+              </h1>
+              <p className="mt-4 text-sm sm:text-[15px] text-marine-600 leading-relaxed max-w-xl">
+                When St. Elmo's Fire danced blue upon the rigging, sailors knew the worst
+                of the tempest was behind them — a corona of science, not superstition.
+                This is that light for learners: knowledge held steady against the
+                unknown, one unlocked lesson at a time.
               </p>
             </div>
-          </div>
 
-          {/* Quick Metrics & Actions */}
-          <div className="flex items-center space-x-3">
-            <div className="hidden sm:flex items-center space-x-2 text-xs font-semibold text-slate-600 bg-white/90 px-3 py-1.5 rounded-xl border border-sky-100 shadow-2xs">
-              <span className="text-sky-700 font-bold">{releasedLessons.length}/{lessons.length}</span>
-              <span>Lessons Unlocked ({completionPercentage}%)</span>
-              <span>&bull;</span>
-              <span className="text-sky-700 font-bold">{graphData.nodes.length}</span>
-              <span>Graph Nodes</span>
+            {/* Ship's-log metrics */}
+            <div className="flex items-center gap-6 sm:gap-8 pb-1">
+              <div>
+                <p className="chart-annotation mb-1">Course plotted</p>
+                <p className="font-display text-2xl font-semibold text-marine-900">
+                  {releasedLessons.length}<span className="text-marine-400 text-lg">/{lessons.length}</span>
+                </p>
+                <p className="text-[11px] text-marine-500 font-medium">lessons unlocked</p>
+              </div>
+              <div className="h-10 w-px bg-beacon-100" />
+              <div>
+                <p className="chart-annotation mb-1">Constellation</p>
+                <p className="font-display text-2xl font-semibold text-marine-900">{graphData.nodes.length}</p>
+                <p className="text-[11px] text-marine-500 font-medium">stars mapped</p>
+              </div>
+              <div className="h-10 w-px bg-beacon-100" />
+              <div>
+                <p className="chart-annotation mb-1">Voyage</p>
+                <p className="font-display text-2xl font-semibold text-beacon-600">{completionPercentage}%</p>
+                <p className="text-[11px] text-marine-500 font-medium">complete</p>
+              </div>
+              <button
+                onClick={refreshAllData}
+                className="ml-2 flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
+                title="Refresh Firestore database state"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Sync</span>
+              </button>
             </div>
-
-            <button
-              onClick={refreshAllData}
-              className="p-2 px-3 rounded-xl bg-white border border-sky-200 hover:bg-sky-50 text-slate-700 hover:text-sky-900 transition text-xs font-bold flex items-center gap-1.5 shadow-2xs"
-              title="Refresh Firestore database state"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-sky-600 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>Sync Firestore</span>
-            </button>
           </div>
+
+          {/* Plotted course line */}
+          <div className="course-line h-0.5 mt-8 opacity-70" />
         </div>
       </section>
 
@@ -198,27 +198,29 @@ export function LmsDashboardClient({
             <aside className="lg:col-span-3 space-y-4">
               {/* Course Overview Widget */}
               {selectedCourse && (
-                <div className="bg-white rounded-2xl border border-sky-100 p-4 shadow-sm shadow-sky-500/5 space-y-2.5">
+                <div className="chart-card p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold text-sky-700 uppercase tracking-wider bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+                    <span className="chart-annotation text-beacon-600">
                       {selectedCourse.code || 'CS-850'}
                     </span>
-                    <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                      <GraduationCap className="w-3.5 h-3.5 text-sky-600" /> Lead Course
+                    <span className="chart-annotation flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-beacon-500" /> Lead course
                     </span>
                   </div>
-                  <h3 className="text-xs font-extrabold text-slate-900 leading-snug">{selectedCourse.title}</h3>
-                  <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{selectedCourse.description}</p>
-                  
-                  {/* Progress Bar */}
+                  <h3 className="font-display text-lg font-semibold text-marine-900 leading-snug">
+                    {selectedCourse.title}
+                  </h3>
+                  <p className="text-xs text-marine-500 leading-relaxed line-clamp-2">{selectedCourse.description}</p>
+
+                  {/* Progress — plotted course */}
                   <div className="pt-1">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1">
-                      <span>Drip Progression</span>
-                      <span className="text-sky-700">{completionPercentage}%</span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="chart-annotation">Voyage progress</span>
+                      <span className="text-xs font-bold text-beacon-600">{completionPercentage}%</span>
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-beacon-100 h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="bg-sky-600 h-full rounded-full transition-all duration-500"
+                        className="bg-beacon-500 h-full rounded-full transition-all duration-500"
                         style={{ width: `${completionPercentage}%` }}
                       />
                     </div>
@@ -248,10 +250,10 @@ export function LmsDashboardClient({
               <SocraticTutorCard studentId={studentId} />
 
               {/* Center Canvas Header with View Mode Switcher */}
-              <div className="bg-white rounded-2xl border border-sky-100 shadow-sm shadow-sky-500/5 p-4 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 pb-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="p-1.5 rounded-lg bg-sky-100 text-sky-700">
+              <div className="chart-card p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-beacon-100 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
                       {centerTab === 'graph' ? (
                         <Network className="w-4 h-4" />
                       ) : (
@@ -259,43 +261,43 @@ export function LmsDashboardClient({
                       )}
                     </div>
                     <div>
-                      <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                      <h3 className="font-display text-base font-semibold text-marine-900">
                         {centerTab === 'graph'
-                          ? 'Second Brain Knowledge Constellation'
+                          ? 'The Knowledge Constellation'
                           : 'Multimodal Courseware Reader'}
                       </h3>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="chart-annotation mt-0.5">
                         {centerTab === 'graph'
-                          ? 'Radial concept graph showing extracted entities & relational bonds'
-                          : `Currently viewing: ${selectedLesson?.title || 'Selected Lesson'}`}
+                          ? 'Fixed stars of your unlocked curriculum'
+                          : `Sighting: ${selectedLesson?.title || 'Selected Lesson'}`}
                       </p>
                     </div>
                   </div>
 
                   {/* View Mode Toggle */}
-                  <div className="flex space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <div className="flex gap-1 bg-beacon-50 p-1 rounded-full border border-beacon-100">
                     <button
                       onClick={() => setCenterTab('graph')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
                         centerTab === 'graph'
-                          ? 'bg-sky-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-beacon-600 text-white shadow-sm'
+                          : 'text-marine-500 hover:text-marine-800'
                       }`}
                     >
                       <Network className="w-3.5 h-3.5" />
-                      <span>Graph Constellation</span>
+                      <span>Constellation</span>
                     </button>
 
                     <button
                       onClick={() => setCenterTab('multimodal')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
                         centerTab === 'multimodal'
-                          ? 'bg-sky-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'bg-beacon-600 text-white shadow-sm'
+                          : 'text-marine-500 hover:text-marine-800'
                       }`}
                     >
                       <Layers className="w-3.5 h-3.5" />
-                      <span>Multimodal Reader</span>
+                      <span>Reader</span>
                     </button>
                   </div>
                 </div>
@@ -315,7 +317,7 @@ export function LmsDashboardClient({
                       studentId={studentId}
                     />
                   ) : (
-                    <div className="p-12 text-center text-xs text-slate-400">
+                    <div className="p-12 text-center text-xs text-marine-400">
                       Select a lesson from the left column to view its content and generated formats.
                     </div>
                   )}
@@ -375,21 +377,42 @@ export function LmsDashboardClient({
         />
       )}
 
-      {/* 4. BOTTOM FOOTER WITH REFINED METRICS & CREDITS */}
-      <footer className="border-t border-sky-100 bg-white/90 py-5 mt-auto shadow-xs">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
-          <div className="flex items-center space-x-2">
-            <Flame className="w-4 h-4 text-sky-600" />
-            <span className="font-extrabold text-slate-900">SAINT ELMS FIRE</span>
-            <span>&bull;</span>
-            <span>The Second Brain LMS &bull; Illuminating reasoned knowledge through AI-native orchestration</span>
+      {/* 4. FOOTER — the chart's legend */}
+      <footer className="border-t border-beacon-100 bg-white mt-auto">
+        {/* Compass-rose divider */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4 py-4 border-b border-beacon-50">
+            <div className="course-line flex-1 h-0.5 opacity-60" />
+            <CoronaMark className="w-5 h-5 text-beacon-500" />
+            <div className="course-line flex-1 h-0.5 opacity-60" />
           </div>
-          <div className="flex items-center space-x-4 text-[11px] font-semibold text-slate-500">
-            <span>Genkit 1.41.0</span>
-            <span>&bull;</span>
-            <span>Gemini 3.7 Flash</span>
-            <span>&bull;</span>
-            <span>GCP Firestore Native</span>
+
+          <div className="py-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-beacon-600 text-white flex items-center justify-center">
+                <CoronaMark className="w-4.5 h-4.5" />
+              </div>
+              <div>
+                <span className="font-display text-sm font-semibold text-marine-900">Saint Elms Fire</span>
+                <p className="chart-annotation mt-0.5">Lux in tempestate — light in the storm</p>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-marine-500 max-w-md leading-relaxed text-center">
+              Trust the light, not the thunder. Reasoned knowledge, drip-fed with
+              courage, mapped as a constellation, and guarded by a Socratic beacon.
+            </p>
+
+            <div className="chart-annotation flex items-center gap-4">
+              <span>Genkit 1.41</span>
+              <span className="h-3 w-px bg-beacon-200" />
+              <span>Gemini 3.7 Flash</span>
+              <span className="h-3 w-px bg-beacon-200" />
+              <span className="flex items-center gap-1.5">
+                <Anchor className="w-3 h-3 text-beacon-500" />
+                GCP Firestore
+              </span>
+            </div>
           </div>
         </div>
       </footer>

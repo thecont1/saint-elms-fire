@@ -3,16 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   Compass,
-  Sparkles,
   Send,
   CheckCircle2,
-  AlertCircle,
   TrendingUp,
   RefreshCw,
-  Flame,
   ArrowRight,
-  Lightbulb,
+  Sparkles,
 } from 'lucide-react';
+import { CoronaMark } from '@/components/Navigation';
 
 interface SocraticTutorCardProps {
   studentId: string;
@@ -70,27 +68,27 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
   };
 
   return (
-    <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/60 rounded-2xl border border-sky-200 shadow-md shadow-sky-500/5 p-6 relative overflow-hidden">
-      {/* Decorative celestial background accent */}
-      <div className="absolute -top-16 -right-16 w-48 h-48 bg-sky-200/40 rounded-full blur-3xl pointer-events-none" />
+    <div className="chart-card p-6 relative overflow-hidden">
+      {/* The beacon's glow */}
+      <div className="absolute -top-20 -right-20 w-56 h-56 bg-beacon-200/40 rounded-full blur-3xl pointer-events-none" />
 
       {/* Card Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
-            <Flame className="w-6 h-6 animate-pulse" />
+      <div className="relative flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
+            <CoronaMark className="w-6 h-6 animate-glow-breathe" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
-                Saint Elms Socratic Beacon
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-display text-lg font-semibold text-marine-950 tracking-tight">
+                The Beacon Calls
               </h3>
-              <span className="text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-bold bg-sky-100 text-sky-800 border border-sky-300">
-                Proactive Inquiry
+              <span className="chart-annotation px-2.5 py-0.5 rounded-full bg-beacon-50 text-beacon-700 border border-beacon-200">
+                Proactive inquiry
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Illuminating uncertainty &bull; Agent-initiated challenge targeting your recent quiz concepts
+            <p className="text-xs text-marine-500 mt-0.5">
+              A light against uncertainty — a challenge drawn from your recent quizzes
             </p>
           </div>
         </div>
@@ -98,7 +96,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
         <button
           onClick={() => fetchActiveSession(true)}
           disabled={isLoadingSession}
-          className="p-2 text-slate-400 hover:text-sky-700 rounded-xl hover:bg-sky-50 transition border border-transparent hover:border-sky-200"
+          className="p-2 text-marine-400 hover:text-beacon-700 rounded-full hover:bg-beacon-50 transition border border-transparent hover:border-beacon-200"
           title="Request new Socratic challenge"
         >
           <RefreshCw className={`w-4 h-4 ${isLoadingSession ? 'animate-spin' : ''}`} />
@@ -106,66 +104,65 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
       </div>
 
       {isLoadingSession ? (
-        <div className="p-6 flex flex-col items-center justify-center text-center">
-          <div className="w-7 h-7 border-3 border-sky-500 border-t-transparent rounded-full animate-spin mb-2" />
-          <span className="text-xs text-sky-800 font-semibold">
-            The Socratic Beacon is formulating an inquiry from your curriculum...
+        <div className="relative p-6 flex flex-col items-center justify-center text-center">
+          <div className="w-7 h-7 border-3 border-beacon-500 border-t-transparent rounded-full animate-spin mb-2" />
+          <span className="text-xs text-beacon-700 font-semibold">
+            The beacon is kindling an inquiry from your curriculum...
           </span>
         </div>
       ) : session ? (
-        <div className="space-y-4">
-          {/* Trigger Context Pill */}
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-white border border-sky-100 text-xs text-slate-700 shadow-2xs">
-            <Compass className="w-4 h-4 text-sky-600 shrink-0" />
-            <span className="text-slate-500 font-semibold">Inquiry Trigger:</span>
-            <span className="text-sky-900 font-medium">{session.triggerReason}</span>
+        <div className="relative space-y-4">
+          {/* Trigger Context */}
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-beacon-50/70 border border-beacon-100 text-xs">
+            <Compass className="w-4 h-4 text-beacon-500 shrink-0" />
+            <span className="chart-annotation shrink-0">Bearing:</span>
+            <span className="text-beacon-900 font-medium">{session.triggerReason}</span>
           </div>
 
           {/* Socratic Question Box */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-sky-100/60 to-blue-50 border border-sky-200/80 text-slate-900 shadow-xs">
-            <div className="text-[10px] uppercase text-sky-800 tracking-wider font-bold mb-1.5 flex items-center justify-between">
-              <span className="flex items-center gap-1">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                Target Pillar: {session.targetConcept} &bull; {session.relatedLessonTitle}
-              </span>
+          <div className="p-5 rounded-xl bg-white border border-beacon-200 border-l-4 border-l-beacon-500 text-marine-900">
+            <div className="chart-annotation mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-beacon-500" />
+              Destination: {session.targetConcept} &bull; {session.relatedLessonTitle}
             </div>
-            <p className="text-sm sm:text-base font-bold leading-relaxed text-slate-900">
+            <p className="font-display text-base sm:text-lg font-medium leading-relaxed text-marine-950 italic">
               &ldquo;{session.socraticQuestion}&rdquo;
             </p>
             {session.contextHint && (
-              <p className="text-xs text-sky-800 mt-2.5 font-medium bg-white/70 p-2 rounded-lg border border-sky-100 inline-block">
-                🧭 Navigational Hint: {session.contextHint}
+              <p className="text-xs text-beacon-800 mt-3 font-medium bg-beacon-50 p-2.5 rounded-lg border border-beacon-100 inline-flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-beacon-500" />
+                Navigational hint: {session.contextHint}
               </p>
             )}
           </div>
 
           {/* Evaluation Result View */}
           {evaluation ? (
-            <div className="p-5 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-3 animate-in fade-in shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Socratic Synthesis Evaluated
+            <div className="p-5 rounded-xl bg-beacon-50 border border-beacon-200 space-y-3 animate-in fade-in">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-beacon-800">
+                  <CheckCircle2 className="w-4 h-4 text-beacon-600" />
+                  Course verified by the beacon
                 </span>
-                <span className="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold">
-                  Comprehension: {evaluation.understandingScore} / 10
+                <span className="chart-annotation px-3 py-1 rounded-full bg-white text-beacon-700 border border-beacon-200 font-semibold">
+                  Comprehension {evaluation.understandingScore}/10
                 </span>
               </div>
 
-              <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              <p className="text-xs text-marine-800 leading-relaxed font-medium">
                 {evaluation.feedback}
               </p>
 
               {evaluation.socraticFollowUp && (
-                <div className="pt-2.5 border-t border-emerald-200 text-xs text-emerald-900 font-semibold flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                <div className="pt-2.5 border-t border-beacon-200 text-xs text-beacon-900 font-semibold flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-beacon-600" />
                   {evaluation.socraticFollowUp}
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2 text-xs text-emerald-800 font-semibold">
+              <div className="flex items-center justify-between gap-2 pt-2 text-xs text-beacon-800 font-semibold flex-wrap">
                 <span className="flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <Sparkles className="w-3.5 h-3.5 text-beacon-500" />
                   {evaluation.masteryUpdate}
                 </span>
                 <button
@@ -174,9 +171,9 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
                     setStudentAnswer('');
                     fetchActiveSession(true);
                   }}
-                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition shadow-xs"
+                  className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-beacon-600 text-white font-bold hover:bg-beacon-500 transition shadow-sm"
                 >
-                  Next Challenge <ArrowRight className="w-3 h-3" />
+                  Next challenge <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -186,31 +183,31 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
               <textarea
                 value={studentAnswer}
                 onChange={(e) => setStudentAnswer(e.target.value)}
-                placeholder="Explain your reasoning here. What are the key architectural tradeoffs, state boundaries, or edge cases?"
+                placeholder="Reason it out, sailor. What are the key architectural tradeoffs, state boundaries, or edge cases?"
                 rows={3}
                 disabled={isEvaluating}
-                className="w-full bg-white border border-slate-300 focus:border-sky-500 rounded-xl p-3.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:opacity-50 resize-none leading-relaxed shadow-inner"
+                className="w-full bg-white border border-beacon-200 focus:border-beacon-500 rounded-xl p-3.5 text-xs text-marine-900 placeholder-marine-400 focus:outline-none focus:ring-2 focus:ring-beacon-200 disabled:opacity-50 resize-none leading-relaxed"
               />
 
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-500 font-medium">
-                  Reasoning Engine: Gemini 3.7 Flash
+              <div className="flex items-center justify-between gap-2">
+                <span className="chart-annotation">
+                  Reasoning engine: Gemini 3.7 Flash
                 </span>
 
                 <button
                   type="submit"
                   disabled={!studentAnswer.trim() || isEvaluating}
-                  className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-2 transition disabled:opacity-40 shadow-md shadow-sky-600/25"
+                  className="px-5 py-2.5 rounded-full bg-beacon-600 hover:bg-beacon-500 text-white text-xs font-bold flex items-center gap-2 transition disabled:opacity-40 shadow-sm"
                 >
                   {isEvaluating ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Evaluating Mastery...</span>
+                      <span>Sounding the depths...</span>
                     </>
                   ) : (
                     <>
                       <Send className="w-3.5 h-3.5" />
-                      <span>Submit Reasoning</span>
+                      <span>Submit reasoning</span>
                     </>
                   )}
                 </button>
@@ -219,8 +216,8 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
           )}
         </div>
       ) : (
-        <div className="p-4 text-center text-xs text-slate-500 font-medium">
-          No active Socratic inquiry. Complete a quiz or unlock a module to light the beacon!
+        <div className="relative p-4 text-center text-xs text-marine-500 font-medium">
+          No active inquiry on the horizon. Complete a quiz or unlock a module to light the beacon.
         </div>
       )}
     </div>

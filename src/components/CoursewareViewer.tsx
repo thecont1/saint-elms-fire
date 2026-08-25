@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BookOpen, Lock, CheckCircle2, ChevronRight, Layers, FileText, Sparkles, Compass } from 'lucide-react';
+import { BookOpen, Lock, CheckCircle2, ChevronRight, FileText, Sparkles } from 'lucide-react';
 import type { CourseModule, Lesson } from '@/lib/types';
 
 interface CoursewareViewerProps {
@@ -25,24 +25,24 @@ export function CoursewareViewer({
   const completionPercent = Math.round((releasedLessons.length / Math.max(1, lessons.length)) * 100);
 
   return (
-    <div className="bg-white rounded-2xl border border-sky-100 shadow-xl shadow-sky-500/5 overflow-hidden flex flex-col h-full">
+    <div className="chart-card overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-sky-100 bg-gradient-to-r from-sky-50/80 via-white to-blue-50/40 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-sky-100 border border-sky-200 text-sky-700 shadow-2xs">
+      <div className="p-4 border-b border-beacon-100 bg-beacon-50/60 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-white border border-beacon-200 text-beacon-600 flex items-center justify-center">
             <BookOpen className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Curriculum Progression</h3>
-            <p className="text-xs text-slate-500">
-              {releasedLessons.length} of {lessons.length} Lessons Unlocked
+            <h3 className="font-display text-sm font-semibold text-marine-900">The Charted Course</h3>
+            <p className="chart-annotation mt-0.5">
+              {releasedLessons.length} of {lessons.length} waypoints reached
             </p>
           </div>
         </div>
 
-        {/* Completion Pill */}
-        <div className="text-xs px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 font-bold">
-          {completionPercent}% Unlocked
+        {/* Completion annotation */}
+        <div className="chart-annotation px-2.5 py-1 rounded-full bg-white border border-beacon-200 text-beacon-700 font-semibold">
+          {completionPercent}%
         </div>
       </div>
 
@@ -57,36 +57,36 @@ export function CoursewareViewer({
           return (
             <div
               key={mod.id}
-              className="rounded-xl border border-slate-200/80 bg-slate-50/50 overflow-hidden shadow-2xs transition hover:border-sky-200"
+              className="rounded-xl border border-beacon-100 bg-white overflow-hidden transition hover:border-beacon-300"
             >
               {/* Module Header */}
-              <div className="p-3 bg-white border-b border-slate-200/80 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-sky-700 uppercase tracking-wider font-extrabold">
-                    Module {mod.order}
+              <div className="p-3 bg-beacon-50/50 border-b border-beacon-100 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="chart-annotation text-beacon-600">
+                    Leg {mod.order}
                   </span>
-                  <h4 className="text-xs font-bold text-slate-900">{mod.title}</h4>
+                  <h4 className="text-xs font-bold text-marine-900 truncate">{mod.title}</h4>
                 </div>
 
-                <div className="flex items-center space-x-1.5">
+                <div className="flex items-center shrink-0">
                   {isModFullyUnlocked ? (
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Unlocked
+                    <span className="flex items-center gap-1 chart-annotation text-beacon-700 bg-white px-2 py-1 rounded-full border border-beacon-200">
+                      <CheckCircle2 className="w-3 h-3 text-beacon-500" /> Charted
                     </span>
                   ) : isModPartiallyUnlocked ? (
-                    <span className="flex items-center gap-1 text-[10px] text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
-                      <Sparkles className="w-3 h-3 text-sky-600" /> In Progress
+                    <span className="flex items-center gap-1 chart-annotation text-beacon-600 bg-white px-2 py-1 rounded-full border border-beacon-200">
+                      <Sparkles className="w-3 h-3 text-beacon-500" /> Sailing
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
-                      <Lock className="w-3 h-3" /> Locked
+                    <span className="flex items-center gap-1 chart-annotation text-marine-400 bg-beacon-50 px-2 py-1 rounded-full border border-beacon-100">
+                      <Lock className="w-3 h-3" /> Fogbound
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Lessons within Module */}
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-beacon-50">
                 {modLessons.map((lesson) => {
                   const isReleased = releasedLessonIds.has(lesson.id);
                   const isSelected = selectedLessonId === lesson.id;
@@ -99,37 +99,37 @@ export function CoursewareViewer({
                       }}
                       className={`p-3 flex items-center justify-between text-xs transition ${
                         !isReleased
-                          ? 'opacity-40 cursor-not-allowed bg-slate-50/30'
+                          ? 'opacity-45 cursor-not-allowed'
                           : isSelected
-                          ? 'bg-sky-50 text-sky-950 font-semibold border-l-3 border-sky-600 cursor-pointer shadow-2xs'
-                          : 'hover:bg-white text-slate-700 cursor-pointer'
+                          ? 'bg-beacon-50 text-beacon-900 font-semibold border-l-2 border-beacon-600 cursor-pointer'
+                          : 'hover:bg-beacon-50/60 text-marine-700 cursor-pointer'
                       }`}
                     >
-                      <div className="flex items-center space-x-2.5 flex-1 min-w-0 pr-2">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-2">
                         {isReleased ? (
-                          <FileText className="w-4 h-4 text-sky-600 shrink-0" />
+                          <FileText className="w-4 h-4 text-beacon-500 shrink-0" />
                         ) : (
-                          <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                          <Lock className="w-4 h-4 text-marine-400 shrink-0" />
                         )}
                         <span className="truncate">{lesson.title}</span>
                       </div>
 
-                      <div className="flex items-center space-x-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         {isReleased && onOpenQuiz && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onOpenQuiz(lesson);
                             }}
-                            className="px-2.5 py-0.5 rounded-md bg-white hover:bg-sky-50 text-[11px] text-sky-700 font-bold border border-sky-200 shadow-2xs transition"
+                            className="px-2.5 py-0.5 rounded-full bg-white hover:bg-beacon-50 text-[11px] text-beacon-700 font-bold border border-beacon-200 transition"
                           >
                             Quiz
                           </button>
                         )}
                         {isReleased ? (
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                          <ChevronRight className="w-4 h-4 text-beacon-300" />
                         ) : (
-                          <span className="text-[10px] text-slate-400 font-medium">Locked</span>
+                          <span className="chart-annotation">Locked</span>
                         )}
                       </div>
                     </div>

@@ -73,10 +73,10 @@ export function AdminReleaseManager({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Release Action Panel */}
-      <div className="lg:col-span-1 bg-white rounded-2xl border border-sky-100 p-6 shadow-xl shadow-sky-500/5 flex flex-col justify-between">
+      <div className="lg:col-span-1 bg-white rounded-2xl border border-beacon-100 p-6 shadow-xl shadow-beacon-500/5 flex flex-col justify-between">
         <div>
           <div className="flex items-center space-x-3 mb-4">
-            <div className="p-2.5 rounded-xl bg-sky-100 border border-sky-200 text-sky-700 shadow-2xs">
+            <div className="p-2.5 rounded-xl bg-beacon-100 border border-beacon-200 text-beacon-700 shadow-2xs">
               <Send className="w-4 h-4" />
             </div>
             <div>
@@ -96,7 +96,7 @@ export function AdminReleaseManager({
               <select
                 value={targetStudent}
                 onChange={(e) => setTargetStudent(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
               >
                 <option value="student-alex">Alex (Student #101)</option>
                 <option value="cohort-all">All Cohort Learners (Global Drip)</option>
@@ -114,7 +114,7 @@ export function AdminReleaseManager({
                   setSelectedModuleId(e.target.value);
                   setSelectedLessonId('all-in-module');
                 }}
-                className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
               >
                 {modules.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -132,7 +132,7 @@ export function AdminReleaseManager({
               <select
                 value={selectedLessonId}
                 onChange={(e) => setSelectedLessonId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
               >
                 <option value="all-in-module">Entire Module (All Lessons)</option>
                 {availableLessons.map((l) => (
@@ -147,7 +147,7 @@ export function AdminReleaseManager({
               <button
                 type="submit"
                 disabled={isReleasing || modules.length === 0}
-                className="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-sky-600/25 disabled:opacity-50"
+                className="w-full py-3 px-4 rounded-xl bg-beacon-600 hover:bg-beacon-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-beacon-600/25 disabled:opacity-50"
               >
                 {isReleasing ? (
                   <>
@@ -180,10 +180,10 @@ export function AdminReleaseManager({
       </div>
 
       {/* Release History & Second Brain Sync Logs */}
-      <div className="lg:col-span-2 bg-white rounded-2xl border border-sky-100 p-6 shadow-xl shadow-sky-500/5 flex flex-col">
+      <div className="lg:col-span-2 bg-white rounded-2xl border border-beacon-100 p-6 shadow-xl shadow-beacon-500/5 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-sky-600" />
+            <Clock className="w-4 h-4 text-beacon-600" />
             <h3 className="text-base font-extrabold text-slate-900">Release Audit Log & Drip Timeline</h3>
           </div>
           <span className="text-xs font-mono font-semibold text-slate-500 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
@@ -209,7 +209,7 @@ export function AdminReleaseManager({
                         {mod ? `Module ${mod.order}: ${mod.title}` : 'Course Module'}
                       </span>
                       {lesson && (
-                        <span className="text-sky-700 font-semibold text-xs">
+                        <span className="text-beacon-700 font-semibold text-xs">
                           &bull; {lesson.title}
                         </span>
                       )}

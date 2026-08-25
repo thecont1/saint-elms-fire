@@ -109,10 +109,10 @@ export function AdminCourseManager({
   return (
     <div className="space-y-5">
       {/* Course Details Header Card */}
-      <div className="bg-white rounded-2xl border border-sky-100 p-6 shadow-xl shadow-sky-500/5 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-beacon-100 p-6 shadow-xl shadow-beacon-500/5 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <span className="text-xs font-bold text-sky-800 px-2.5 py-0.5 rounded-full bg-sky-50 border border-sky-200">
+            <span className="text-xs font-bold text-beacon-800 px-2.5 py-0.5 rounded-full bg-beacon-50 border border-beacon-200">
               {course.code || 'COURSE'}
             </span>
             <h2 className="text-xl font-extrabold text-slate-900">{course.title}</h2>
@@ -136,7 +136,7 @@ export function AdminCourseManager({
               setShowLessonModal(true);
             }}
             disabled={modules.length === 0}
-            className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-md shadow-sky-600/20 disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-beacon-600 hover:bg-beacon-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-md shadow-beacon-600/20 disabled:opacity-50"
           >
             <UploadCloud className="w-4 h-4" />
             <span>Upload Courseware (.md)</span>
@@ -152,11 +152,11 @@ export function AdminCourseManager({
           return (
             <div
               key={mod.id}
-              className="bg-white rounded-2xl border border-sky-100 p-5 flex flex-col justify-between shadow-md shadow-sky-500/5 transition hover:border-sky-300"
+              className="bg-white rounded-2xl border border-beacon-100 p-5 flex flex-col justify-between shadow-md shadow-beacon-500/5 transition hover:border-beacon-300"
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-sky-700 uppercase tracking-wider font-extrabold">
+                  <span className="text-[10px] text-beacon-700 uppercase tracking-wider font-extrabold">
                     Module {mod.order}
                   </span>
                   <span className="text-[11px] text-slate-500 font-semibold bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
@@ -191,7 +191,7 @@ export function AdminCourseManager({
       {/* Add Module Modal */}
       {showModuleModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-sky-200 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in">
+          <div className="bg-white border border-beacon-200 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in">
             <h3 className="text-base font-extrabold text-slate-900 mb-4">Create New Module</h3>
             <form onSubmit={handleCreateModule} className="space-y-4">
               <div>
@@ -204,7 +204,7 @@ export function AdminCourseManager({
                   onChange={(e) => setModuleTitle(e.target.value)}
                   placeholder="e.g. Module 4: Byzantine Fault Tolerance"
                   required
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-beacon-200"
                 />
               </div>
 
@@ -217,7 +217,7 @@ export function AdminCourseManager({
                   onChange={(e) => setModuleDescription(e.target.value)}
                   placeholder="Summary of module curriculum..."
                   rows={2}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-200 resize-none"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-beacon-200 resize-none"
                 />
               </div>
 
@@ -232,7 +232,7 @@ export function AdminCourseManager({
                 <button
                   type="submit"
                   disabled={isSubmitting || !moduleTitle.trim()}
-                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-50"
+                  className="px-5 py-2.5 bg-beacon-600 hover:bg-beacon-500 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-50"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Module'}
                 </button>
@@ -245,7 +245,7 @@ export function AdminCourseManager({
       {/* Add / Upload Lesson Modal */}
       {showLessonModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-sky-200 rounded-2xl max-w-2xl w-full p-6 shadow-2xl animate-in fade-in max-h-[90vh] overflow-y-auto">
+          <div className="bg-white border border-beacon-200 rounded-2xl max-w-2xl w-full p-6 shadow-2xl animate-in fade-in max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-extrabold text-slate-900 mb-4">Upload Markdown Courseware</h3>
             <form onSubmit={handleCreateLesson} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -257,7 +257,7 @@ export function AdminCourseManager({
                     value={lessonModuleId}
                     onChange={(e) => setLessonModuleId(e.target.value)}
                     required
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none"
                   >
                     {modules.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -277,7 +277,7 @@ export function AdminCourseManager({
                     onChange={(e) => setLessonTitle(e.target.value)}
                     placeholder="e.g. 1.3 State Machine Safety Invariants"
                     required
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none"
                   />
                 </div>
               </div>
@@ -291,7 +291,7 @@ export function AdminCourseManager({
                   type="file"
                   accept=".md,.markdown,.txt"
                   onChange={handleFileUpload}
-                  className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-sky-800 hover:file:bg-sky-100 cursor-pointer"
+                  className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-beacon-50 file:text-beacon-800 hover:file:bg-beacon-100 cursor-pointer"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export function AdminCourseManager({
                   placeholder="# Lesson Content in Markdown format..."
                   rows={10}
                   required
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 font-mono focus:outline-none resize-none"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 font-mono focus:outline-none resize-none"
                 />
               </div>
 
@@ -320,7 +320,7 @@ export function AdminCourseManager({
                 <button
                   type="submit"
                   disabled={isSubmitting || !lessonTitle.trim() || !lessonMarkdown.trim()}
-                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-50"
+                  className="px-5 py-2.5 bg-beacon-600 hover:bg-beacon-500 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-50"
                 >
                   {isSubmitting ? 'Saving...' : 'Save Lesson'}
                 </button>

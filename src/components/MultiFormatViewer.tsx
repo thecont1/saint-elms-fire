@@ -11,10 +11,8 @@ import {
   CheckCircle2,
   Copy,
   Layers,
-  ArrowRight,
-  Sliders,
-  Flame,
 } from 'lucide-react';
+import { CoronaMark } from '@/components/Navigation';
 import type { Lesson, GeneratedFormat } from '@/lib/types';
 
 interface MultiFormatViewerProps {
@@ -94,17 +92,24 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
 
   const currentFormat = formats[activeTab as string];
 
+  const tabs: { id: FormatTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'raw_markdown', label: 'Original Courseware', icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { id: 'structured_notes', label: 'Structured Notes', icon: <FileText className="w-3.5 h-3.5" /> },
+    { id: 'podcast_dialogue', label: 'Podcast Dialogue', icon: <Headphones className="w-3.5 h-3.5" /> },
+    { id: 'video_lecture_script', label: 'Video Masterclass', icon: <Video className="w-3.5 h-3.5" /> },
+  ];
+
   return (
-    <div className="bg-white rounded-2xl border border-sky-100 shadow-xl shadow-sky-500/5 overflow-hidden flex flex-col h-full">
+    <div className="overflow-hidden flex flex-col h-full rounded-xl border border-beacon-100 bg-white">
       {/* Header with Title and Tab Switcher */}
-      <div className="p-5 border-b border-sky-100 bg-gradient-to-r from-sky-50/70 via-white to-blue-50/40">
+      <div className="p-5 border-b border-beacon-100 bg-beacon-50/50">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-sky-700 flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-sky-600" />
-              Multimodal Knowledge Synthesis
+            <span className="chart-annotation flex items-center gap-1.5 text-beacon-600">
+              <CoronaMark className="w-3.5 h-3.5" />
+              One lesson, many lights
             </span>
-            <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
+            <h3 className="font-display text-lg font-semibold text-marine-900 mt-1">
               {lesson.title}
             </h3>
           </div>
@@ -112,17 +117,17 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
           {activeTab !== 'raw_markdown' && currentFormat && (
             <button
               onClick={() => copyToClipboard(currentFormat.content)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition border border-slate-200 shadow-2xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-beacon-50 text-marine-600 text-xs font-semibold transition border border-beacon-200"
             >
               {copied ? (
                 <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-beacon-600" />
                   <span>Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Copy Script / Notes</span>
+                  <Copy className="w-3.5 h-3.5 text-marine-400" />
+                  <span>Copy script / notes</span>
                 </>
               )}
             </button>
@@ -130,63 +135,24 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
         </div>
 
         {/* Multimodal Format Navigation Tabs */}
-        <div className="flex flex-wrap gap-1.5 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/80">
-          <button
-            onClick={() => setActiveTab('raw_markdown')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
-              activeTab === 'raw_markdown'
-                ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5 text-sky-600" />
-            <span>Original Courseware</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('structured_notes')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
-              activeTab === 'structured_notes'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-slate-600 hover:text-amber-800'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5 text-amber-500" />
-            <span>Structured Notes & Diagrams</span>
-            {formats['structured_notes'] && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 ring-1 ring-white" />
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('podcast_dialogue')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
-              activeTab === 'podcast_dialogue'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-indigo-800'
-            }`}
-          >
-            <Headphones className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Podcast Dialogue Script</span>
-            {formats['podcast_dialogue'] && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 ring-1 ring-white" />
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('video_lecture_script')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
-              activeTab === 'video_lecture_script'
-                ? 'bg-sky-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-sky-800'
-            }`}
-          >
-            <Video className="w-3.5 h-3.5 text-sky-500" />
-            <span>Video Masterclass Script</span>
-            {formats['video_lecture_script'] && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 ring-1 ring-white" />
-            )}
-          </button>
+        <div className="flex flex-wrap gap-1 bg-white p-1 rounded-full border border-beacon-200 w-fit">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
+                activeTab === tab.id
+                  ? 'bg-beacon-600 text-white shadow-sm'
+                  : 'text-marine-500 hover:text-marine-900 hover:bg-beacon-50'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              {tab.id !== 'raw_markdown' && formats[tab.id] && (
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === tab.id ? 'bg-white' : 'bg-beacon-500'}`} />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -194,38 +160,38 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
       <div className="flex-1 p-6 overflow-y-auto max-h-[560px] bg-white">
         {activeTab === 'raw_markdown' ? (
           <div className="prose-light max-w-none text-xs">
-            <div className="whitespace-pre-wrap font-sans leading-relaxed text-slate-800">
+            <div className="whitespace-pre-wrap font-sans leading-relaxed text-marine-800">
               {lesson.markdownContent}
             </div>
           </div>
         ) : currentFormat ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-sky-100 text-xs text-slate-500">
-              <span className="font-bold text-sky-900">{currentFormat.title}</span>
-              <span className="font-mono text-[11px] bg-sky-50 px-2.5 py-0.5 rounded-full text-sky-800 font-semibold">
-                Synthesized with Gemini 3.7 Flash &bull; {new Date(currentFormat.createdAt).toLocaleDateString()}
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-beacon-100 text-xs text-marine-500 flex-wrap">
+              <span className="font-bold text-beacon-800">{currentFormat.title}</span>
+              <span className="chart-annotation bg-beacon-50 px-2.5 py-1 rounded-full text-beacon-700 border border-beacon-100">
+                Gemini 3.7 Flash &bull; {new Date(currentFormat.createdAt).toLocaleDateString()}
               </span>
             </div>
-            <div className="prose-light max-w-none text-xs leading-relaxed whitespace-pre-wrap text-slate-800">
+            <div className="prose-light max-w-none text-xs leading-relaxed whitespace-pre-wrap text-marine-800">
               {currentFormat.content}
             </div>
           </div>
         ) : (
           /* Empty / Un-generated State */
           <div className="flex flex-col items-center justify-center p-8 text-center my-6">
-            <div className="w-16 h-16 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center mb-4 text-sky-600 shadow-inner">
-              {activeTab === 'structured_notes' && <FileText className="w-8 h-8 text-amber-500" />}
-              {activeTab === 'podcast_dialogue' && <Headphones className="w-8 h-8 text-indigo-500" />}
-              {activeTab === 'video_lecture_script' && <Video className="w-8 h-8 text-sky-500" />}
+            <div className="w-16 h-16 rounded-full bg-beacon-50 border border-beacon-200 flex items-center justify-center mb-4 text-beacon-500">
+              {activeTab === 'structured_notes' && <FileText className="w-7 h-7" />}
+              {activeTab === 'podcast_dialogue' && <Headphones className="w-7 h-7" />}
+              {activeTab === 'video_lecture_script' && <Video className="w-7 h-7" />}
             </div>
 
-            <h4 className="text-base font-extrabold text-slate-900 mb-1">
-              {activeTab === 'structured_notes' && 'Structured Study Notes Not Yet Generated'}
-              {activeTab === 'podcast_dialogue' && 'Podcast Dialogue Script Not Yet Generated'}
-              {activeTab === 'video_lecture_script' && 'Video Masterclass Script Not Yet Generated'}
+            <h4 className="font-display text-lg font-semibold text-marine-900 mb-1">
+              {activeTab === 'structured_notes' && 'No chart notes yet'}
+              {activeTab === 'podcast_dialogue' && 'No dialogue on the wire'}
+              {activeTab === 'video_lecture_script' && 'The lecture hall is dark'}
             </h4>
 
-            <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
+            <p className="text-xs text-marine-500 max-w-md mb-6 leading-relaxed">
               {activeTab === 'structured_notes' &&
                 'Generate an executive summary, concept hierarchy, diagram blueprints, and review checklists grounded strictly in this lesson.'}
               {activeTab === 'podcast_dialogue' &&
@@ -236,12 +202,12 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
 
             {/* Persona Selector for Video */}
             {activeTab === 'video_lecture_script' && (
-              <div className="mb-4 flex items-center space-x-2 text-xs">
-                <span className="text-slate-600 font-bold">Lecturer Persona:</span>
+              <div className="mb-4 flex items-center gap-2 text-xs">
+                <span className="chart-annotation">Lecturer persona:</span>
                 <select
                   value={selectedPersona}
                   onChange={(e) => setSelectedPersona(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 px-3 py-1.5 focus:outline-none focus:border-sky-500 font-medium"
+                  className="bg-white border border-beacon-200 rounded-full text-xs text-marine-800 px-3 py-1.5 focus:outline-none focus:border-beacon-500 font-medium"
                 >
                   <option value="Master Lecturer (Feynman style)">Master Lecturer (Feynman style - Vivid analogies)</option>
                   <option value="Senior Staff Architect">Senior Staff Architect (Production tradeoffs & edge cases)</option>
@@ -255,17 +221,17 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
                 handleGenerate(activeTab as 'structured_notes' | 'podcast_dialogue' | 'video_lecture_script')
               }
               disabled={isLoading}
-              className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-2 transition shadow-lg shadow-sky-600/20 disabled:opacity-50"
+              className="px-5 py-2.5 rounded-full bg-beacon-600 hover:bg-beacon-500 text-white text-xs font-bold flex items-center gap-2 transition shadow-sm disabled:opacity-50"
             >
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Synthesizing with Gemini 3.7 Flash...</span>
+                  <span>Kindling the fire...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Generate {activeTab.replace(/_/g, ' ').toUpperCase()}</span>
+                  <span>Generate {activeTab.replace(/_/g, ' ')}</span>
                 </>
               )}
             </button>
@@ -274,10 +240,10 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
       </div>
 
       {/* Footer Status */}
-      <div className="p-3.5 border-t border-sky-100 bg-sky-50/50 flex items-center justify-between text-xs text-slate-600 font-medium">
-        <span className="flex items-center gap-1.5 text-sky-800">
-          <Layers className="w-4 h-4 text-sky-600" />
-          Strict Factual Invariant: Traceable to underlying markdown with zero hallucination
+      <div className="p-3.5 border-t border-beacon-100 bg-beacon-50/50 flex items-center justify-between gap-2 text-xs text-marine-600 font-medium flex-wrap">
+        <span className="flex items-center gap-1.5 text-beacon-800">
+          <Layers className="w-4 h-4 text-beacon-500" />
+          Strict invariant: traceable to the source markdown — zero hallucination
         </span>
         {currentFormat && (
           <button
@@ -285,7 +251,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
               handleGenerate(activeTab as 'structured_notes' | 'podcast_dialogue' | 'video_lecture_script')
             }
             disabled={isLoading}
-            className="flex items-center gap-1 text-sky-700 hover:text-sky-900 font-bold transition"
+            className="flex items-center gap-1 text-beacon-600 hover:text-beacon-800 font-bold transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Regenerate</span>
