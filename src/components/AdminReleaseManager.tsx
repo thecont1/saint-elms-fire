@@ -12,6 +12,7 @@ import {
   RefreshCw,
   User,
   BookOpen,
+  Compass,
 } from 'lucide-react';
 import type { CourseModule, Lesson, ReleaseEvent } from '@/lib/types';
 
@@ -70,41 +71,41 @@ export function AdminReleaseManager({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Release Action Panel */}
-      <div className="lg:col-span-1 bg-slate-900/90 rounded-xl border border-slate-800 p-5 shadow-xl flex flex-col justify-between">
+      <div className="lg:col-span-1 bg-white rounded-2xl border border-sky-100 p-6 shadow-xl shadow-sky-500/5 flex flex-col justify-between">
         <div>
-          <div className="flex items-center space-x-2.5 mb-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2.5 rounded-xl bg-sky-100 border border-sky-200 text-sky-700 shadow-2xs">
               <Send className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Trigger Incremental Release</h3>
-              <p className="text-xs text-slate-400">
-                Drip-feed content & trigger Genkit Second Brain Ingestion
+              <h3 className="text-base font-extrabold text-slate-900">Trigger Drip Release</h3>
+              <p className="text-xs text-slate-500">
+                Unlock curriculum & trigger Genkit Second Brain Ingestion
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleTriggerRelease} className="space-y-3.5 mt-4">
+          <form onSubmit={handleTriggerRelease} className="space-y-4 mt-4">
             {/* Target Cohort / Student */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Target Student / Cohort
               </label>
               <select
                 value={targetStudent}
                 onChange={(e) => setTargetStudent(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
               >
                 <option value="student-alex">Alex (Student #101)</option>
-                <option value="cohort-all">All Cohort Students (Global Drip)</option>
+                <option value="cohort-all">All Cohort Learners (Global Drip)</option>
               </select>
             </div>
 
             {/* Select Module */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Select Module to Unlock
               </label>
               <select
@@ -113,7 +114,7 @@ export function AdminReleaseManager({
                   setSelectedModuleId(e.target.value);
                   setSelectedLessonId('all-in-module');
                 }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
               >
                 {modules.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -125,13 +126,13 @@ export function AdminReleaseManager({
 
             {/* Scope: Full module vs single lesson */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Release Granularity
               </label>
               <select
                 value={selectedLessonId}
                 onChange={(e) => setSelectedLessonId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
               >
                 <option value="all-in-module">Entire Module (All Lessons)</option>
                 {availableLessons.map((l) => (
@@ -146,7 +147,7 @@ export function AdminReleaseManager({
               <button
                 type="submit"
                 disabled={isReleasing || modules.length === 0}
-                className="w-full py-2.5 px-4 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-amber-600/25 disabled:opacity-50"
+                className="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-sky-600/25 disabled:opacity-50"
               >
                 {isReleasing ? (
                   <>
@@ -156,7 +157,7 @@ export function AdminReleaseManager({
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Push Release Live to Student</span>
+                    <span>Push Release Live to Learner</span>
                   </>
                 )}
               </button>
@@ -166,12 +167,12 @@ export function AdminReleaseManager({
 
         {/* Real-time Ingestion Result Pill */}
         {lastReleaseResult && (
-          <div className="mt-4 p-3 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-300 space-y-1 animate-in fade-in">
-            <div className="flex items-center gap-1.5 font-semibold text-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Release & Ingestion Complete!
+          <div className="mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1 animate-in fade-in shadow-2xs">
+            <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Release & Second Brain Ingestion Complete!
             </div>
-            <p className="text-[11px] text-emerald-300/80">
+            <p className="text-xs text-emerald-700">
               {lastReleaseResult.ingestedCount} lesson(s) ingested into student graph.
             </p>
           </div>
@@ -179,13 +180,13 @@ export function AdminReleaseManager({
       </div>
 
       {/* Release History & Second Brain Sync Logs */}
-      <div className="lg:col-span-2 bg-slate-900/90 rounded-xl border border-slate-800 p-5 shadow-xl flex flex-col">
+      <div className="lg:col-span-2 bg-white rounded-2xl border border-sky-100 p-6 shadow-xl shadow-sky-500/5 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-bold text-white">Release Audit Log & Drip Timeline</h3>
+            <Clock className="w-4 h-4 text-sky-600" />
+            <h3 className="text-base font-extrabold text-slate-900">Release Audit Log & Drip Timeline</h3>
           </div>
-          <span className="text-xs font-mono text-slate-400">
+          <span className="text-xs font-mono font-semibold text-slate-500 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
             {releases.length} Release Event(s)
           </span>
         </div>
@@ -198,28 +199,28 @@ export function AdminReleaseManager({
             return (
               <div
                 key={rel.id}
-                className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2"
+                className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs flex flex-wrap items-center justify-between gap-2 shadow-2xs"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-white">
+                      <span className="font-bold text-slate-900">
                         {mod ? `Module ${mod.order}: ${mod.title}` : 'Course Module'}
                       </span>
                       {lesson && (
-                        <span className="text-indigo-300 font-mono text-[10px]">
+                        <span className="text-sky-700 font-semibold text-xs">
                           &bull; {lesson.title}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center space-x-3 text-[11px] text-slate-400 mt-0.5">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3 h-3 text-slate-500" />
+                    <div className="flex items-center space-x-3 text-xs text-slate-500 mt-0.5">
+                      <span className="flex items-center gap-1 font-medium">
+                        <User className="w-3 h-3 text-slate-400" />
                         Target: {rel.studentId}
                       </span>
                       <span>&bull;</span>
-                      <span className="font-mono">
+                      <span className="font-mono text-[11px]">
                         {new Date(rel.releasedAt).toLocaleString()}
                       </span>
                     </div>
@@ -227,8 +228,8 @@ export function AdminReleaseManager({
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800/60 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Second Brain Synced
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Second Brain Synced
                   </span>
                 </div>
               </div>
@@ -236,7 +237,7 @@ export function AdminReleaseManager({
           })}
 
           {releases.length === 0 && (
-            <div className="p-8 text-center text-xs text-slate-500">
+            <div className="p-8 text-center text-xs text-slate-500 font-medium">
               No releases triggered yet. Select a module on the left to push the first release.
             </div>
           )}

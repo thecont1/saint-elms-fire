@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, BookOpen, UploadCloud, FileText, Check, AlertCircle, Sparkles, Layers } from 'lucide-react';
+import { Plus, BookOpen, UploadCloud, FileText, Check, AlertCircle, Sparkles, Layers, Shield } from 'lucide-react';
 import type { Course, CourseModule, Lesson } from '@/lib/types';
 
 interface AdminCourseManagerProps {
@@ -107,25 +107,25 @@ export function AdminCourseManager({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Course Details Card */}
-      <div className="bg-slate-900/90 rounded-xl border border-slate-800 p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-5">
+      {/* Course Details Header Card */}
+      <div className="bg-white rounded-2xl border border-sky-100 p-6 shadow-xl shadow-sky-500/5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-mono text-amber-400 font-semibold px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/40">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-xs font-bold text-sky-800 px-2.5 py-0.5 rounded-full bg-sky-50 border border-sky-200">
               {course.code || 'COURSE'}
             </span>
-            <h2 className="text-lg font-bold text-white">{course.title}</h2>
+            <h2 className="text-xl font-extrabold text-slate-900">{course.title}</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">{course.description}</p>
+          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">{course.description}</p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2.5">
           <button
             onClick={() => setShowModuleModal(true)}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition border border-slate-700"
+            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition border border-slate-200"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4 text-slate-600" />
             <span>Add Module</span>
           </button>
           <button
@@ -136,50 +136,50 @@ export function AdminCourseManager({
               setShowLessonModal(true);
             }}
             disabled={modules.length === 0}
-            className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-md shadow-amber-600/20 disabled:opacity-40"
+            className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-md shadow-sky-600/20 disabled:opacity-50"
           >
-            <UploadCloud className="w-3.5 h-3.5" />
+            <UploadCloud className="w-4 h-4" />
             <span>Upload Courseware (.md)</span>
           </button>
         </div>
       </div>
 
-      {/* Modules & Lessons Hierarchy */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Modules & Lessons Hierarchy Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {modules.map((mod) => {
           const modLessons = lessons.filter((l) => l.moduleId === mod.id);
 
           return (
             <div
               key={mod.id}
-              className="bg-slate-900/80 rounded-xl border border-slate-800 p-4 flex flex-col justify-between shadow-md"
+              className="bg-white rounded-2xl border border-sky-100 p-5 flex flex-col justify-between shadow-md shadow-sky-500/5 transition hover:border-sky-300"
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-sky-700 uppercase tracking-wider font-extrabold">
                     Module {mod.order}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-mono">
+                  <span className="text-[11px] text-slate-500 font-semibold bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
                     {modLessons.length} Lesson(s)
                   </span>
                 </div>
-                <h3 className="text-sm font-bold text-white mb-1">{mod.title}</h3>
-                <p className="text-xs text-slate-400 mb-3">{mod.description}</p>
+                <h3 className="text-sm font-extrabold text-slate-900 mb-1">{mod.title}</h3>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">{mod.description}</p>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {modLessons.map((l) => (
                     <div
                       key={l.id}
-                      className="p-2 rounded bg-slate-950 border border-slate-800/80 text-xs flex items-center justify-between"
+                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs flex items-center justify-between shadow-2xs hover:bg-white transition"
                     >
-                      <span className="truncate text-slate-300 font-medium">{l.title}</span>
-                      <span className="text-[9px] font-mono text-slate-500 shrink-0 ml-2">
+                      <span className="truncate text-slate-800 font-semibold">{l.title}</span>
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-2">
                         {l.markdownContent.length} chars
                       </span>
                     </div>
                   ))}
                   {modLessons.length === 0 && (
-                    <p className="text-[11px] text-slate-500 italic">No lessons uploaded yet</p>
+                    <p className="text-xs text-slate-400 italic">No lessons uploaded yet</p>
                   )}
                 </div>
               </div>
@@ -190,12 +190,12 @@ export function AdminCourseManager({
 
       {/* Add Module Modal */}
       {showModuleModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-5 shadow-2xl animate-in fade-in">
-            <h3 className="text-base font-bold text-white mb-3">Create New Module</h3>
-            <form onSubmit={handleCreateModule} className="space-y-3">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-sky-200 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in">
+            <h3 className="text-base font-extrabold text-slate-900 mb-4">Create New Module</h3>
+            <form onSubmit={handleCreateModule} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Module Title
                 </label>
                 <input
@@ -204,12 +204,12 @@ export function AdminCourseManager({
                   onChange={(e) => setModuleTitle(e.target.value)}
                   placeholder="e.g. Module 4: Byzantine Fault Tolerance"
                   required
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Description
                 </label>
                 <textarea
@@ -217,7 +217,7 @@ export function AdminCourseManager({
                   onChange={(e) => setModuleDescription(e.target.value)}
                   placeholder="Summary of module curriculum..."
                   rows={2}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-200 resize-none"
                 />
               </div>
 
@@ -225,14 +225,14 @@ export function AdminCourseManager({
                 <button
                   type="button"
                   onClick={() => setShowModuleModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || !moduleTitle.trim()}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-md disabled:opacity-50"
+                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-50"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Module'}
                 </button>
@@ -244,20 +244,20 @@ export function AdminCourseManager({
 
       {/* Add / Upload Lesson Modal */}
       {showLessonModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 shadow-2xl animate-in fade-in max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-white mb-4">Upload Markdown Courseware</h3>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-sky-200 rounded-2xl max-w-2xl w-full p-6 shadow-2xl animate-in fade-in max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base font-extrabold text-slate-900 mb-4">Upload Markdown Courseware</h3>
             <form onSubmit={handleCreateLesson} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Assign to Module
                   </label>
                   <select
                     value={lessonModuleId}
                     onChange={(e) => setLessonModuleId(e.target.value)}
                     required
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none"
                   >
                     {modules.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -268,7 +268,7 @@ export function AdminCourseManager({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Lesson Title
                   </label>
                   <input
@@ -277,26 +277,26 @@ export function AdminCourseManager({
                     onChange={(e) => setLessonTitle(e.target.value)}
                     placeholder="e.g. 1.3 State Machine Safety Invariants"
                     required
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Upload file directly */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Import .md File (Optional)
                 </label>
                 <input
                   type="file"
                   accept=".md,.markdown,.txt"
                   onChange={handleFileUpload}
-                  className="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
+                  className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-sky-800 hover:file:bg-sky-100 cursor-pointer"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Markdown Content
                 </label>
                 <textarea
@@ -305,7 +305,7 @@ export function AdminCourseManager({
                   placeholder="# Lesson Content in Markdown format..."
                   rows={10}
                   required
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-white font-mono focus:outline-none focus:border-amber-500 resize-none"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-sky-500 focus:bg-white rounded-xl p-3 text-xs text-slate-900 font-mono focus:outline-none resize-none"
                 />
               </div>
 
@@ -313,14 +313,14 @@ export function AdminCourseManager({
                 <button
                   type="button"
                   onClick={() => setShowLessonModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || !lessonTitle.trim() || !lessonMarkdown.trim()}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-md disabled:opacity-50"
+                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-50"
                 >
                   {isSubmitting ? 'Saving...' : 'Save Lesson'}
                 </button>

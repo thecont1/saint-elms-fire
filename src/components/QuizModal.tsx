@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { HelpCircle, CheckCircle2, XCircle, Sparkles, Send, ArrowRight } from 'lucide-react';
+import { HelpCircle, CheckCircle2, XCircle, Sparkles, Send, ArrowRight, Lightbulb } from 'lucide-react';
 import type { Lesson } from '@/lib/types';
 
 interface QuizModalProps {
@@ -21,7 +21,6 @@ export function QuizModal({
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Derive quiz question based on lesson title/content
   const isRaftLesson = lesson.title.toLowerCase().includes('raft') || lesson.title.toLowerCase().includes('consensus');
   const isVectorLesson = lesson.title.toLowerCase().includes('vector') || lesson.title.toLowerCase().includes('hnsw');
 
@@ -97,43 +96,43 @@ export function QuizModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div className="bg-white border border-sky-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <HelpCircle className="w-4 h-4 text-indigo-400" />
-            <span className="text-xs font-mono text-indigo-400 uppercase tracking-wider font-semibold">
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+            <span className="text-xs uppercase tracking-wider font-extrabold text-sky-800">
               Concept Mastery Check
             </span>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-xs p-1"
+            className="text-slate-400 hover:text-slate-800 text-sm p-1 rounded-md"
           >
             ✕
           </button>
         </div>
 
-        <h3 className="text-sm font-bold text-white mb-1">{lesson.title}</h3>
-        <p className="text-xs text-slate-300 font-medium mb-4 leading-relaxed">
+        <h3 className="text-base font-extrabold text-slate-900 mb-1">{lesson.title}</h3>
+        <p className="text-xs text-slate-700 font-semibold mb-4 leading-relaxed">
           {quizData.question}
         </p>
 
         {/* Options */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2.5 mb-4">
           {quizData.options.map((opt, i) => {
             const isSelected = selectedOption === i;
             const isCorrectOption = i === quizData.correctIndex;
 
-            let optionStyle = 'border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700';
+            let optionStyle = 'border-slate-200 bg-slate-50 text-slate-800 hover:border-sky-300 hover:bg-sky-50/50';
             if (hasSubmitted) {
               if (isCorrectOption) {
-                optionStyle = 'border-emerald-500 bg-emerald-950/40 text-emerald-200';
+                optionStyle = 'border-emerald-400 bg-emerald-50 text-emerald-900 font-bold';
               } else if (isSelected && !isCorrectOption) {
-                optionStyle = 'border-rose-500 bg-rose-950/40 text-rose-200';
+                optionStyle = 'border-rose-300 bg-rose-50 text-rose-900 font-bold';
               }
             } else if (isSelected) {
-              optionStyle = 'border-indigo-500 bg-indigo-950/40 text-indigo-200';
+              optionStyle = 'border-sky-500 bg-sky-50 text-sky-950 font-bold ring-1 ring-sky-300';
             }
 
             return (
@@ -141,14 +140,14 @@ export function QuizModal({
                 key={i}
                 disabled={hasSubmitted || isSubmitting}
                 onClick={() => setSelectedOption(i)}
-                className={`w-full p-3 rounded-lg border text-xs text-left transition flex items-center justify-between ${optionStyle}`}
+                className={`w-full p-3.5 rounded-xl border text-xs text-left transition flex items-center justify-between shadow-2xs ${optionStyle}`}
               >
                 <span>{opt}</span>
                 {hasSubmitted && isCorrectOption && (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 )}
                 {hasSubmitted && isSelected && !isCorrectOption && (
-                  <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 )}
               </button>
             );
@@ -158,30 +157,31 @@ export function QuizModal({
         {/* Post-submission Feedback Box */}
         {hasSubmitted && (
           <div
-            className={`p-3.5 rounded-lg border text-xs mb-4 leading-relaxed ${
+            className={`p-4 rounded-xl border text-xs mb-4 leading-relaxed ${
               selectedOption === quizData.correctIndex
-                ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200'
-                : 'bg-amber-950/40 border-amber-800 text-amber-200'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-medium'
+                : 'bg-amber-50 border-amber-200 text-amber-900 font-medium'
             }`}
           >
-            <div className="font-semibold mb-1">
-              {selectedOption === quizData.correctIndex ? 'Mastery Verified!' : 'Weak Spot Detected'}
+            <div className="font-extrabold mb-1 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4" />
+              {selectedOption === quizData.correctIndex ? 'Mastery Verified!' : 'Weak Spot Identified'}
             </div>
             {quizData.explanation}
             {selectedOption !== quizData.correctIndex && (
-              <div className="text-[11px] text-amber-300/80 mt-2 italic">
-                This weak spot will automatically trigger a proactive Socratic challenge on your dashboard!
+              <div className="text-[11px] text-amber-800 mt-2 font-semibold">
+                🧭 St. Elmo&apos;s Socratic Beacon will formulate a proactive challenge on your dashboard to reinforce this concept!
               </div>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+        <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
           {!hasSubmitted ? (
             <button
               onClick={handleSubmit}
               disabled={selectedOption === null || isSubmitting}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition disabled:opacity-40 flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl transition disabled:opacity-40 flex items-center gap-1.5 shadow-md shadow-sky-600/20"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Submit Answer</span>
@@ -189,7 +189,7 @@ export function QuizModal({
           ) : (
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg transition"
+              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-xs"
             >
               Done
             </button>
