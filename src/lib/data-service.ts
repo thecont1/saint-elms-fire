@@ -10,7 +10,12 @@ import type {
   QuizSubmission,
   SocraticSession,
   CoursewareChunk,
+  IngestionErrorCategory,
+  IngestionStage,
+  IngestionStepRecord,
 } from './types';
+import type { IngestionArtifact, StagedVectorRecord, ExtractedGraphNode, ExtractedGraphEdge } from './second-brain-ingestion';
+import { buildPendingRelease, completeRelease, failRelease, isReleaseVisible } from './release-integrity';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -107,15 +112,24 @@ export const DataService = {
   },
 
   // RELEASES & RELEASE-GATING
-  async getReleasesForStudent(studentId: string): Promise<ReleaseEvent[]> {
+  async getRelease(id: string): Promise<ReleaseEvent | null> {
+    const doc = await db.collection('releases').doc(id).get();
+    return doc.exists ? sanitizeDoc<ReleaseEvent>(doc) : null;
+  },
+
+  async getReleaseAuditForStudent(studentId: string): Promise<ReleaseEvent[]> {
     const snap = await db
       .collection('releases')
       .where('studentId', 'in', [studentId, 'cohort-all'])
       .get();
-    const now = Date.now();
     return snap.docs
       .map(doc => sanitizeDoc<ReleaseEvent>(doc))
-      .filter(release => release.status === 'released' && Date.parse(release.releasedAt) <= now);
+      .sort((a, b) => Date.parse(b.requestedAt || b.releasedAt) - Date.parse(a.requestedAt || a.releasedAt));
+  },
+
+  async getReleasesForStudent(studentId: string): Promise<ReleaseEvent[]> {
+    const releases = await this.getReleaseAuditForStudent(studentId);
+    return releases.filter(release => isReleaseVisible(release));
   },
 
   async getReleasedLessonsForStudent(studentId: string, courseId?: string): Promise<Lesson[]> {
@@ -167,22 +181,184 @@ export const DataService = {
     return newRelease;
   },
 
+  async findEquivalentRelease(input: {
+    moduleId: string;
+    studentId: string;
+    targetLessonIds: string[];
+  }): Promise<ReleaseEvent | null> {
+    const snap = await db.collection('releases').where('studentId', '==', input.studentId).get();
+    const targetKey = [...input.targetLessonIds].sort().join('\u0000');
+    return snap.docs
+      .map(doc => sanitizeDoc<ReleaseEvent>(doc))
+      .find(release =>
+        release.moduleId === input.moduleId
+        && release.overallStatus !== 'failed'
+        && (release.targetLessonIds ?? []).slice().sort().join('\u0000') === targetKey
+      ) ?? null;
+  },
+
+  /**
+   * Atomically detect an equivalent non-failed release and, only when none
+   * exists, create the pending release. Runs inside one Firestore transaction
+   * so concurrent identical requests cannot both create a pending record
+   * (TOCTOU race between findEquivalentRelease and createPendingRelease).
+   */
+  async createPendingReleaseIfAbsent(input: {
+    courseId: string;
+    moduleId: string;
+    lessonId?: string;
+    studentId: string;
+    targetLessonIds: string[];
+  }): Promise<{ release: ReleaseEvent; created: boolean }> {
+    const targetKey = [...input.targetLessonIds].sort().join('\u0000');
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(
+        db.collection('releases').where('studentId', '==', input.studentId)
+      );
+      const existing = snap.docs
+        .map(doc => sanitizeDoc<ReleaseEvent>(doc))
+        .find(release =>
+          release.moduleId === input.moduleId
+          && release.overallStatus !== 'failed'
+          && (release.targetLessonIds ?? []).slice().sort().join('\u0000') === targetKey
+        );
+      if (existing) return { release: existing, created: false };
+
+      const ref = db.collection('releases').doc();
+      const requestedAt = new Date().toISOString();
+      const release = buildPendingRelease({ id: ref.id, ...input, requestedAt });
+      transaction.set(ref, release);
+      return { release, created: true };
+    });
+  },
+
+  async createPendingRelease(input: {
+    courseId: string;
+    moduleId: string;
+    lessonId?: string;
+    studentId: string;
+    targetLessonIds: string[];
+  }): Promise<ReleaseEvent> {
+    const ref = db.collection('releases').doc();
+    const requestedAt = new Date().toISOString();
+    const release = buildPendingRelease({ id: ref.id, ...input, requestedAt });
+    await ref.set(release);
+    return release;
+  },
+
+  async updateIngestionStep(
+    releaseId: string,
+    lessonId: string,
+    stage: IngestionStage,
+    patch: Partial<IngestionStepRecord>,
+  ): Promise<void> {
+    const ref = db.collection('releases').doc(releaseId);
+    await db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Release not found');
+      const release = sanitizeDoc<ReleaseEvent>(snap);
+      const steps = release.steps?.map(step =>
+        step.lessonId === lessonId && step.stage === stage ? { ...step, ...patch } : step
+      );
+      if (!steps?.some(step => step.lessonId === lessonId && step.stage === stage)) {
+        throw new Error('Ingestion step not found');
+      }
+      transaction.update(ref, { steps });
+    });
+  },
+
+  async beginReleaseRetry(releaseId: string): Promise<ReleaseEvent> {
+    const ref = db.collection('releases').doc(releaseId);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Release not found');
+      const release = sanitizeDoc<ReleaseEvent>(snap);
+      if (release.overallStatus !== 'failed') throw new Error('Only failed releases can be retried');
+      const now = new Date().toISOString();
+      const steps = (release.steps ?? []).map(step =>
+        step.status === 'failed' ? { ...step, status: 'pending' as const, error: undefined, completedAt: undefined } : step
+      );
+      const updated: ReleaseEvent = {
+        ...release,
+        status: 'pending', overallStatus: 'pending', failureCategory: undefined,
+        attemptCount: (release.attemptCount ?? 0) + 1, lastAttemptAt: now, steps,
+      };
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  async finalizeRelease(releaseId: string): Promise<ReleaseEvent> {
+    const ref = db.collection('releases').doc(releaseId);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Release not found');
+      const completed = completeRelease(sanitizeDoc<ReleaseEvent>(snap), new Date().toISOString());
+      transaction.set(ref, completed);
+      return completed;
+    });
+  },
+
+  async failRelease(releaseId: string, category: IngestionErrorCategory): Promise<ReleaseEvent> {
+    const ref = db.collection('releases').doc(releaseId);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Release not found');
+      const failed = failRelease(sanitizeDoc<ReleaseEvent>(snap), category);
+      transaction.set(ref, failed);
+      return failed;
+    });
+  },
+
+  async getIngestionArtifact(releaseId: string, lessonId: string): Promise<IngestionArtifact | null> {
+    const doc = await db.collection('ingestion_artifacts').doc(`${releaseId}_${lessonId}`).get();
+    return doc.exists ? doc.data() as IngestionArtifact : null;
+  },
+
+  async saveIngestionArtifact(releaseId: string, lessonId: string, patch: Partial<IngestionArtifact>): Promise<void> {
+    await db.collection('ingestion_artifacts').doc(`${releaseId}_${lessonId}`).set(patch, { merge: true });
+  },
+
+  async getStagedEmbedding(releaseId: string, lessonId: string, chunkIndex: number): Promise<number[] | undefined> {
+    const doc = await db.collection('ingestion_embeddings').doc(`${releaseId}_${lessonId}_${String(chunkIndex).padStart(5, '0')}`).get();
+    const embedding = doc.data()?.embedding as { toArray?: () => number[] } | number[] | undefined;
+    if (Array.isArray(embedding)) return embedding.map(Number);
+    return embedding?.toArray?.().map(Number);
+  },
+
+  async saveStagedEmbedding(releaseId: string, lessonId: string, chunkIndex: number, embedding: number[]): Promise<void> {
+    await db.collection('ingestion_embeddings').doc(`${releaseId}_${lessonId}_${String(chunkIndex).padStart(5, '0')}`).set({
+      releaseId, lessonId, chunkIndex, embedding: FieldValue.vector(embedding),
+    });
+  },
+
   // SECOND BRAIN KNOWLEDGE GRAPH (NODES & EDGES)
   async getStudentKnowledgeGraph(studentId: string): Promise<{
     nodes: KnowledgeNode[];
     edges: KnowledgeEdge[];
   }> {
-    const nodesSnap = await db
-      .collection('knowledge_nodes')
-      .where('studentId', '==', studentId)
-      .get();
-    const edgesSnap = await db
-      .collection('knowledge_edges')
-      .where('studentId', '==', studentId)
-      .get();
+    const [nodesSnap, edgesSnap, releases] = await Promise.all([
+      db.collection('knowledge_nodes').where('studentId', 'in', [studentId, 'cohort-all']).get(),
+      db.collection('knowledge_edges').where('studentId', 'in', [studentId, 'cohort-all']).get(),
+      this.getReleasesForStudent(studentId),
+    ]);
+    const visibleReleaseIds = new Set(releases.map(release => release.id));
+    const visibleLessonIds = new Set(
+      releases.flatMap(release => release.targetLessonIds ?? (release.lessonId ? [release.lessonId] : []))
+    );
+    const visibleModuleIds = new Set(
+      releases.filter(release => !release.targetLessonIds?.length && !release.lessonId).map(release => release.moduleId)
+    );
+    const visible = (data: { releaseId?: string; lessonId?: string; moduleId?: string }) =>
+      data.releaseId
+        ? visibleReleaseIds.has(data.releaseId)
+        : Boolean((data.lessonId && visibleLessonIds.has(data.lessonId)) || (data.moduleId && visibleModuleIds.has(data.moduleId)));
 
-    const nodes = nodesSnap.docs.map(doc => sanitizeDoc<KnowledgeNode>(doc));
-    const edges = edgesSnap.docs.map(doc => sanitizeDoc<KnowledgeEdge>(doc));
+    const nodes = nodesSnap.docs.map(doc => sanitizeDoc<KnowledgeNode & { releaseId?: string }>(doc)).filter(visible);
+    const nodeIds = new Set(nodes.map(node => node.id));
+    const edges = edgesSnap.docs
+      .map(doc => sanitizeDoc<KnowledgeEdge & { releaseId?: string; lessonId?: string }>(doc))
+      .filter(edge => edge.releaseId ? visibleReleaseIds.has(edge.releaseId) : nodeIds.has(edge.sourceNodeId) && nodeIds.has(edge.targetNodeId));
 
     return { nodes, edges };
   },
@@ -276,6 +452,59 @@ export const DataService = {
     return { savedNodes, savedEdges };
   },
 
+  async writeVerifiedCoursewareVectors(records: StagedVectorRecord[]): Promise<void> {
+    let batch = db.batch();
+    let operationCount = 0;
+    const flush = async () => {
+      if (!operationCount) return;
+      await batch.commit();
+      batch = db.batch();
+      operationCount = 0;
+    };
+    const createdAt = new Date().toISOString();
+    for (const record of records) {
+      const ref = db.collection('courseware_chunks').doc(record.id);
+      const { embedding, ...metadata } = record;
+      batch.set(ref, { ...metadata, embedding: FieldValue.vector(embedding), createdAt });
+      operationCount += 1;
+      if (operationCount === 450) await flush();
+    }
+    await flush();
+  },
+
+  async verifyCoursewareVectors(records: StagedVectorRecord[]): Promise<boolean> {
+    if (records.length === 0) return false;
+    const docs = await db.getAll(...records.map(record => db.collection('courseware_chunks').doc(record.id)));
+    return docs.length === records.length && docs.every((doc, index) => {
+      const data = doc.data();
+      return doc.exists && data?.releaseId === records[index].releaseId && data?.lessonId === records[index].lessonId;
+    });
+  },
+
+  async writeVerifiedKnowledgeGraph(
+    studentId: string,
+    graph: { nodes: ExtractedGraphNode[]; edges: ExtractedGraphEdge[] },
+  ): Promise<void> {
+    const batch = db.batch();
+    for (const node of graph.nodes) {
+      batch.set(db.collection('knowledge_nodes').doc(node.id), { ...node, studentId });
+    }
+    for (const edge of graph.edges) {
+      batch.set(db.collection('knowledge_edges').doc(edge.id), { ...edge, studentId });
+    }
+    await batch.commit();
+  },
+
+  async verifyKnowledgeGraph(graph: { nodes: ExtractedGraphNode[]; edges: ExtractedGraphEdge[] }): Promise<boolean> {
+    const refs = [
+      ...graph.nodes.map(node => db.collection('knowledge_nodes').doc(node.id)),
+      ...graph.edges.map(edge => db.collection('knowledge_edges').doc(edge.id)),
+    ];
+    if (refs.length === 0) return true;
+    const docs = await db.getAll(...refs);
+    return docs.length === refs.length && docs.every(doc => doc.exists);
+  },
+
   // COURSEWARE VECTOR CHUNKS
   async replaceCoursewareChunks(
     lessonId: string,
@@ -318,7 +547,8 @@ export const DataService = {
   async retrieveCoursewareChunks(
     queryVector: number[],
     releasedLessonIds: string[],
-    limit = 6
+    limit = 6,
+    visibleReleaseIds?: string[],
   ): Promise<RetrievedCoursewareChunk[]> {
     if (releasedLessonIds.length === 0 || limit <= 0) return [];
 
@@ -341,6 +571,7 @@ export const DataService = {
       )
     );
 
+    const visibleSet = visibleReleaseIds ? new Set(visibleReleaseIds) : null;
     return snapshots.flatMap((snapshot) => snapshot.docs)
       .map((doc) => {
         const data = doc.data();
@@ -350,11 +581,13 @@ export const DataService = {
           lessonTitle: String(data.lessonTitle || ''),
           courseId: String(data.courseId || ''),
           moduleId: String(data.moduleId || ''),
+          releaseId: String(data.releaseId || ''),
           chunkIndex: Number(data.chunkIndex || 0),
           content: String(data.content || ''),
           distance: typeof data.vectorDistance === 'number' ? data.vectorDistance : undefined,
         };
       })
+      .filter(chunk => !visibleSet || !chunk.releaseId || visibleSet.has(chunk.releaseId))
       .sort((a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY))
       .slice(0, limit);
   },

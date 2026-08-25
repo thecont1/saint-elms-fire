@@ -1,5 +1,6 @@
 import { z } from 'genkit';
 import { ai, COURSEWARE_EMBEDDER } from '../genkit';
+import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { filterReleasedRetrievedChunks } from '../../lib/courseware-rag';
 
@@ -58,6 +59,10 @@ export const ragChat = ai.defineFlow(
       };
     }
 
+    // Only fetch the visible-release set once we know released lessons exist —
+    // the empty-courseware path returns above without an extra Firestore read.
+    const activeReleases = await DataService.getReleasesForStudent(studentId);
+
     const queryEmbedding = await ai.embed({
       embedder: COURSEWARE_EMBEDDER,
       content: question,
@@ -67,8 +72,15 @@ export const ragChat = ai.defineFlow(
     if (!vector?.length) throw new Error('Gemini returned no query embedding');
 
     const releasedIds = new Set(releasedLessons.map((lesson) => lesson.id));
-    const rawChunks = await DataService.retrieveCoursewareChunks(vector, [...releasedIds], topK);
-    const chunks = filterReleasedRetrievedChunks(rawChunks, releasedIds, topK);
+    const rawChunks = await DataService.retrieveCoursewareChunks(
+      vector,
+      [...releasedIds],
+      topK,
+      activeReleases.map(release => release.id),
+    );
+    const visibleReleaseIds = new Set(activeReleases.map(release => release.id));
+    const chunks = filterReleasedRetrievedChunks(rawChunks, releasedIds, topK)
+      .filter(chunk => !chunk.releaseId || visibleReleaseIds.has(chunk.releaseId));
     if (chunks.length === 0) {
       return {
         answer: 'No indexed passage from your released lessons matched this question. Ask your instructor to re-ingest the released courseware, or try a question closer to the lesson text.',
@@ -85,13 +97,15 @@ export const ragChat = ai.defineFlow(
       `[${index + 1}] ${chunk.lessonTitle} (lessonId=${chunk.lessonId}, chunk=${chunk.chunkIndex})\n${chunk.content}`
     ).join('\n\n');
 
-    const response = await ai.generate({
+    // Generation goes through the model router: Gemini primary, Sarvam
+    // fallback on availability errors — chat never waits out a 503 storm.
+    const { output, model } = await generateWithFallback({
       system: `You are the Socratic Beacon. Answer only from the retrieved passages. If the passages do not support an answer, say so. Never infer or reveal unreleased curriculum. Cite lesson titles in the answer.`,
       prompt: `RETRIEVED RELEASE-GATED PASSAGES:\n${context}\n\nRECENT HISTORY:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\n\nSTUDENT QUESTION: ${question}`,
-      output: { schema: GeneratedAnswerSchema },
+      schema: GeneratedAnswerSchema,
     });
-    if (!response.output) throw new Error('Gemini returned no structured RAG answer');
-    const generated = GeneratedAnswerSchema.parse(response.output);
+    if (!output) throw new Error('model returned no structured RAG answer');
+    const generated = GeneratedAnswerSchema.parse(output);
 
     const safeSources = generated.groundedSources.filter((source) => releasedIds.has(source.lessonId));
     const defaultSources = chunks.map((chunk) => ({

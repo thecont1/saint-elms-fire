@@ -13,6 +13,7 @@ export interface RetrievedCoursewareChunk {
   distance?: number;
   courseId?: string;
   moduleId?: string;
+  releaseId?: string;
 }
 
 interface ChunkOptions {

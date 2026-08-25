@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { db, FieldValue } from '@/lib/firestore';
 import { ai, GEMINI_FLASH } from '@/ai/genkit';
+import { sarvamGenerate, SARVAM_MODEL } from '@/ai/sarvam';
 
 /**
  * Shared deep-health implementation used by /api/health and /health.
@@ -9,7 +10,10 @@ import { ai, GEMINI_FLASH } from '@/ai/genkit';
  */
 
 const PROBE_TIMEOUT_MS = 8000;
-const PROBE_CACHE_TTL_MS = 15_000;
+// Above the UI's 30s polling interval so normal requests are served from
+// cache without firing generation probes on every poll. Deep checks happen
+// only when explicitly requested (?deep=true) or on cold cache.
+const PROBE_CACHE_TTL_MS = 60_000;
 
 export type DepStatus = {
   status: 'up' | 'down';
@@ -22,7 +26,9 @@ export interface HealthReport {
   timestamp: string;
   project: string | null;
   model: string;
-  checks: { firestore: DepStatus; gemini: DepStatus };
+  fallbackModel: string;
+  embeddings: string;
+  checks: { firestore: DepStatus; gemini: DepStatus; sarvam: DepStatus };
 }
 
 type CacheEntry = { expiresAt: number; report: HealthReport };
@@ -106,19 +112,56 @@ async function probeGemini(): Promise<DepStatus> {
   }
 }
 
+/** Round-trip a trivial generation through the Sarvam fallback model. */
+async function probeSarvam(): Promise<DepStatus> {
+  const start = Date.now();
+  try {
+    // sarvam-105b-conversations is slow (~40s for structured output), so the
+    // probe needs more headroom than the standard PROBE_TIMEOUT_MS.
+    const text = await withTimeout(
+      sarvamGenerate({ prompt: 'Reply with exactly: OK', timeoutMs: 60_000 }),
+      65_000,
+      'sarvam',
+    );
+    if (!text) throw new Error('empty model response');
+    return { status: 'up', latencyMs: Date.now() - start };
+  } catch (error: unknown) {
+    console.error('Sarvam health probe failed:', error);
+    return {
+      status: 'down',
+      latencyMs: Date.now() - start,
+      error: publicProbeError(error),
+    };
+  }
+}
+
 /**
- * Pings Firestore and Gemini in parallel and reports honest per-dependency
- * status. Cached for PROBE_CACHE_TTL_MS so repeated requests reuse the last
- * result instead of re-probing dependencies.
+ * Pings Firestore, Gemini, and the Sarvam fallback in parallel and reports
+ * honest per-dependency status. Cached for PROBE_CACHE_TTL_MS so repeated
+ * requests reuse the last result instead of re-probing dependencies.
+ *
+ * Normal requests (deep = false) are served from cache when fresh — they do
+ * NOT trigger generation probes. Pass deep = true (e.g. ?deep=true on the
+ * endpoint) to force both generation probes on demand; the cold-cache path
+ * also performs a full probe so the first observation is real.
  */
-export async function getHealthReport(): Promise<HealthReport> {
+export async function getHealthReport(deep = false): Promise<HealthReport> {
   const now = Date.now();
-  if (cache && cache.expiresAt > now) {
+  if (cache && cache.expiresAt > now && !deep) {
     // Refresh timestamp per response; dependency results stay cached.
     return { ...cache.report, timestamp: new Date().toISOString() };
   }
 
-  const [firestore, gemini] = await Promise.all([probeFirestore(), probeGemini()]);
+  const [firestore, gemini, sarvam] = await Promise.all([
+    probeFirestore(),
+    probeGemini(),
+    probeSarvam(),
+  ]);
+  // Overall health requires Firestore plus Gemini. Gemini is not optional:
+  // courseware embeddings (gemini-embedding-001) have NO fallback, so with
+  // Gemini down neither ingestion nor RAG chat can function even though the
+  // Sarvam generation fallback may be up. Sarvam up makes the report more
+  // informative but cannot keep the product healthy on its own.
   const healthy = firestore.status === 'up' && gemini.status === 'up';
 
   const report: HealthReport = {
@@ -126,7 +169,9 @@ export async function getHealthReport(): Promise<HealthReport> {
     timestamp: new Date().toISOString(),
     project: process.env.GOOGLE_CLOUD_PROJECT ?? null,
     model: GEMINI_FLASH,
-    checks: { firestore, gemini },
+    fallbackModel: SARVAM_MODEL,
+    embeddings: 'gemini-embedding-001@768',
+    checks: { firestore, gemini, sarvam },
   };
 
   cache = { expiresAt: now + PROBE_CACHE_TTL_MS, report };

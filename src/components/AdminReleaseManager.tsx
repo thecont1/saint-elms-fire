@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Send,
   Sparkles,
@@ -15,6 +15,7 @@ import {
   Compass,
 } from 'lucide-react';
 import type { CourseModule, Lesson, ReleaseEvent } from '@/lib/types';
+import { getReleaseDisplayState } from '@/lib/release-integrity';
 
 interface AdminReleaseManagerProps {
   courseId: string;
@@ -35,7 +36,30 @@ export function AdminReleaseManager({
   const [selectedLessonId, setSelectedLessonId] = useState<string>('all-in-module');
   const [targetStudent, setTargetStudent] = useState<string>('student-alex');
   const [isReleasing, setIsReleasing] = useState(false);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   const [lastReleaseResult, setLastReleaseResult] = useState<any>(null);
+
+  const hasActiveIngestion = releases.some((release) => release.overallStatus === 'pending');
+  useEffect(() => {
+    if (!hasActiveIngestion && !isReleasing) return;
+    const timer = window.setInterval(onRefresh, 1500);
+    return () => window.clearInterval(timer);
+  }, [hasActiveIngestion, isReleasing, onRefresh]);
+
+  const handleRetry = async (releaseId: string) => {
+    setRetryingId(releaseId);
+    try {
+      const response = await fetch(`/api/releases/${releaseId}/retry`, { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok && data.release?.overallStatus !== 'failed') throw new Error(data.error || 'Retry failed');
+      setLastReleaseResult(data);
+      await onRefresh();
+    } catch (error) {
+      alert(`Retry failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setRetryingId(null);
+    }
+  };
 
   const availableLessons = lessons.filter((l) => l.moduleId === selectedModuleId);
 
@@ -59,7 +83,7 @@ export function AdminReleaseManager({
       });
 
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok && !data.release) throw new Error(data.error || 'Release failed');
 
       setLastReleaseResult(data);
       onRefresh();
@@ -167,14 +191,16 @@ export function AdminReleaseManager({
 
         {/* Real-time Ingestion Result Pill */}
         {lastReleaseResult && (
-          <div className="mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1 animate-in fade-in shadow-2xs">
-            <div className="flex items-center gap-1.5 font-bold text-emerald-800">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              Release & Second Brain Ingestion Complete!
+          <div className={`mt-4 p-4 rounded-xl border text-xs space-y-1 animate-in fade-in shadow-2xs ${lastReleaseResult.release?.overallStatus === 'released' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-red-50 border-red-200 text-red-900'}`}>
+            <div className="flex items-center gap-1.5 font-bold">
+              {lastReleaseResult.release?.overallStatus === 'released'
+                ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                : <AlertCircle className="w-4 h-4 text-red-600" />}
+              {lastReleaseResult.release?.overallStatus === 'released'
+                ? 'Release verified and synced.'
+                : 'Release failed. See the audit log and retry.'}
             </div>
-            <p className="text-xs text-emerald-700">
-              {lastReleaseResult.ingestedCount} lesson(s) ingested into student graph.
-            </p>
+            <p>{lastReleaseResult.ingestedCount ?? 0} lesson(s) verified.</p>
           </div>
         )}
       </div>
@@ -195,6 +221,14 @@ export function AdminReleaseManager({
           {releases.map((rel) => {
             const mod = modules.find((m) => m.id === rel.moduleId);
             const lesson = lessons.find((l) => l.id === rel.lessonId);
+            const state = getReleaseDisplayState(rel);
+            const style = {
+              grey: 'bg-slate-100 text-slate-700 border-slate-300',
+              blue: 'bg-blue-100 text-blue-800 border-blue-300',
+              green: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+              red: 'bg-red-100 text-red-800 border-red-300',
+            }[state.tone];
+            const dot = { grey: 'bg-slate-400', blue: 'bg-blue-500', green: 'bg-emerald-500', red: 'bg-red-500' }[state.tone];
 
             return (
               <div
@@ -202,7 +236,7 @@ export function AdminReleaseManager({
                 className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs flex flex-wrap items-center justify-between gap-2 shadow-2xs"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-xs ${dot} ${state.tone === 'blue' ? 'animate-pulse' : ''}`} />
                   <div>
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-900">
@@ -228,9 +262,21 @@ export function AdminReleaseManager({
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Second Brain Synced
+                  <span className={`px-3 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1 ${style}`}>
+                    {state.tone === 'green' ? <CheckCircle2 className="w-3.5 h-3.5" /> : state.tone === 'red' ? <AlertCircle className="w-3.5 h-3.5" /> : <RefreshCw className={`w-3.5 h-3.5 ${state.tone === 'blue' ? 'animate-spin' : ''}`} />}
+                    {state.label}{state.detail ? ` — ${state.detail.replaceAll('_', ' ')}` : ''}
                   </span>
+                  {rel.overallStatus === 'failed' && (
+                    <button
+                      type="button"
+                      onClick={() => handleRetry(rel.id)}
+                      disabled={retryingId === rel.id}
+                      className="px-3 py-1 rounded-full text-[11px] font-bold bg-white text-red-700 border border-red-300 hover:bg-red-50 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${retryingId === rel.id ? 'animate-spin' : ''}`} />
+                      Retry Sync
+                    </button>
+                  )}
                 </div>
               </div>
             );

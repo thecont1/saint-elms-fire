@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { ingestCoursewareFlow } from '@/ai/flows/ingestion';
+import { IngestionStageError } from '@/lib/second-brain-ingestion';
+import type { IngestionErrorCategory, Lesson, ReleaseEvent } from '@/lib/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -9,76 +11,104 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const studentId = searchParams.get('studentId') || 'student-alex';
-    const releases = await DataService.getReleasesForStudent(studentId);
+    const releases = await DataService.getReleaseAuditForStudent(studentId);
     return NextResponse.json({ releases });
-  } catch (error: any) {
-    console.error('Failed to get releases:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Failed to get release audit log:', error);
+    return NextResponse.json({ error: 'Unable to load releases' }, { status: 500 });
   }
+}
+
+function boundedCategory(error: unknown): IngestionErrorCategory {
+  return error instanceof IngestionStageError ? error.category : 'unknown';
+}
+
+export async function ingestRelease(release: ReleaseEvent, lessons: Lesson[]) {
+  const ingestionResults = [];
+  for (const lesson of lessons) {
+    try {
+      const result = await ingestCoursewareFlow({
+        releaseId: release.id,
+        lessonId: lesson.id,
+        courseId: lesson.courseId,
+        moduleId: lesson.moduleId,
+        studentId: release.studentId,
+        markdownContent: lesson.markdownContent,
+        lessonTitle: lesson.title,
+        releaseTimestamp: release.requestedAt || release.releasedAt,
+      });
+      ingestionResults.push({ lessonId: lesson.id, status: 'success' as const, result });
+    } catch (error: unknown) {
+      const category = boundedCategory(error);
+      console.error('Second Brain ingestion failed', { releaseId: release.id, lessonId: lesson.id, category });
+      const failedRelease = await DataService.failRelease(release.id, category);
+      return { release: failedRelease, ingestionResults: [...ingestionResults, { lessonId: lesson.id, status: 'error' as const, error: category }] };
+    }
+  }
+  // Finalize can throw if, e.g., the transaction hits a conflicting write or
+  // a step record is missing at completion time. Do not let that escape to the
+  // outer 500 handler: persist a bounded failure so the release stays
+  // retryable and the audit log reports an honest state.
+  let completedRelease: ReleaseEvent;
+  try {
+    completedRelease = await DataService.finalizeRelease(release.id);
+  } catch (finalizeError) {
+    console.error('Release finalization failed', { releaseId: release.id, error: finalizeError instanceof Error ? finalizeError.message : String(finalizeError) });
+    const failedRelease = await DataService.failRelease(release.id, 'unknown');
+    return { release: failedRelease, ingestionResults };
+  }
+  return { release: completedRelease, ingestionResults };
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { courseId, moduleId, lessonId, studentId = 'student-alex' } = body;
-
     if (!courseId || !moduleId) {
-      return NextResponse.json(
-        { error: 'courseId and moduleId are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'courseId and moduleId are required' }, { status: 400 });
     }
 
-    // 1. Record release event in Firestore
-    const release = await DataService.createRelease({
+    let lessonsToIngest: Lesson[] = [];
+    if (lessonId) {
+      const lesson = await DataService.getLesson(lessonId);
+      if (!lesson || lesson.courseId !== courseId || lesson.moduleId !== moduleId) {
+        return NextResponse.json({ error: 'Lesson does not belong to the requested course/module' }, { status: 400 });
+      }
+      lessonsToIngest = [lesson];
+    } else {
+      lessonsToIngest = await DataService.getLessons(courseId, moduleId);
+    }
+    if (lessonsToIngest.length === 0) {
+      return NextResponse.json({ error: 'No lessons found for release target' }, { status: 400 });
+    }
+
+    const targetLessonIds = lessonsToIngest.map(lesson => lesson.id);
+    // Atomically dedupe + create in one transaction (no TOCTOU between the
+    // equivalent-release check and the pending-record write).
+    const { release: pending, created } = await DataService.createPendingReleaseIfAbsent({
       courseId,
       moduleId,
       lessonId: lessonId || undefined,
       studentId,
-      status: 'released',
+      targetLessonIds,
     });
-
-    // 2. Identify lessons that need ingestion into Second Brain
-    let lessonsToIngest = [];
-    if (lessonId) {
-      const single = await DataService.getLesson(lessonId);
-      if (single) lessonsToIngest.push(single);
-    } else {
-      lessonsToIngest = await DataService.getLessons(courseId, moduleId);
+    if (!created) {
+      return NextResponse.json({
+        release: pending,
+        ingestionResults: [],
+        ingestedCount: 0,
+        idempotent: true,
+      }, { status: 200 });
     }
 
-    // 3. Trigger Genkit Ingestion Flow for each lesson to extract knowledge graph nodes/edges
-    const ingestionResults = [];
-    for (const lesson of lessonsToIngest) {
-      try {
-        const result = await ingestCoursewareFlow({
-          lessonId: lesson.id,
-          courseId: lesson.courseId,
-          moduleId: lesson.moduleId,
-          studentId,
-          markdownContent: lesson.markdownContent,
-          lessonTitle: lesson.title,
-          releaseTimestamp: release.releasedAt,
-        });
-        ingestionResults.push({ lessonId: lesson.id, status: 'success', result });
-      } catch (ingestErr: unknown) {
-        console.error(`Ingestion flow failed for lesson ${lesson.id}:`, ingestErr);
-        ingestionResults.push({
-          lessonId: lesson.id,
-          status: 'error',
-          error: 'Courseware ingestion failed upstream',
-        });
-      }
-    }
-
-    const failedIngestions = ingestionResults.filter((result) => result.status === 'error').length;
+    const result = await ingestRelease(pending, lessonsToIngest);
     return NextResponse.json({
-      release,
-      ingestedCount: lessonsToIngest.length,
-      ingestionResults,
-    }, { status: failedIngestions > 0 ? 502 : 200 });
-  } catch (error: any) {
+      ...result,
+      ingestedCount: result.ingestionResults.filter(item => item.status === 'success').length,
+      retryUrl: result.release.overallStatus === 'failed' ? `/api/releases/${result.release.id}/retry` : undefined,
+    }, { status: result.release.overallStatus === 'failed' ? 502 : 201 });
+  } catch (error: unknown) {
     console.error('Failed to process release:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Release processing failed' }, { status: 500 });
   }
 }

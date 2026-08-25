@@ -51,3 +51,30 @@ describe('Genkit presentation surface', () => {
     expect(evaluator).not.toContain("import('../../../src/lib/firestore')");
   });
 });
+
+describe('model fallback routing', () => {
+  test('graph extraction routes generation through the model router', () => {
+    const ingestion = read('src/ai/flows/ingestion.ts');
+
+    expect(ingestion).toContain("import { generateWithFallback } from '../model-router';");
+    // The graph stage must never call ai.generate directly — a retryable
+    // Gemini outage would otherwise fail graph_write instead of degrading.
+    expect(ingestion).toContain('const { output, model } = await generateWithFallback({');
+    expect(ingestion).toContain('schema: GraphExtractionSchema');
+  });
+
+  test('RAG chat routes generation through the model router', () => {
+    const chat = read('src/ai/flows/student-chat.ts');
+
+    expect(chat).toContain("import { generateWithFallback } from '../model-router';");
+    expect(chat).toContain('const { output, model } = await generateWithFallback({');
+    expect(chat).not.toContain('Gemini returned no structured RAG answer');
+  });
+
+  test('model router treats retryable availability errors as fallback triggers', () => {
+    const router = read('src/ai/model-router.ts');
+
+    expect(router).toMatch(/RESOURCE_EXHAUSTED|UNAVAILABLE|high demand/);
+    expect(router).toContain("import { sarvamGenerate, SARVAM_MODEL } from './sarvam';");
+  });
+});
