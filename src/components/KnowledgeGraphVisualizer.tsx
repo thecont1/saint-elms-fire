@@ -33,7 +33,17 @@ export function KnowledgeGraphVisualizer({
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // The golden-angle layout below calls Math.cos/Math.sin, whose last-ulp
+  // results can differ between the server's Node V8 and the client's browser
+  // V8. Rendering those floats during SSR produces a hydration mismatch on
+  // SVG attributes. Defer the SVG until after mount: SSR serves the skeleton,
+  // the client draws the constellation post-hydration.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Filter nodes
   const filteredNodes = useMemo(() => {
@@ -175,6 +185,14 @@ export function KnowledgeGraphVisualizer({
               No stars have been sighted yet. Once your instructor triggers a release,
               the beacon will extract and fix each concept to your chart.
             </p>
+          </div>
+        ) : !mounted ? (
+          // SSR placeholder: identical tree on server and client, no float
+          // attributes. The SVG mounts after hydration (mounted=true).
+          <div className="relative flex-1 min-h-[380px] bg-white overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-xs">
+              <div className="w-8 h-8 border-3 border-beacon-500 border-t-transparent rounded-full animate-spin" />
+            </div>
           </div>
         ) : (
           <svg
