@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { ingestCoursewareFlow } from '@/ai/flows/ingestion';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -58,21 +61,22 @@ export async function POST(req: Request) {
           releaseTimestamp: release.releasedAt,
         });
         ingestionResults.push({ lessonId: lesson.id, status: 'success', result });
-      } catch (ingestErr: any) {
+      } catch (ingestErr: unknown) {
         console.error(`Ingestion flow failed for lesson ${lesson.id}:`, ingestErr);
         ingestionResults.push({
           lessonId: lesson.id,
           status: 'error',
-          error: ingestErr.message,
+          error: 'Courseware ingestion failed upstream',
         });
       }
     }
 
+    const failedIngestions = ingestionResults.filter((result) => result.status === 'error').length;
     return NextResponse.json({
       release,
       ingestedCount: lessonsToIngest.length,
       ingestionResults,
-    });
+    }, { status: failedIngestions > 0 ? 502 : 200 });
   } catch (error: any) {
     console.error('Failed to process release:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

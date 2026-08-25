@@ -9,6 +9,10 @@ import { googleAI } from '@genkit-ai/google-genai';
 const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
 
 export const GEMINI_FLASH = 'gemini-3.7-flash';
+export const GEMINI_FLASH_MODEL = googleAI.model(GEMINI_FLASH);
+export const COURSEWARE_EMBEDDER = googleAI.embedder('gemini-embedding-001', {
+  outputDimensionality: 768,
+});
 
 export const ai = genkit({
   plugins: [
@@ -16,5 +20,5 @@ export const ai = genkit({
       apiKey: apiKey,
     }),
   ],
-  model: googleAI.model(GEMINI_FLASH),
+  model: GEMINI_FLASH_MODEL,
 });

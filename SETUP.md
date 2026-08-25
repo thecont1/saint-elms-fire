@@ -6,8 +6,7 @@
 | --- | --- |
 | `src/ai/genkit.ts` | Genkit instance, `googleAI` plugin, default model `gemini-3.7-flash` |
 | `src/lib/firestore.ts` | Firestore client (ADC / service account), `db` export |
-| `src/ai/flows/incident-summary.ts` | Example flow: Firestore read -> Gemini -> Firestore write |
-| `src/ai/dev.ts` | Entry point for the Genkit dev UI |
+| `src/ai/dev.ts` | Entry point for the Genkit dev UI; production flows only |
 | `scripts/smoke-test.ts` | Verifies Gemini + Firestore are live |
 | `.env.example` | Config template — copy to `.env` (gitignored) |
 
@@ -41,8 +40,12 @@ firestore  : cleanup ok
 ## Genkit dev UI
 
 ```bash
-bunx genkit start -- bun run src/ai/dev.ts
+bun run genkit:dev
 ```
+
+The dev entrypoint intentionally registers only the six production flows used
+by the application. Scaffold examples remain in source for reference but are
+not presented in the Developer UI.
 
 ## Auth model
 
@@ -55,6 +58,9 @@ Two independent credentials — this trips people up:
 For deployment, attach
 `saint-elms-fire-app@saint-elms-fire.iam.gserviceaccount.com`
 (role: Cloud Datastore User) rather than shipping a JSON key.
+
+The complete Cloud Run and Secret Manager procedure is in
+[`docs/PHASE3.md`](docs/PHASE3.md).
 
 ## Firestore security rules
 
