@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { studentChatFlow } from '@/ai/flows/student-chat';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function publicErrorStatus(error: unknown): number {
+  if (error instanceof z.ZodError) return 400;
   const message = error instanceof Error ? error.message : '';
-  if (/validation|invalid|too_big|too_small/i.test(message)) return 400;
-  if (/index/i.test(message)) return 503;
+  if (/query requires an INDEX|FAILED_PRECONDITION.*INDEX/i.test(message)) return 503;
   return 502;
 }
 

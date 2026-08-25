@@ -155,7 +155,9 @@ export function chunkMarkdown(markdown: string, options: ChunkOptions = {}): Mar
     if (!current) current = { heading: 'Introduction', body: [] };
     current.body.push(line);
   }
-  if (current && (current.body.join('\n').trim() || sections.length === 0)) {
+  // Always finalize the trailing section so documents ending in a bare
+  // heading still contribute their heading-based chunk.
+  if (current) {
     sections.push(current);
   }
 
@@ -216,6 +218,7 @@ export function selectProactiveTarget(input: {
 
   const weakQuiz = [...input.quizHistory]
     .filter((quiz) => (!quiz.isCorrect || quiz.weakSpotDetected) && lessonById.has(quiz.lessonId))
+    .filter((quiz) => Number.isFinite(Date.parse(quiz.createdAt)))
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
 
   if (weakQuiz) {
@@ -244,7 +247,8 @@ export function selectProactiveTarget(input: {
   }
 
   const newestRelease = [...input.activeReleases]
-    .filter((release): release is Required<TargetRelease> => Boolean(release.lessonId && lessonById.has(release.lessonId)))
+    .filter((release): release is Required<TargetRelease> =>
+      Boolean(release.lessonId && lessonById.has(release.lessonId) && Number.isFinite(Date.parse(release.releasedAt))))
     .sort((a, b) => Date.parse(b.releasedAt) - Date.parse(a.releasedAt))[0];
   const lesson = newestRelease
     ? lessonById.get(newestRelease.lessonId)!

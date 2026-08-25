@@ -47,7 +47,7 @@ This phase addresses those as one coherent boundary: **who may act, what they ma
     - `X-Saint-Elms-User-Id`
     - `X-Saint-Elms-Role: admin|student`
   - Compare the proxy secret in constant time.
-- Production with missing/unknown `AUTH_MODE` fails closed with HTTP 401.
+- Production with missing/unknown `AUTH_MODE` fails closed with HTTP 401. Production additionally rejects `AUTH_MODE=demo` with HTTP 401 — demo identity must never serve production traffic (Task 1 covers this with a dedicated RED test using the `AUTH_MODE` / `DEMO_USER_ROLE` symbols).
 
 ### Authorization policy
 
@@ -161,10 +161,12 @@ Student mastery remains student-specific. If this migration is too large for the
 2. Trusted-proxy mode accepts a valid secret, user ID, and role.
 3. Missing/wrong secret returns an authorization error.
 4. Production without explicit `AUTH_MODE` fails closed.
-5. Student scope resolves to the authenticated student.
-6. Student requesting another ID receives 403.
-7. Admin mutation guard accepts only admin.
-8. Admin student-scoped request requires an explicit target.
+5. Production with `AUTH_MODE=demo` fails closed with HTTP 401 (demo identity rejected in production regardless of `DEMO_USER_ROLE`).
+6. A trusted-proxy header whose secret differs in length from the configured secret is handled without throwing and returns HTTP 401 — `timingSafeEqual` is only invoked on equal-length buffers; length mismatches short-circuit to a denial.
+7. Student scope resolves to the authenticated student.
+8. Student requesting another ID receives 403.
+9. Admin mutation guard accepts only admin.
+10. Admin student-scoped request requires an explicit target.
 
 **Implementation API:**
 

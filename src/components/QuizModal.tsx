@@ -47,10 +47,17 @@ export function QuizModal({
           studentId,
         });
         const res = await fetch(`/api/quiz/generate?${params.toString()}`);
-        const data = await res.json();
         if (!res.ok) {
-          throw new Error(data?.error || `Quiz generation failed (${res.status})`);
+          let errorMessage = `Quiz generation failed (${res.status})`;
+          try {
+            const errData = await res.json();
+            if (errData?.error) errorMessage = String(errData.error);
+          } catch {
+            // Non-JSON error body — keep the generic status-bearing message.
+          }
+          throw new Error(errorMessage);
         }
+        const data = await res.json();
         if (!cancelled) setQuizData(data.quiz as QuizData);
       } catch (error: unknown) {
         if (!cancelled) {

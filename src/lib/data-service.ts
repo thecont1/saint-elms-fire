@@ -26,6 +26,17 @@ function sanitizeDoc<T>(doc: import('@google-cloud/firestore').DocumentSnapshot)
   return res as T;
 }
 
+/** Deterministic edge identity: same student+concepts+relationship upserts in place. */
+function edgeKey(
+  studentId: string,
+  source: string,
+  target: string,
+  relationshipType: KnowledgeEdge['relationshipType'],
+): string {
+  const norm = (value: string) => value.toLowerCase().trim().replace(/\s+/g, ' ');
+  return `${studentId}__${norm(source)}__${norm(target)}__${relationshipType}`;
+}
+
 export const DataService = {
   // COURSES
   async getCourses(): Promise<Course[]> {
@@ -227,11 +238,24 @@ export const DataService = {
       }
     }
 
+    // Fetch existing edges once so re-ingestion upserts instead of appending duplicates.
+    const existingEdgesSnap = await db
+      .collection('knowledge_edges')
+      .where('studentId', '==', studentId)
+      .get();
+    const existingEdgeKeyToRef = new Map<string, FirebaseFirestore.DocumentReference>();
+    for (const doc of existingEdgesSnap.docs) {
+      const data = doc.data() as KnowledgeEdge;
+      const key = edgeKey(studentId, data.sourceNodeId || data.sourceConcept, data.targetNodeId || data.targetConcept, data.relationshipType);
+      existingEdgeKeyToRef.set(key, doc.ref);
+    }
+
     for (const e of edges) {
       const sourceId = conceptToIdMap.get(e.sourceConcept.toLowerCase().trim()) || e.sourceNodeId;
       const targetId = conceptToIdMap.get(e.targetConcept.toLowerCase().trim()) || e.targetNodeId;
-      
-      const ref = db.collection('knowledge_edges').doc();
+
+      const key = edgeKey(studentId, sourceId || e.sourceConcept, targetId || e.targetConcept, e.relationshipType);
+      const ref = existingEdgeKeyToRef.get(key) ?? db.collection('knowledge_edges').doc(key);
       const edgeObj: KnowledgeEdge = {
         id: ref.id,
         studentId,

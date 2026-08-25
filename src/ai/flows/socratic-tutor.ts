@@ -48,10 +48,23 @@ export const proactiveTutor = ai.defineFlow(
       }
     }
 
-    const [quizHistory, graph, releasedLessons, activeReleases] = await Promise.all([
+    const releasedLessons = await DataService.getReleasedLessonsForStudent(studentId);
+    if (releasedLessons.length === 0) {
+      return {
+        sessionId: '',
+        studentId,
+        targetConcept: '',
+        relatedLessonTitle: '',
+        triggerReason: 'No released courseware is available yet',
+        socraticQuestion: '',
+        contextHint: 'Once your instructor releases a lesson, a Socratic challenge will appear here.',
+        status: 'pending' as const,
+      };
+    }
+
+    const [quizHistory, graph, activeReleases] = await Promise.all([
       DataService.getQuizHistory(studentId),
       DataService.getStudentKnowledgeGraph(studentId),
-      DataService.getReleasedLessonsForStudent(studentId),
       DataService.getReleasesForStudent(studentId),
     ]);
     const target = selectProactiveTarget({

@@ -52,6 +52,7 @@ export const ragChat = ai.defineFlow(
         answer: "You do not have any released courseware yet. Once your instructor unlocks a lesson, the Socratic Beacon can answer from it.",
         isGrounded: false,
         groundedSources: [],
+        unreleasedTopicsWarning: 'No courseware has been released to you yet.',
         confidence: 1,
         retrievedChunkCount: 0,
       };
@@ -73,6 +74,7 @@ export const ragChat = ai.defineFlow(
         answer: 'No indexed passage from your released lessons matched this question. Ask your instructor to re-ingest the released courseware, or try a question closer to the lesson text.',
         isGrounded: false,
         groundedSources: [],
+        unreleasedTopicsWarning: 'Released lessons are not fully indexed yet.',
         confidence: 1,
         retrievedChunkCount: 0,
       };

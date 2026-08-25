@@ -135,7 +135,12 @@ describe('resolveRegenerationSource', () => {
     })).toEqual({ lessonId: undefined, sourceTitle: 'Upload', markdown: '# Raw' });
   });
 
-  test('rejects missing lesson and blank raw markdown', () => {
+  test('rejects a missing lesson record and blank raw markdown', () => {
+    expect(() => resolveRegenerationSource({
+      lessonId: 'ghost',
+      lesson: null,
+      markdownContent: '# Orphan',
+    })).toThrow('Lesson with id ghost not found');
     expect(() => resolveRegenerationSource({ markdownContent: '   ' })).toThrow('Markdown content is required');
   });
 });

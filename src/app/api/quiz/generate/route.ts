@@ -44,24 +44,14 @@ export async function GET(req: Request) {
     );
   }
 
-  if (
-    difficultyParam &&
-    difficultyParam !== 'foundational' &&
-    difficultyParam !== 'intermediate' &&
-    difficultyParam !== 'advanced'
-  ) {
+  const DIFFICULTIES = ['foundational', 'intermediate', 'advanced'] as const;
+  const difficulty = DIFFICULTIES.find((value) => value === difficultyParam);
+  if (difficultyParam && !difficulty) {
     return NextResponse.json(
       { error: 'difficulty must be foundational, intermediate, or advanced' },
       { status: 400 },
     );
   }
-
-  const difficulty =
-    difficultyParam === 'foundational' ||
-    difficultyParam === 'intermediate' ||
-    difficultyParam === 'advanced'
-      ? difficultyParam
-      : undefined;
 
   try {
     const quiz = await generateQuizFlow({ lessonId, studentId, difficulty });
@@ -70,14 +60,23 @@ export async function GET(req: Request) {
     const message = error instanceof Error ? error.message : 'Quiz generation failed';
     // Release-gate denials map to 403; missing lesson to 404; everything else 502
     // (the upstream model/data dependency failed — an honest, visible failure).
-    const status = /Access Denied/i.test(message)
+    // Only our flow's own anchored error strings map to 403/404, and client
+    // messages are fixed — never raw error text or lesson titles.
+    const status = /^Access Denied:/i.test(message)
       ? 403
-      : /not found/i.test(message)
+      : /^Lesson with id ".+" not found$/.test(message)
         ? 404
         : 502;
     console.error('Quiz generation error:', error);
     return NextResponse.json(
-      { error: status === 502 ? publicGenerationError(error) : message },
+      {
+        error:
+          status === 403
+            ? 'This lesson has not been released to your Second Brain yet.'
+            : status === 404
+              ? 'Lesson not found.'
+              : publicGenerationError(error),
+      },
       { status },
     );
   }

@@ -98,11 +98,13 @@ gcloud run deploy "$SERVICE" \
   --region="$REGION" \
   --source=. \
   --service-account="$RUNTIME_SA" \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
-  --set-secrets='GEMINI_API_KEY=gemini-api-key:latest' \
+  --update-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
+  --update-secrets='GEMINI_API_KEY=gemini-api-key:N' \
   --port=8080 \
   --no-allow-unauthenticated
 ```
+
+`--update-env-vars` and `--update-secrets` are non-destructive: repeatable deployments preserve any existing env vars and secret bindings (for example a future `AUTH_MODE` / `AUTH_PROXY_SECRET` pair). Pin numeric Secret Manager versions (e.g. `gemini-api-key:3`) instead of `latest` so rollbacks are deterministic; bump the version deliberately when rotating.
 
 The service is deliberately private. Grant `roles/run.invoker` to the intended demo principal rather than opening it globally.
 
@@ -115,7 +117,7 @@ SERVICE_URL=$(gcloud run services describe saint-elms-fire \
   --format='value(status.url)')
 
 IDENTITY_TOKEN=$(gcloud auth print-identity-token)
-curl --fail --show-error \
+curl --fail-with-body --show-error \
   -H "Authorization: Bearer ${IDENTITY_TOKEN}" \
   "${SERVICE_URL}/health"
 ```
@@ -124,7 +126,7 @@ A healthy response is HTTP 200 with both Firestore and Gemini marked healthy. HT
 
 ## Backfill existing releases
 
-Only courseware ingested after Phase 2 has vectors. Once the index is `READY` and Gemini credits are available, re-run ingestion for all already-released lessons. Ingestion uses deterministic chunk IDs and replaces existing lesson chunks, so retries are safe.
+Only courseware ingested after Phase 2 has vectors. Once the index is `READY` and Gemini credits are available, re-run ingestion for all already-released lessons. Retries are safe and idempotent: chunk documents use deterministic per-lesson IDs, graph nodes are reused by normalized concept, and graph edges are upserted by a stable key (see `saveKnowledgeNodesAndEdges`).
 
 ## Rollback
 

@@ -31,7 +31,7 @@ gcloud firestore indexes composite list \
 
 ## Backfill released courseware
 
-New releases automatically run `ingestCourseware` through `POST /api/releases`. Existing released lessons predate the vector store and must be released/ingested again after the index is ready. Re-ingestion replaces a lesson's previous chunks, so it is safe to repeat.
+New releases automatically run `ingestCourseware` through `POST /api/releases`. Existing released lessons predate the vector store and must be released/ingested again after the index is ready. Re-ingestion is idempotent: chunk documents use deterministic per-lesson IDs, knowledge nodes are reused by normalized concept, and knowledge edges are upserted by a stable student/source/target/relationship key rather than appended.
 
 ## Genkit Developer UI
 
