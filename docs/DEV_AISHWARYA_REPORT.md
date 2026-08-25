@@ -5,8 +5,9 @@ demo-grade prototype to a live, release-gated, Cloud Run-ready application. This
 ground-truth summary of what shipped, verified against real execution (tests, typecheck, build,
 and container runtime) rather than intent.
 
-Base: `main` @ `f833da9d` → `dev/aishwarya` @ `HEAD`
-Delta: 6 feature/deploy commits + this planning/report commit — 31 files, ~1,780 insertions.
+Base: `main` @ `f833da9d` → `dev/aishwarya` @ `34b4df3a`
+Delta at PR creation: 6 feature/deploy commits + this planning/report commit — 33 files,
+2,375 insertions, and 708 deletions.
 
 ---
 
@@ -21,7 +22,9 @@ Delta: 6 feature/deploy commits + this planning/report commit — 31 files, ~1,7
   prompt-stuffing (no chunking/embeddings/vector store); silent canned fallbacks masking Gemini
   failures; no `/health` endpoint; no Cloud Run config.
 
-Phases 1–3 below closed that backlog.
+Phases 1–3 below closed the scoped quiz, RAG, health, and Cloud Run backlog. Remaining trust and
+consistency work is explicit under Phase 4; the legacy `evaluateSocraticFlow` heuristic fallback
+also remains visible technical debt rather than being misreported as removed.
 
 ---
 
@@ -132,5 +135,6 @@ Phase 4 is intentionally left unimplemented pending review of this plan.
 
 Caller-supplied `studentId` is currently trusted; admin mutations aren't authorized; releases are
 recorded before ingestion completes; active Socratic sessions can outlive release access; and
-course/detail GETs may return unreleased lesson markdown. These are the coupled production risks
-Phase 4 addresses.
+course/detail GETs return unreleased lesson markdown. Quiz submissions also trust caller-supplied
+`isCorrect` and `feedback`, allowing forged mastery evidence. These are the coupled production
+risks Phase 4 addresses or must explicitly split into tracked follow-up work.

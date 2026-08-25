@@ -19,6 +19,7 @@ Phases 1–3 established live Gemini generation, vector RAG, and a deployable Cl
 3. A release is stored as `released` before ingestion. Failed ingestion can leave visible but unindexed courseware.
 4. An existing pending Socratic session is returned without revalidating its lesson release.
 5. Cohort releases unlock courseware but student knowledge graphs are stored per student, so cohort graph propagation is incomplete.
+6. Course/detail reads return full lesson Markdown without release filtering, and quiz submissions trust caller-supplied correctness evidence.
 
 This phase addresses those as one coherent boundary: **who may act, what they may access, and when a release becomes visible**.
 
@@ -199,6 +200,8 @@ Expected: targeted tests pass; full typecheck remains clean.
 - Modify: `src/app/api/generate-format/route.ts`
 - Modify: `src/app/api/socratic-tutor/route.ts`
 - Modify: `src/app/api/releases/route.ts` (`GET`)
+- Modify: `src/app/api/courses/[courseId]/route.ts` (`GET` lesson filtering)
+- Modify: `src/app/api/lessons/route.ts` (`GET` lesson filtering)
 - Create: route-level tests under `src/app/api/**/route.test.ts` or a shared policy contract test if module mocking is required.
 
 **RED tests:**
@@ -207,11 +210,13 @@ Expected: targeted tests pass; full typecheck remains clean.
 - Omitted `studentId` resolves to the authenticated student.
 - Matching legacy `studentId` remains accepted.
 - Admin can target another student only explicitly.
+- Student course/detail and lesson-list reads contain only released lessons; unreleased Markdown is never serialized.
+- Admin course/detail and lesson-list reads may explicitly request the complete authoring view.
 - HTTP mapping is stable: unauthenticated 401, forbidden 403, malformed 400.
 
 **Implementation notes:**
 
-Resolve identity before reading JSON where practical. Replace all `studentId = 'student-alex'` defaults in routes with `resolveStudentScope`. Keep Genkit flow schemas unchanged; routes pass the resolved ID.
+Resolve identity before reading JSON where practical. Replace all `studentId = 'student-alex'` defaults in routes with `resolveStudentScope`. Keep Genkit flow schemas unchanged; routes pass the resolved ID. Treat full lesson Markdown as protected courseware, not public course metadata.
 
 ---
 
@@ -236,7 +241,20 @@ Resolve identity before reading JSON where practical. Replace all `studentId = '
 - Admin access is based on server identity, not the client role toggle.
 - `/admin` does not expose admin controls to a student principal.
 - `POST /api/seed` is disabled in production unless `ALLOW_PRODUCTION_SEED=true` and the caller is admin.
-- Public GET course metadata remains unchanged unless review identifies unreleased lesson content leakage; if lesson Markdown is returned, student reads must filter to released lessons.
+- Public/basic course metadata may remain unchanged, but `GET /api/courses/[courseId]` and `GET /api/lessons` must filter lesson payloads to the resolved student's released lessons. Only an authenticated admin authoring view may return all lesson Markdown.
+
+### Quiz evidence integrity
+
+`POST /api/quiz` currently accepts `isCorrect` and `feedback` from the browser. Authorization alone
+does not make those mastery records trustworthy. Phase 4 must choose and test one of these contracts:
+
+1. **Preferred:** persist each generated quiz server-side with its correct answer, return an opaque
+   `quizId`, and compute `isCorrect`, feedback, and `weakSpotDetected` on submission; or
+2. split this into a named follow-up with a blocking `test.todo` and ensure no downstream feature
+   claims client-reported correctness as trusted mastery evidence.
+
+The server must always derive `studentId`; it must never persist caller-supplied correctness as
+authoritative evidence without validation.
 
 ---
 
@@ -442,9 +460,10 @@ Expected: 100% tests pass; typecheck/build/container build succeed.
 
 1. **Trusted-proxy boundary:** reviewers must verify the header-stripping/injection behavior of the chosen proxy before production. Direct access to the app must remain blocked.
 2. **Course metadata leakage:** current course/detail APIs may return unreleased lesson Markdown. Phase 4 should explicitly classify and filter student reads.
-3. **Synchronous ingestion:** long module releases may approach Cloud Run request limits. Keep synchronous behavior for Phase 4 correctness; measure before introducing a queue in a later phase.
-4. **Cohort graph migration:** template graphs are the clean design but materially expand scope. Reviewers may split Task 7 into a follow-up PR, provided the limitation remains explicit and tested.
-5. **Demo admin ergonomics:** a single server-configured role means switching student/admin may require two local runs or a deliberate dev-only mechanism. Do not weaken production policy for UI convenience.
+3. **Quiz evidence integrity:** current quiz submissions self-report correctness and feedback. Persist issued quizzes and score server-side, or split this as explicit blocked follow-up work; do not label self-reported results trusted mastery.
+4. **Synchronous ingestion:** long module releases may approach Cloud Run request limits. Keep synchronous behavior for Phase 4 correctness; measure before introducing a queue in a later phase.
+5. **Cohort graph migration:** template graphs are the clean design but materially expand scope. Reviewers may split Task 7 into a follow-up PR, provided the limitation remains explicit and tested.
+6. **Demo admin ergonomics:** a single server-configured role means switching student/admin may require two local runs or a deliberate dev-only mechanism. Do not weaken production policy for UI convenience.
 
 ## Definition of done
 
@@ -452,6 +471,8 @@ Phase 4 is done only when:
 
 - server-derived identity governs every student/admin API;
 - cross-student access and student admin mutations are denied by tests;
+- unreleased lesson Markdown is absent from student course/detail and lesson-list responses;
+- quiz correctness is scored server-side or explicitly split into blocked follow-up work with no trusted-mastery claim;
 - visible releases are fully indexed or legacy-compatible;
 - failed ingestion is persisted and retryable;
 - active/evaluated Socratic sessions revalidate ownership and release access;
