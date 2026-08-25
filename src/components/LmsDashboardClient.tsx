@@ -157,34 +157,31 @@ export function LmsDashboardClient({
               </p>
             </div>
 
-            {/* Ship's-log metrics: 2x2 matrix */}
-            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[320px]">
-              <div className="chart-card px-4 py-3">
+            {/* Ship's-log metrics: 2x2 matrix, stretches to match hero text height */}
+            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[320px] items-stretch self-stretch">
+              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Course plotted</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">
                   {releasedLessons.length}<span className="text-marine-400 text-lg">/{lessons.length}</span>
                 </p>
                 <p className="text-[11px] text-marine-500 font-medium">lessons unlocked</p>
               </div>
-              <div className="chart-card px-4 py-3">
+              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Constellation</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">{graphData.nodes.length}</p>
                 <p className="text-[11px] text-marine-500 font-medium">stars mapped</p>
               </div>
-              <div className="chart-card px-4 py-3">
+              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Voyage</p>
                 <p className="font-display text-2xl font-semibold text-beacon-600">{completionPercentage}%</p>
                 <p className="text-[11px] text-marine-500 font-medium">complete</p>
               </div>
-              <div className="chart-card px-4 py-3">
+              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Active models</p>
                 <ModelStatusLights />
               </div>
             </div>
           </div>
-
-          {/* Plotted course line */}
-          <div className="course-line h-0.5 mt-8 opacity-70" />
         </div>
       </section>
 
@@ -377,16 +374,16 @@ export function LmsDashboardClient({
       )}
 
       {/* 4. FOOTER — the chart's legend */}
-      <footer className="border-t border-beacon-100 bg-white mt-auto">
-        {/* Compass-rose divider */}
+      <footer className="bg-white mt-auto">
+        {/* Compass-rose divider: dashed line with symbol, balanced spacing */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 py-4 border-b border-beacon-50">
+          <div className="flex items-center gap-4 py-6">
             <div className="course-line flex-1 h-0.5 opacity-60" />
             <CoronaMark className="w-5 h-5 text-beacon-500" />
             <div className="course-line flex-1 h-0.5 opacity-60" />
           </div>
 
-          <div className="py-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="pb-6 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-beacon-600 text-white flex items-center justify-center">
                 <CoronaMark className="w-4.5 h-4.5" />
