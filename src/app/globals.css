@@ -36,10 +36,16 @@
 
   --animate-spin-slow: spin 9s linear infinite;
   --animate-glow-breathe: glow-breathe 5.5s ease-in-out infinite;
+  --animate-flicker-fast: flicker-fast 0.25s ease-in-out infinite;
 
   @keyframes glow-breathe {
     0%, 100% { opacity: 0.55; transform: scale(1); }
     50% { opacity: 1; transform: scale(1.06); }
+  }
+
+  @keyframes flicker-fast {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
   }
 }
 

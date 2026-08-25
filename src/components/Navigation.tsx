@@ -1,30 +1,35 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Compass, Shield, User } from 'lucide-react';
+import { Compass, Shield, User, RefreshCw } from 'lucide-react';
 
 interface ModelLightProps {
   label: string;
   /** up = green; down = red. */
   up: boolean;
-  /** in-use = pulsing; idle/stable = solid. */
-  inUse: boolean;
+  /** serving now or within the activity window = fast flicker. */
+  serving: boolean;
   title: string;
 }
 
-/** One model status light: green+solid = available, green+pulse = serving. */
-function ModelLight({ label, up, inUse, title }: ModelLightProps) {
+/**
+ * One model status light:
+ * - red solid = unavailable
+ * - green solid = available, idle
+ * - green fast-flicker = actively serving (data in/out)
+ */
+function ModelLight({ label, up, serving, title }: ModelLightProps) {
   return (
     <span
       className="flex items-center gap-1.5"
       title={title}
       data-testid={`model-light-${label}`}
-      aria-label={`${label} ${up ? 'available' : 'unavailable'}${inUse ? ', in use' : ''}`}
+      aria-label={`${label} ${up ? 'available' : 'unavailable'}${serving ? ', serving requests' : ''}`}
     >
       <span
         className={`inline-block w-2 h-2 rounded-full ${
           up ? 'bg-emerald-500' : 'bg-red-400'
-        } ${up && inUse ? 'animate-pulse' : ''} shadow-[0_0_4px_currentColor]`}
+        } ${up && serving ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`}
       />
       <span className="hidden xl:inline">{label}</span>
     </span>
@@ -35,35 +40,56 @@ export function ModelStatusLights() {
   const [status, setStatus] = useState<{
     geminiUp: boolean;
     sarvamUp: boolean;
-    active: 'gemini' | 'sarvam' | null;
-  }>({ geminiUp: false, sarvamUp: false, active: null });
+    geminiServing: boolean;
+    sarvamServing: boolean;
+  }>({ geminiUp: false, sarvamUp: false, geminiServing: false, sarvamServing: false });
 
   useEffect(() => {
     let cancelled = false;
-    const poll = async () => {
+
+    // Availability: slow poll of the (cached) health endpoint.
+    const pollHealth = async () => {
       try {
         const res = await fetch('/api/health', { cache: 'no-store' });
         const data = await res.json();
         if (cancelled) return;
         const checks = data.checks ?? {};
-        // "In use" heuristic: a provider is actively serving when it is up and
-        // either the other generation provider is down or it is the primary.
-        const geminiUp = checks.gemini?.status === 'up';
-        const sarvamUp = checks.sarvam?.status === 'up';
-        setStatus({
-          geminiUp,
-          sarvamUp,
-          active: sarvamUp && !geminiUp ? 'sarvam' : geminiUp ? 'gemini' : null,
-        });
+        setStatus((prev) => ({
+          ...prev,
+          geminiUp: checks.gemini?.status === 'up',
+          sarvamUp: checks.sarvam?.status === 'up',
+        }));
       } catch {
-        if (!cancelled) setStatus({ geminiUp: false, sarvamUp: false, active: null });
+        if (!cancelled) setStatus((prev) => ({ ...prev, geminiUp: false, sarvamUp: false }));
       }
     };
-    void poll();
-    const timer = setInterval(poll, 30_000);
+
+    // Activity: fast poll of the cheap observational endpoint so the light
+    // flickers while a model is actually serving, not merely available.
+    const pollActivity = async () => {
+      try {
+        const res = await fetch('/api/model-activity', { cache: 'no-store' });
+        const data = await res.json();
+        if (cancelled) return;
+        const models = data.models ?? {};
+        setStatus((prev) => ({
+          ...prev,
+          geminiServing: models['gemini-3.7-flash']?.inFlight || models['gemini-3.7-flash']?.recent || false,
+          sarvamServing: models['sarvam-105b-conversations']?.inFlight || models['sarvam-105b-conversations']?.recent || false,
+        }));
+      } catch {
+        // ignore transient poll failures; lights keep last known state
+      }
+    };
+
+    void pollHealth();
+    void pollActivity();
+    const healthTimer = setInterval(pollHealth, 30_000);
+    const activityTimer = setInterval(pollActivity, 1_500);
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      clearInterval(healthTimer);
+      clearInterval(activityTimer);
     };
   }, []);
 
@@ -72,20 +98,20 @@ export function ModelStatusLights() {
       <ModelLight
         label="gemini-3.7-flash"
         up={status.geminiUp}
-        inUse={status.active === 'gemini'}
+        serving={status.geminiServing}
         title={
           status.geminiUp
-            ? `Primary model · available${status.active === 'gemini' ? ' · serving requests' : ''}`
+            ? `Primary model · available${status.geminiServing ? ' · serving requests (flickering)' : ''}`
             : 'Primary model · unavailable (falling back)'
         }
       />
       <ModelLight
         label="sarvam-105b"
         up={status.sarvamUp}
-        inUse={status.active === 'sarvam'}
+        serving={status.sarvamServing}
         title={
           status.sarvamUp
-            ? `Fallback model · available${status.active === 'sarvam' ? ' · serving requests' : ''}`
+            ? `Fallback model · available${status.sarvamServing ? ' · serving requests (flickering)' : ''}`
             : 'Fallback model · unavailable'
         }
       />
@@ -96,6 +122,9 @@ export function ModelStatusLights() {
 interface NavigationProps {
   currentRole: 'admin' | 'student';
   onRoleChange: (role: 'admin' | 'student') => void;
+  /** Optional: renders a Sync button to the right of the role switcher. */
+  onSync?: () => void;
+  isSyncing?: boolean;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
@@ -130,6 +159,8 @@ export function CoronaMark({ className = 'w-6 h-6' }: { className?: string }) {
 export function Navigation({
   currentRole,
   onRoleChange,
+  onSync,
+  isSyncing = false,
 }: NavigationProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-beacon-100 bg-white/90 backdrop-blur-md">
@@ -151,36 +182,44 @@ export function Navigation({
             </div>
           </div>
 
-          {/* Model status lights — primary + fallback */}
-          <div className="hidden lg:flex items-center">
-            <ModelStatusLights />
-          </div>
+          {/* Role Switcher + Sync */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
+              <button
+                onClick={() => onRoleChange('admin')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  currentRole === 'admin'
+                    ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
+                    : 'text-marine-500 hover:text-marine-800'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Admin</span>
+              </button>
 
-          {/* Role Switcher */}
-          <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
-            <button
-              onClick={() => onRoleChange('admin')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                currentRole === 'admin'
-                  ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
-                  : 'text-marine-500 hover:text-marine-800'
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Admin</span>
-            </button>
+              <button
+                onClick={() => onRoleChange('student')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  currentRole === 'student'
+                    ? 'bg-beacon-600 text-white shadow-sm'
+                    : 'text-marine-500 hover:text-marine-800'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Student · Alex</span>
+              </button>
+            </div>
 
-            <button
-              onClick={() => onRoleChange('student')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                currentRole === 'student'
-                  ? 'bg-beacon-600 text-white shadow-sm'
-                  : 'text-marine-500 hover:text-marine-800'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>Student · Alex</span>
-            </button>
+            {onSync && (
+              <button
+                onClick={onSync}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
+                title="Refresh Firestore database state"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Sync</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

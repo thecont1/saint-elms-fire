@@ -32,6 +32,47 @@ export const ACTIVE_MODELS = {
 
 export type ModelUsed = typeof GEMINI_FLASH | typeof SARVAM_MODEL;
 
+/**
+ * Lightweight in-process activity tracking for the model status lights.
+ * Records every generation call start/finish so the UI can flicker a light at
+ * high frequency while that provider is actually serving (data in/out), not
+ * merely available. Module-level counters are fine here: the health/lights
+ * surface is observational, not authoritative.
+ */
+const ACTIVITY_WINDOW_MS = 5000;
+const activity: Record<string, { active: number; lastActivityAt: number }> = {
+  [GEMINI_FLASH]: { active: 0, lastActivityAt: 0 },
+  [SARVAM_MODEL]: { active: 0, lastActivityAt: 0 },
+};
+
+export function markModelActivityStart(model: ModelUsed): void {
+  const entry = activity[model];
+  if (!entry) return;
+  entry.active += 1;
+  entry.lastActivityAt = Date.now();
+}
+
+export function markModelActivityEnd(model: ModelUsed): void {
+  const entry = activity[model];
+  if (!entry) return;
+  entry.active = Math.max(0, entry.active - 1);
+  entry.lastActivityAt = Date.now();
+}
+
+/** Which providers have served (or are serving) a call within the window. */
+export function getActiveModelActivity(now = Date.now()): {
+  [key: string]: { inFlight: boolean; recent: boolean };
+} {
+  const out: { [key: string]: { inFlight: boolean; recent: boolean } } = {};
+  for (const [model, entry] of Object.entries(activity)) {
+    out[model] = {
+      inFlight: entry.active > 0,
+      recent: entry.lastActivityAt > 0 && now - entry.lastActivityAt < ACTIVITY_WINDOW_MS,
+    };
+  }
+  return out;
+}
+
 export interface RoutedResult<T> {
   /** Parsed structured output when a schema was supplied. */
   output?: T;
@@ -147,6 +188,7 @@ export async function generateWithFallback<T>({
   }
 
   try {
+    markModelActivityStart(GEMINI_FLASH);
     const response = schema
       ? await (ai.generate as (args: {
           system?: string;
@@ -158,6 +200,7 @@ export async function generateWithFallback<T>({
           output: { jsonSchema },
         })
       : await ai.generate({ system, prompt });
+    markModelActivityEnd(GEMINI_FLASH);
     if (schema) {
       // Gemini may return null output when jsonSchema-constrained decoding
       // yields no tool call; fall back rather than failing the request.
@@ -178,6 +221,7 @@ export async function generateWithFallback<T>({
     if (!text) throw new Error('empty model response');
     return { text, model: GEMINI_FLASH };
   } catch (primaryError) {
+    markModelActivityEnd(GEMINI_FLASH);
     if (!isAvailabilityError(primaryError)) throw primaryError;
     console.warn('gemini_unavailable_falling_back', {
       model: GEMINI_FLASH,
@@ -216,7 +260,12 @@ export async function generateWithFallback<T>({
       let text = '';
       let parsed: unknown | null = null;
       for (let i = 0; i < attempts.length; i++) {
-        text = await sarvamGenerate({ system: attempts[i], prompt });
+        markModelActivityStart(SARVAM_MODEL);
+        try {
+          text = await sarvamGenerate({ system: attempts[i], prompt });
+        } finally {
+          markModelActivityEnd(SARVAM_MODEL);
+        }
         parsed = extractJsonObject(text);
         if (parsed && schema.safeParse && schema.safeParse(parsed).success) {
           return { output: schema.parse(parsed), model: SARVAM_MODEL };
@@ -230,7 +279,13 @@ export async function generateWithFallback<T>({
       throw new Error(`fallback model could not produce schema-valid output: ${text.slice(0, 200)}`);
     }
 
-    const text = await sarvamGenerate({ system: jsonInstruction, prompt });
+    markModelActivityStart(SARVAM_MODEL);
+    let text: string;
+    try {
+      text = await sarvamGenerate({ system: jsonInstruction, prompt });
+    } finally {
+      markModelActivityEnd(SARVAM_MODEL);
+    }
     return { text, model: SARVAM_MODEL };
   }
 }

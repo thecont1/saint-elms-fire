@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  RefreshCw,
   Compass,
   GraduationCap,
   Network,
@@ -10,7 +9,7 @@ import {
   Anchor,
   Star,
 } from 'lucide-react';
-import { Navigation, CoronaMark } from '@/components/Navigation';
+import { Navigation, CoronaMark, ModelStatusLights } from '@/components/Navigation';
 import { KnowledgeGraphVisualizer } from '@/components/KnowledgeGraphVisualizer';
 import { StudentChat } from '@/components/StudentChat';
 import { MultiFormatViewer } from '@/components/MultiFormatViewer';
@@ -134,6 +133,8 @@ export function LmsDashboardClient({
       <Navigation
         currentRole={role}
         onRoleChange={setRole}
+        onSync={refreshAllData}
+        isSyncing={isSyncing}
       />
 
       {/* 2. HERO — the legend of the fire */}
@@ -156,35 +157,29 @@ export function LmsDashboardClient({
               </p>
             </div>
 
-            {/* Ship's-log metrics */}
-            <div className="flex items-center gap-6 sm:gap-8 pb-1">
-              <div>
+            {/* Ship's-log metrics: 2x2 matrix */}
+            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[320px]">
+              <div className="chart-card px-4 py-3">
                 <p className="chart-annotation mb-1">Course plotted</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">
                   {releasedLessons.length}<span className="text-marine-400 text-lg">/{lessons.length}</span>
                 </p>
                 <p className="text-[11px] text-marine-500 font-medium">lessons unlocked</p>
               </div>
-              <div className="h-10 w-px bg-beacon-100" />
-              <div>
+              <div className="chart-card px-4 py-3">
                 <p className="chart-annotation mb-1">Constellation</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">{graphData.nodes.length}</p>
                 <p className="text-[11px] text-marine-500 font-medium">stars mapped</p>
               </div>
-              <div className="h-10 w-px bg-beacon-100" />
-              <div>
+              <div className="chart-card px-4 py-3">
                 <p className="chart-annotation mb-1">Voyage</p>
                 <p className="font-display text-2xl font-semibold text-beacon-600">{completionPercentage}%</p>
                 <p className="text-[11px] text-marine-500 font-medium">complete</p>
               </div>
-              <button
-                onClick={refreshAllData}
-                className="ml-2 flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
-                title="Refresh Firestore database state"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Sync</span>
-              </button>
+              <div className="chart-card px-4 py-3">
+                <p className="chart-annotation mb-1">Active models</p>
+                <ModelStatusLights />
+              </div>
             </div>
           </div>
 
