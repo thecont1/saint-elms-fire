@@ -5,5 +5,6 @@ import './flows/student-chat';
 import './flows/multi-format';
 import './flows/socratic-tutor';
 import './flows/evaluate-socratic';
+import './flows/generate-quiz';
 import './flows/incident-summary';
 import './flows/example';
