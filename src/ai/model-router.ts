@@ -129,13 +129,22 @@ export async function generateWithFallback<T>({
   prompt,
   schema,
 }: GenerateArgs<T>): Promise<RoutedResult<T>> {
-  const rawJsonSchema = schema
-    ? (zodToJsonSchema(schema as never, { target: 'draft-2020-12' as never }) as Record<string, unknown>)
-    : undefined;
-  // JSON Schema meta-key can confuse Genkit's format handler; strip it.
-  const jsonSchema = rawJsonSchema
-    ? { ...rawJsonSchema, $schema: undefined }
-    : undefined;
+  let jsonSchema: Record<string, unknown> | undefined;
+  try {
+    const rawJsonSchema = schema
+      ? (zodToJsonSchema(schema as never, { target: 'draft-2020-12' as never }) as Record<string, unknown>)
+      : undefined;
+    // JSON Schema meta-key can confuse Genkit's format handler; strip it.
+    jsonSchema = rawJsonSchema ? { ...rawJsonSchema, $schema: undefined } : undefined;
+  } catch (conversionError) {
+    // Schemas with transforms/dates/bigints may not be representable as JSON
+    // Schema. Do not let the conversion failure prevent the request: log it
+    // and proceed unconstrained so the primary call still happens and the
+    // fallback can still be attempted (with local schema.parse validation).
+    console.warn('json_schema_conversion_failed', {
+      error: conversionError instanceof Error ? conversionError.message : String(conversionError),
+    });
+  }
 
   try {
     const response = schema
@@ -158,10 +167,12 @@ export async function generateWithFallback<T>({
       // Gemini may return JSON that parses but does not match the requested
       // schema (e.g. missing keys on complex shapes). Treat that as a
       // fallback-eligible failure too — the caller asked for a verified shape.
+      // Both primary and fallback paths validate through the caller's
+      // schema.parse, so a malformed object is never returned as T.
       if (schema.safeParse && !schema.safeParse(response.output).success) {
         throw new Error('UNAVAILABLE: primary model returned schema-invalid output');
       }
-      return { output: schema.parse(response.output) as T, model: GEMINI_FLASH };
+      return { output: schema.parse(response.output), model: GEMINI_FLASH };
     }
     const text = (response.text || '').trim();
     if (!text) throw new Error('empty model response');
@@ -175,8 +186,10 @@ export async function generateWithFallback<T>({
 
     // Schema-constrained path: instruct the fallback to emit raw JSON and
     // validate locally — sarvam-105b has no native structured-output mode.
+    // If JSON Schema conversion failed earlier, still ask for JSON using the
+    // schema-parse validation loop as the safety net.
     const jsonInstruction = schema
-      ? `${system ?? ''}\n\nRespond with ONLY a single valid JSON object matching this shape, no markdown fences, no commentary:\n${JSON.stringify(jsonSchema)}`
+      ? `${system ?? ''}\n\nRespond with ONLY a single valid JSON object matching this shape, no markdown fences, no commentary:\n${jsonSchema ? JSON.stringify(jsonSchema) : '(match the keys implied by the worked example and the request)'}`
       : system;
 
     // sarvam-105b-conversations is nondeterministic on complex schemas: it

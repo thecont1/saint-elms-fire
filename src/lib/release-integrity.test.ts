@@ -58,6 +58,22 @@ describe('release integrity state machine', () => {
     expect(isReleaseVisible(released, new Date('2026-08-25T10:02:00.000Z'))).toBe(true);
   });
 
+  test('multi-lesson release is not complete until EVERY lesson has every stage complete', () => {
+    const pending = buildPendingRelease({
+      id: 'r1', courseId: 'c1', moduleId: 'm1', studentId: 's1',
+      targetLessonIds: ['l1', 'l2'], requestedAt,
+    });
+    // Mark only l1's five stages complete; l2 remains pending.
+    const partialSteps = pending.steps.map((step) =>
+      step.lessonId === 'l1' ? { ...step, status: 'complete' as const } : step
+    );
+    const partial = { ...pending, steps: partialSteps };
+
+    expect(releaseHasAllStepsComplete(partial)).toBe(false);
+    expect(() => completeRelease(partial, '2026-08-25T10:01:00.000Z')).toThrow('not complete');
+    expect(isReleaseVisible(partial, new Date('2026-08-25T10:02:00.000Z'))).toBe(false);
+  });
+
   test('a bounded failure is invisible and diagnostic', () => {
     const pending = buildPendingRelease({
       id: 'r1', courseId: 'c1', moduleId: 'm1', studentId: 's1',

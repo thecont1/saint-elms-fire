@@ -111,12 +111,26 @@ describe('runLessonIngestion', () => {
     await expect(runLessonIngestion(lesson, state.deps)).rejects.toBeTruthy();
     expect(state.calls()).toEqual({ parseCalls: 1, chunkCalls: 1, embedCalls: 2 });
 
-    const retryDeps = { ...state.deps, embedChunk: async (_text: string, index: number) => [index + 0.1, index + 0.2] };
+    // Replacement embedder counts every invocation so we can assert exact
+    // embedding-call totals across both retry runs.
+    let replacementEmbedCalls = 0;
+    const retryDeps = {
+      ...state.deps,
+      embedChunk: async (_text: string, index: number) => {
+        replacementEmbedCalls += 1;
+        return [index + 0.1, index + 0.2];
+      },
+    };
     await runLessonIngestion(lesson, retryDeps);
     await runLessonIngestion(lesson, retryDeps);
 
     expect(state.calls().parseCalls).toBe(1);
     expect(state.calls().chunkCalls).toBe(1);
+    // First run: 2 chunks attempted, chunk 1 failed before staging. The first
+    // retry must re-embed exactly the ONE missing chunk (resumption, not
+    // redo); the second retry reuses every staged embedding, so the
+    // replacement embedder is called exactly once across both retry runs.
+    expect(replacementEmbedCalls).toBe(1);
     expect(state.embeddings.size).toBe(2);
     expect(state.vectorIds.size).toBe(2);
   });

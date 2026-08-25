@@ -6,7 +6,9 @@ import { getHealthReport } from '@/lib/health';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const report = await getHealthReport();
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const deep = searchParams.get('deep') === 'true';
+  const report = await getHealthReport(deep);
   return NextResponse.json(report, { status: report.status === 'ok' ? 200 : 503 });
 }

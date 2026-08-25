@@ -51,7 +51,8 @@ export const IngestCoursewareOutputSchema = z.object({
 function parseMarkdown(markdown: string): string {
   const normalized = markdown.replace(/\r\n?/g, '\n').trim();
   if (!normalized) throw new Error('Markdown content is required');
-  if (!/^#{1,6}\s+\S/m.test(normalized)) throw new Error('Markdown must contain at least one heading');
+  // No ATX-heading requirement here: chunkMarkdown handles heading-free and
+  // Setext-heading content by defaulting to an 'Introduction' section.
   return normalized;
 }
 

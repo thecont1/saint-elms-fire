@@ -236,6 +236,14 @@ export async function runLessonIngestion(input: LessonIngestionInput, deps: Inge
 
   artifact = await deps.loadArtifact(input.releaseId, input.lessonId) ?? artifact;
   const chunks = artifact.chunks ?? [];
+  if (chunks.length === 0) {
+    // A retry can reach here with chunking marked complete but an artifact
+    // that lost its chunks (or a chunker that returned none). Embedding with
+    // zero items would complete vacuously — fail chunking instead so a retry
+    // re-chunks rather than silently skipping the content.
+    console.error('chunking_artifact_empty', { releaseId: input.releaseId, lessonId: input.lessonId });
+    throw await markFailed(deps, input, 'chunking', new Error('No chunks after artifact load'));
+  }
   const embeddings: number[][] = [];
   if (status('embedding') !== 'complete') {
     console.info('second_brain_ingestion_stage', { releaseId: input.releaseId, lessonId: input.lessonId, stage: 'embedding', status: 'in_progress', itemsTotal: chunks.length });
@@ -306,6 +314,22 @@ export async function runLessonIngestion(input: LessonIngestionInput, deps: Inge
     try {
       const extracted = await deps.extractGraph(artifact.parsedMarkdown ?? input.markdownContent);
       graph = buildGraph(input, extracted);
+    } catch (error) {
+      // Extraction failures (provider outage, schema mismatch) are categorized
+      // by CALL SITE — they never touch Firestore, so reporting them as a
+      // firestore write failure would mislead the audit log.
+      console.error('graph_write_stage_error', {
+        releaseId: input.releaseId,
+        lessonId: input.lessonId,
+        phase: 'extraction',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      const wrapped = error instanceof IngestionStageError
+        ? error
+        : new IngestionStageError('graph_write', 'graph_extraction_failed', PUBLIC_MESSAGES.graph_extraction_failed);
+      throw await markFailed(deps, input, 'graph_write', wrapped);
+    }
+    try {
       await deps.writeGraph(graph);
       if (!await deps.verifyGraph(graph)) {
         throw new IngestionStageError('graph_write', 'verification_failed', PUBLIC_MESSAGES.verification_failed);
@@ -315,17 +339,16 @@ export async function runLessonIngestion(input: LessonIngestionInput, deps: Inge
         itemsTotal: graph.nodes.length + graph.edges.length,
       });
     } catch (error) {
-      // Log the raw error before wrapping so provider-side failures are
-      // diagnosable even though only bounded categories reach Firestore.
+      // Failures from the write/verify phase are genuine storage problems.
       console.error('graph_write_stage_error', {
         releaseId: input.releaseId,
         lessonId: input.lessonId,
+        phase: 'write',
         error: error instanceof Error ? error.message : String(error),
       });
       const wrapped = error instanceof IngestionStageError
         ? error
-        : new IngestionStageError('graph_write', error instanceof Error && error.message.includes('extract') ? 'graph_extraction_failed' : categorize('graph_write', error),
-          error instanceof Error && error.message.includes('extract') ? PUBLIC_MESSAGES.graph_extraction_failed : PUBLIC_MESSAGES[categorize('graph_write', error)]);
+        : new IngestionStageError('graph_write', categorize('graph_write', error), PUBLIC_MESSAGES[categorize('graph_write', error)]);
       throw await markFailed(deps, input, 'graph_write', wrapped);
     }
   }

@@ -197,6 +197,41 @@ export const DataService = {
       ) ?? null;
   },
 
+  /**
+   * Atomically detect an equivalent non-failed release and, only when none
+   * exists, create the pending release. Runs inside one Firestore transaction
+   * so concurrent identical requests cannot both create a pending record
+   * (TOCTOU race between findEquivalentRelease and createPendingRelease).
+   */
+  async createPendingReleaseIfAbsent(input: {
+    courseId: string;
+    moduleId: string;
+    lessonId?: string;
+    studentId: string;
+    targetLessonIds: string[];
+  }): Promise<{ release: ReleaseEvent; created: boolean }> {
+    const targetKey = [...input.targetLessonIds].sort().join('\u0000');
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(
+        db.collection('releases').where('studentId', '==', input.studentId)
+      );
+      const existing = snap.docs
+        .map(doc => sanitizeDoc<ReleaseEvent>(doc))
+        .find(release =>
+          release.moduleId === input.moduleId
+          && release.overallStatus !== 'failed'
+          && (release.targetLessonIds ?? []).slice().sort().join('\u0000') === targetKey
+        );
+      if (existing) return { release: existing, created: false };
+
+      const ref = db.collection('releases').doc();
+      const requestedAt = new Date().toISOString();
+      const release = buildPendingRelease({ id: ref.id, ...input, requestedAt });
+      transaction.set(ref, release);
+      return { release, created: true };
+    });
+  },
+
   async createPendingRelease(input: {
     courseId: string;
     moduleId: string;

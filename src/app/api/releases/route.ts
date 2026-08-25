@@ -45,7 +45,18 @@ export async function ingestRelease(release: ReleaseEvent, lessons: Lesson[]) {
       return { release: failedRelease, ingestionResults: [...ingestionResults, { lessonId: lesson.id, status: 'error' as const, error: category }] };
     }
   }
-  const completedRelease = await DataService.finalizeRelease(release.id);
+  // Finalize can throw if, e.g., the transaction hits a conflicting write or
+  // a step record is missing at completion time. Do not let that escape to the
+  // outer 500 handler: persist a bounded failure so the release stays
+  // retryable and the audit log reports an honest state.
+  let completedRelease: ReleaseEvent;
+  try {
+    completedRelease = await DataService.finalizeRelease(release.id);
+  } catch (finalizeError) {
+    console.error('Release finalization failed', { releaseId: release.id, error: finalizeError instanceof Error ? finalizeError.message : String(finalizeError) });
+    const failedRelease = await DataService.failRelease(release.id, 'unknown');
+    return { release: failedRelease, ingestionResults };
+  }
   return { release: completedRelease, ingestionResults };
 }
 
@@ -72,23 +83,24 @@ export async function POST(req: Request) {
     }
 
     const targetLessonIds = lessonsToIngest.map(lesson => lesson.id);
-    const existing = await DataService.findEquivalentRelease({ moduleId, studentId, targetLessonIds });
-    if (existing) {
-      return NextResponse.json({
-        release: existing,
-        ingestionResults: [],
-        ingestedCount: 0,
-        idempotent: true,
-      }, { status: 200 });
-    }
-
-    const pending = await DataService.createPendingRelease({
+    // Atomically dedupe + create in one transaction (no TOCTOU between the
+    // equivalent-release check and the pending-record write).
+    const { release: pending, created } = await DataService.createPendingReleaseIfAbsent({
       courseId,
       moduleId,
       lessonId: lessonId || undefined,
       studentId,
       targetLessonIds,
     });
+    if (!created) {
+      return NextResponse.json({
+        release: pending,
+        ingestionResults: [],
+        ingestedCount: 0,
+        idempotent: true,
+      }, { status: 200 });
+    }
+
     const result = await ingestRelease(pending, lessonsToIngest);
     return NextResponse.json({
       ...result,

@@ -11,6 +11,12 @@ const env = Object.fromEntries(
     return [l.slice(0, i), l.slice(i + 1)];
   })
 );
+// Apply parsed .env values BEFORE constructing Firestore so credentials
+// (GOOGLE_APPLICATION_CREDENTIALS, etc.) are visible to the client's auth
+// resolution, matching how the Next app loads them.
+for (const [key, value] of Object.entries(env)) {
+  if (process.env[key] === undefined) process.env[key] = value;
+}
 
 const db = new Firestore({ projectId: env.GOOGLE_CLOUD_PROJECT });
 
