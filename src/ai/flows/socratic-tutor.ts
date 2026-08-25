@@ -1,10 +1,11 @@
 import { z } from 'genkit';
-import { ai, GEMINI_FLASH } from '../genkit';
+import { ai } from '../genkit';
 import { DataService } from '../../lib/data-service';
+import { selectProactiveTarget } from '../../lib/courseware-rag';
 
 export const ProactiveTutorInputSchema = z.object({
-  studentId: z.string().describe('ID of the student'),
-  forceNew: z.boolean().optional().describe('Force generation of a new Socratic challenge'),
+  studentId: z.string().trim().min(1),
+  forceNew: z.boolean().optional(),
 });
 
 export const SocraticChallengeOutputSchema = z.object({
@@ -18,131 +19,76 @@ export const SocraticChallengeOutputSchema = z.object({
   status: z.enum(['pending', 'answered']),
 });
 
-export const proactiveSocraticTutorFlow = ai.defineFlow(
+const GeneratedChallengeSchema = z.object({
+  socraticQuestion: z.string().min(1),
+  contextHint: z.string().min(1),
+});
+
+export const proactiveTutor = ai.defineFlow(
   {
-    name: 'proactiveSocraticTutorFlow',
+    name: 'proactiveTutor',
     inputSchema: ProactiveTutorInputSchema,
     outputSchema: SocraticChallengeOutputSchema,
   },
-  async (input) => {
-    const { studentId, forceNew = false } = input;
-
-    // Check if there's already an active pending session
+  async ({ studentId, forceNew = false }) => {
     if (!forceNew) {
-      const activeSession = await DataService.getActiveSocraticSession(studentId);
-      if (activeSession) {
-        const lesson = await DataService.getLesson(activeSession.relatedLessonId);
+      const active = await DataService.getActiveSocraticSession(studentId);
+      if (active) {
+        const lesson = await DataService.getLesson(active.relatedLessonId);
         return {
-          sessionId: activeSession.id,
-          studentId: activeSession.studentId,
-          targetConcept: activeSession.targetConcept,
-          relatedLessonTitle: lesson ? lesson.title : 'Course Concept',
-          triggerReason: activeSession.triggerReason,
-          socraticQuestion: activeSession.socraticQuestion,
-          contextHint: 'Review your earlier thinking on this topic and respond with your reasoning.',
-          status: activeSession.status as 'pending' | 'answered',
+          sessionId: active.id,
+          studentId: active.studentId,
+          targetConcept: active.targetConcept,
+          relatedLessonTitle: lesson?.title || 'Released courseware',
+          triggerReason: active.triggerReason,
+          socraticQuestion: active.socraticQuestion,
+          contextHint: 'Review your earlier reasoning and test it against the released lesson.',
+          status: active.status,
         };
       }
     }
 
-    // 1. Fetch student's quiz history and released nodes
-    const quizHistory = await DataService.getQuizHistory(studentId);
-    const { nodes: releasedNodes } = await DataService.getStudentKnowledgeGraph(studentId);
-    const releasedLessons = await DataService.getReleasedLessonsForStudent(studentId);
+    const [quizHistory, graph, releasedLessons, activeReleases] = await Promise.all([
+      DataService.getQuizHistory(studentId),
+      DataService.getStudentKnowledgeGraph(studentId),
+      DataService.getReleasedLessonsForStudent(studentId),
+      DataService.getReleasesForStudent(studentId),
+    ]);
+    const target = selectProactiveTarget({
+      releasedLessons,
+      activeReleases,
+      quizHistory,
+      knowledgeNodes: graph.nodes,
+    });
 
-    // 2. Identify weak spots: incorrect quiz questions or lower mastery concepts
-    const weakQuizzes = quizHistory.filter((q) => !q.isCorrect || q.weakSpotDetected);
-    
-    let targetConcept = 'Raft Quorum & State Consistency';
-    let triggerReason = 'Proactive reinforcement of core distributed systems pillars.';
-    let targetLessonId = releasedLessons[0]?.id || 'lesson-1';
-    let targetLessonTitle = releasedLessons[0]?.title || '1.1 The Raft Consensus Algorithm';
+    const response = await ai.generate({
+      system: 'You are the proactive Socratic Beacon. Ask one question that tests reasoning without revealing the answer. Use only the supplied released lesson.',
+      prompt: `TARGET: ${target.concept}\nREASON: ${target.triggerReason}\nRELEASED LESSON: ${target.lessonTitle}\n\n${target.lessonContent}`,
+      output: { schema: GeneratedChallengeSchema },
+    });
+    if (!response.output) throw new Error('Gemini returned no Socratic challenge');
+    const generated = GeneratedChallengeSchema.parse(response.output);
 
-    if (weakQuizzes.length > 0) {
-      const latestWeak = weakQuizzes[0];
-      targetConcept = latestWeak.concept;
-      triggerReason = `Detected misconception in recent quiz regarding "${latestWeak.concept}" (Student selected option index ${latestWeak.selectedOptionIndex}).`;
-      targetLessonId = latestWeak.lessonId;
-      const matchingLesson = releasedLessons.find((l) => l.id === latestWeak.lessonId);
-      if (matchingLesson) targetLessonTitle = matchingLesson.title;
-    } else if (releasedNodes.length > 0) {
-      const chosenNode = releasedNodes.sort((a, b) => b.importance - a.importance)[0];
-      targetConcept = chosenNode.concept;
-      triggerReason = `Proactive check-in to deepen mastery of core pillar "${chosenNode.concept}".`;
-      targetLessonId = chosenNode.lessonId;
-      const matchingLesson = releasedLessons.find((l) => l.id === chosenNode.lessonId);
-      if (matchingLesson) targetLessonTitle = matchingLesson.title;
-    }
-
-    const relevantLesson = releasedLessons.find((l) => l.id === targetLessonId);
-    const lessonSnippet = relevantLesson ? relevantLesson.markdownContent.slice(0, 1500) : '';
-
-    const prompt = `
-You are the Proactive Socratic Tutor in "Saint Elms Fire".
-Your goal is to provoke deep understanding and self-discovery in the student, without giving away the answer.
-
-TARGET CONCEPT: "${targetConcept}"
-TRIGGER CONTEXT: "${triggerReason}"
-LESSON CONTEXT ("${targetLessonTitle}"):
-"""
-${lessonSnippet}
-"""
-
-TASK:
-Craft an agent-initiated, thought-provoking Socratic question.
-- Do NOT lecture or explain the entire concept.
-- Pose a real-world scenario, paradox, edge case, or thought experiment that challenges their mental model.
-- Keep the tone encouraging, curious, and intellectually stimulating.
-
-OUTPUT FORMAT (JSON):
-{
-  "socraticQuestion": "The single compelling question or brief scenario + prompt for the student",
-  "contextHint": "A gentle nudge on which perspective or tradeoff to consider"
-}
-`;
-
-    let parsed = {
-      socraticQuestion: `If a 5-node cluster is partitioned into 2 nodes and 3 nodes, why can the 2-node group never commit new log entries even if it can still communicate internally?`,
-      contextHint: 'Think about what would happen once the network partition heals.',
-    };
-
-    try {
-      const response = await ai.generate({
-        prompt,
-        output: {
-          schema: z.object({
-            socraticQuestion: z.string(),
-            contextHint: z.string(),
-          }),
-        },
-      });
-
-      if (response.output) {
-        parsed = response.output;
-      }
-    } catch (genError: any) {
-      console.warn('Gemini 3.7 Flash generation call rate-limited, using fallback Socratic prompt:', genError.message);
-    }
-
-    // Save session in Firestore
     const session = await DataService.createSocraticSession({
       studentId,
-      triggerReason,
-      socraticQuestion: parsed.socraticQuestion,
-      targetConcept,
-      relatedLessonId: targetLessonId,
+      triggerReason: target.triggerReason,
+      socraticQuestion: generated.socraticQuestion,
+      targetConcept: target.concept,
+      relatedLessonId: target.lessonId,
       status: 'pending',
     });
 
     return {
       sessionId: session.id,
       studentId,
-      targetConcept,
-      relatedLessonTitle: targetLessonTitle,
-      triggerReason,
-      socraticQuestion: parsed.socraticQuestion,
-      contextHint: parsed.contextHint,
+      targetConcept: target.concept,
+      relatedLessonTitle: target.lessonTitle,
+      triggerReason: target.triggerReason,
+      socraticQuestion: generated.socraticQuestion,
+      contextHint: generated.contextHint,
       status: 'pending' as const,
     };
   }
 );
+
+export const proactiveSocraticTutorFlow = proactiveTutor;

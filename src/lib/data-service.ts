@@ -9,7 +9,9 @@ import type {
   GeneratedFormat,
   QuizSubmission,
   SocraticSession,
+  CoursewareChunk,
 } from './types';
+import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
 function sanitizeDoc<T>(doc: import('@google-cloud/firestore').DocumentSnapshot): T {
@@ -99,7 +101,10 @@ export const DataService = {
       .collection('releases')
       .where('studentId', 'in', [studentId, 'cohort-all'])
       .get();
-    return snap.docs.map(doc => sanitizeDoc<ReleaseEvent>(doc));
+    const now = Date.now();
+    return snap.docs
+      .map(doc => sanitizeDoc<ReleaseEvent>(doc))
+      .filter(release => release.status === 'released' && Date.parse(release.releasedAt) <= now);
   },
 
   async getReleasedLessonsForStudent(studentId: string, courseId?: string): Promise<Lesson[]> {
@@ -245,6 +250,89 @@ export const DataService = {
 
     await batch.commit();
     return { savedNodes, savedEdges };
+  },
+
+  // COURSEWARE VECTOR CHUNKS
+  async replaceCoursewareChunks(
+    lessonId: string,
+    chunks: Array<Omit<CoursewareChunk, 'id' | 'createdAt'> & { embedding: number[] }>
+  ): Promise<number> {
+    const existing = await db.collection('courseware_chunks').where('lessonId', '==', lessonId).get();
+    const createdAt = new Date().toISOString();
+    let batch = db.batch();
+    let operationCount = 0;
+    const flush = async () => {
+      if (operationCount === 0) return;
+      await batch.commit();
+      batch = db.batch();
+      operationCount = 0;
+    };
+
+    for (const doc of existing.docs) {
+      batch.delete(doc.ref);
+      operationCount += 1;
+      if (operationCount === 450) await flush();
+    }
+    for (const chunk of chunks) {
+      const ref = db.collection('courseware_chunks').doc(
+        `${lessonId}_${String(chunk.chunkIndex).padStart(5, '0')}`
+      );
+      const { embedding, ...metadata } = chunk;
+      batch.set(ref, {
+        id: ref.id,
+        ...metadata,
+        embedding: FieldValue.vector(embedding),
+        createdAt,
+      });
+      operationCount += 1;
+      if (operationCount === 450) await flush();
+    }
+    await flush();
+    return chunks.length;
+  },
+
+  async retrieveCoursewareChunks(
+    queryVector: number[],
+    releasedLessonIds: string[],
+    limit = 6
+  ): Promise<RetrievedCoursewareChunk[]> {
+    if (releasedLessonIds.length === 0 || limit <= 0) return [];
+
+    // Query each released lesson separately. This keeps unreleased documents
+    // outside the query itself instead of retrieving globally and filtering
+    // only after the fact.
+    const snapshots = await Promise.all(
+      [...new Set(releasedLessonIds)].map((lessonId) =>
+        db
+          .collection('courseware_chunks')
+          .where('lessonId', '==', lessonId)
+          .findNearest({
+            vectorField: 'embedding',
+            queryVector,
+            limit,
+            distanceMeasure: 'COSINE',
+            distanceResultField: 'vectorDistance',
+          })
+          .get()
+      )
+    );
+
+    return snapshots.flatMap((snapshot) => snapshot.docs)
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          lessonId: String(data.lessonId || ''),
+          lessonTitle: String(data.lessonTitle || ''),
+          courseId: String(data.courseId || ''),
+          moduleId: String(data.moduleId || ''),
+          chunkIndex: Number(data.chunkIndex || 0),
+          content: String(data.content || ''),
+          distance: typeof data.vectorDistance === 'number' ? data.vectorDistance : undefined,
+        };
+      })
+      .sort((a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY))
+      .slice(0, limit);
   },
 
   // MULTI-FORMAT GENERATION ARTIFACTS

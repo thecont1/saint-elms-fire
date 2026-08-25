@@ -76,6 +76,19 @@ export interface KnowledgeEdge {
   releasedAt: string;
 }
 
+export interface CoursewareChunk {
+  id: string;
+  lessonId: string;
+  lessonTitle: string;
+  courseId: string;
+  moduleId: string;
+  chunkIndex: number;
+  heading: string;
+  content: string;
+  embeddingModel: string;
+  createdAt: string;
+}
+
 export interface GeneratedFormat {
   id: string;
   lessonId: string;

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { multiFormatGenerationFlow } from '@/ai/flows/multi-format';
 import { DataService } from '@/lib/data-service';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -23,11 +26,18 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { lessonId, studentId = 'student-alex', formatType, persona } = body;
+    const {
+      lessonId,
+      studentId = 'student-alex',
+      markdownContent,
+      sourceTitle,
+      formatType,
+      persona,
+    } = body;
 
-    if (!lessonId || !formatType) {
+    if ((!lessonId && !markdownContent) || !formatType) {
       return NextResponse.json(
-        { error: 'lessonId and formatType are required' },
+        { error: 'formatType and either lessonId or markdownContent are required' },
         { status: 400 }
       );
     }
@@ -35,13 +45,22 @@ export async function POST(req: Request) {
     const result = await multiFormatGenerationFlow({
       lessonId,
       studentId,
+      markdownContent,
+      sourceTitle,
       formatType,
       persona,
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Multi-format generation flow error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('not found')) {
+      return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
+    }
+    if (message.includes('Access Denied')) {
+      return NextResponse.json({ error: 'Lesson has not been released to this student' }, { status: 403 });
+    }
+    return NextResponse.json({ error: 'Format generation failed upstream' }, { status: 502 });
   }
 }
