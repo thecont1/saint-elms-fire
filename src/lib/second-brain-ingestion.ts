@@ -120,6 +120,24 @@ function slug(value: string): string {
   return value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || 'item';
 }
 
+/**
+ * Stable FNV-1a 32-bit hash (hex) of the ORIGINAL concept string.
+ *
+ * slug() normalizes away punctuation and spacing, so distinct concepts such
+ * as "API Gateway" and "API-Gateway" collide to the same slug. Appending a
+ * hash of the un-normalized string keeps node/edge IDs collision-safe while
+ * remaining deterministic across retries (same input → same ID → upsert, no
+ * duplicates).
+ */
+function stableHash(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
 function categorize(stage: IngestionStage, error: unknown): IngestionErrorCategory {
   const candidate = error as { code?: unknown; status?: unknown; message?: unknown };
   const code = String(candidate?.code ?? candidate?.status ?? '').toLowerCase();
@@ -158,7 +176,9 @@ function getParsedText(parsed: ParsedMarkdown | string): string {
 function buildGraph(input: LessonIngestionInput, extracted: GraphExtraction) {
   const nodeIdByConcept = new Map<string, string>();
   const nodes = extracted.nodes.map((node) => {
-    const id = `${input.releaseId}_${input.lessonId}_node_${slug(node.concept)}`;
+    // Hash of the ORIGINAL concept keeps distinct-but-similar concepts
+    // ("API Gateway" vs "API-Gateway") from collapsing into one document.
+    const id = `${input.releaseId}_${input.lessonId}_node_${slug(node.concept)}_${stableHash(node.concept)}`;
     nodeIdByConcept.set(node.concept.toLowerCase().trim(), id);
     return {
       ...node,
@@ -172,7 +192,7 @@ function buildGraph(input: LessonIngestionInput, extracted: GraphExtraction) {
   });
   const edges = extracted.edges.map((edge) => ({
     ...edge,
-    id: `${input.releaseId}_${input.lessonId}_edge_${slug(edge.sourceConcept)}_${slug(edge.targetConcept)}_${edge.relationshipType}`,
+    id: `${input.releaseId}_${input.lessonId}_edge_${slug(edge.sourceConcept)}_${stableHash(edge.sourceConcept)}_${slug(edge.targetConcept)}_${stableHash(edge.targetConcept)}_${edge.relationshipType}`,
     sourceNodeId: nodeIdByConcept.get(edge.sourceConcept.toLowerCase().trim()) ?? '',
     targetNodeId: nodeIdByConcept.get(edge.targetConcept.toLowerCase().trim()) ?? '',
     releasedAt: input.releaseTimestamp,

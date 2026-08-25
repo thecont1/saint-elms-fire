@@ -88,7 +88,9 @@ describe('runLessonIngestion', () => {
       'graph_write:in_progress', 'graph_write:complete:1/1',
     ]);
     expect([...state.vectorIds]).toEqual(['r1_l1_00000', 'r1_l1_00001']);
-    expect([...state.graphIds]).toEqual(['r1_l1_node_alpha']);
+    // Node ID now carries a stable hash suffix for collision safety; keep the
+    // assertion shape-aware rather than hardcoding the hash.
+    expect([...state.graphIds]).toEqual([expect.stringMatching(/^r1_l1_node_alpha_[0-9a-f]{8}$/)]);
     expect(state.release.steps.every((step: any) => step.status === 'complete')).toBe(true);
   });
 
@@ -131,4 +133,29 @@ describe('runLessonIngestion', () => {
     await expect(runLessonIngestion(lesson, state.deps)).rejects.toMatchObject({ category: 'verification_failed', stage: 'graph_write' });
     expect(state.release.steps.find((step: any) => step.stage === 'graph_write').status).toBe('failed');
   });
+
+  test('concepts differing only by punctuation/spacing keep distinct node IDs', async () => {
+    const state = fakeDependencies();
+    state.deps.extractGraph = async () => ({
+      nodes: [
+        { concept: 'API Gateway', category: 'concept', summary: 'The gateway', importance: 4 },
+        { concept: 'API-Gateway', category: 'concept', summary: 'Hyphenated gateway', importance: 3 },
+      ],
+      edges: [
+        { sourceConcept: 'API Gateway', targetConcept: 'API-Gateway', relationshipType: 'related_to', description: 'same idea, different spelling' },
+      ],
+    });
+    await runLessonIngestion(lesson, state.deps);
+
+    const ids = [...state.graphIds];
+    // Two nodes must not collapse into one document key even though both
+    // slug() to api_gateway.
+    const nodeIds = ids.filter((id) => id.includes('_node_'));
+    expect(nodeIds).toHaveLength(2);
+    expect(new Set(nodeIds).size).toBe(2);
+    // The edge resolves to both distinct node IDs via the concept map.
+    const edgeIds = ids.filter((id) => id.includes('_edge_'));
+    expect(edgeIds).toHaveLength(1);
+  });
+
 });
