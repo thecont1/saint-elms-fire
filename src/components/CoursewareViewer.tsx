@@ -47,7 +47,7 @@ export function CoursewareViewer({
       </div>
 
       {/* Modules List */}
-      <div className="flex-1 p-3.5 overflow-y-auto space-y-3 max-h-[500px]">
+      <div className="flex-1 p-3.5 overflow-y-auto space-y-3">
         {modules.map((mod) => {
           const modLessons = lessons.filter((l) => l.moduleId === mod.id);
           const releasedInMod = modLessons.filter((l) => releasedLessonIds.has(l.id));

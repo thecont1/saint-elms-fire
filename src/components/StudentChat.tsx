@@ -36,6 +36,23 @@ export function StudentChat({
   }, [initialQuery]);
 
   useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 'welcome') {
+        return [
+          {
+            id: 'welcome',
+            sender: 'tutor',
+            content: `Welcome to the Socratic Beacon! I am your AI Academic Guide.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked in your Second Brain so far. Ask me about system mechanics, consensus invariants, or conceptual proofs!`,
+            timestamp: prev[0].timestamp,
+            isGrounded: true,
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [releasedLessonCount]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
@@ -152,7 +169,7 @@ export function StudentChat({
       )}
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 p-5 overflow-y-auto space-y-4 min-h-[350px] max-h-[480px] bg-slate-50/40">
+      <div className="flex-1 p-5 overflow-y-auto space-y-4 min-h-[320px] bg-slate-50/40">
         {messages.map((msg) => (
           <div
             key={msg.id}

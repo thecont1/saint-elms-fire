@@ -18,6 +18,10 @@ import {
   AlertTriangle,
   Compass,
   Lightbulb,
+  ChevronRight,
+  GraduationCap,
+  Activity,
+  Maximize2,
 } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { KnowledgeGraphVisualizer } from '@/components/KnowledgeGraphVisualizer';
@@ -61,13 +65,12 @@ export function LmsDashboardClient({
 
   // UI Selection States
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(initialLessons[0] || null);
-  const [activeStudentTab, setActiveStudentTab] = useState<'graph' | 'courseware' | 'multimodal' | 'chat'>('graph');
+  const [centerTab, setCenterTab] = useState<'graph' | 'multimodal'>('graph');
   const [quizModalLesson, setQuizModalLesson] = useState<Lesson | null>(null);
   const [chatInitialQuery, setChatInitialQuery] = useState('');
 
   // Loading & Sync States
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
 
   // Compute released lessons
   useEffect(() => {
@@ -130,149 +133,101 @@ export function LmsDashboardClient({
 
   const handleConceptSelectFromGraph = (concept: string) => {
     setChatInitialQuery(`Can you explain the significance of "${concept}" in our courseware?`);
-    setActiveStudentTab('chat');
   };
+
+  const completionPercentage = Math.round((releasedLessons.length / Math.max(1, lessons.length)) * 100);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50/50 via-slate-50 to-white text-slate-900">
+      {/* 1. TOP HEADER / APP NAVIGATION */}
       <Navigation
         currentRole={role}
         onRoleChange={setRole}
-        activeTab={activeStudentTab}
-        onTabChange={(t) => setActiveStudentTab(t as any)}
       />
 
-      {/* Hero Welcome / Saint Elms Storytelling Header */}
-      <section className="bg-gradient-to-r from-sky-100/70 via-white to-blue-50/60 border-b border-sky-100 py-6 px-4 sm:px-6 lg:px-8 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="max-w-3xl">
-            <div className="flex items-center space-x-2 text-sky-700 font-extrabold text-xs uppercase tracking-wider mb-1">
-              <Compass className="w-4 h-4 text-sky-600" />
-              <span>The Beacon of Empirical Knowledge &bull; Victory of Science over the Unknown</span>
+      {/* 2. SUB-HEADER HERO / BRAND METRICS BAR */}
+      <section className="bg-gradient-to-r from-sky-100/70 via-white to-blue-50/60 border-b border-sky-100 py-4 px-4 sm:px-6 lg:px-8 shadow-2xs">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 ring-2 ring-sky-300/40">
+              <Flame className="w-5 h-5 animate-pulse" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Saint Elms Fire — The Second Brain LMS
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-              In turbulent waters, sailors once saw electrical plasma on ship masts and believed in miracles. Science revealed it as the natural illumination of atmospheric energy. In this LMS, an AI-native Second Brain replaces uncertainty with structured clarity through incremental drip releases, strict release-gated RAG, and proactive Socratic guidance.
-            </p>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-extrabold text-slate-900 font-sans tracking-tight">
+                  Saint Elms Fire
+                </span>
+                <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+                  Multimodal Second Brain LMS
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 hidden sm:block">
+                Illuminating the unknown with incremental drip-feeding, strict release-gated RAG, and proactive Socratic guidance.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2.5">
+          {/* Quick Metrics & Actions */}
+          <div className="flex items-center space-x-3">
+            <div className="hidden sm:flex items-center space-x-2 text-xs font-semibold text-slate-600 bg-white/90 px-3 py-1.5 rounded-xl border border-sky-100 shadow-2xs">
+              <span className="text-sky-700 font-bold">{releasedLessons.length}/{lessons.length}</span>
+              <span>Lessons Unlocked ({completionPercentage}%)</span>
+              <span>&bull;</span>
+              <span className="text-sky-700 font-bold">{graphData.nodes.length}</span>
+              <span>Graph Nodes</span>
+            </div>
+
             <button
               onClick={refreshAllData}
-              className="p-2.5 rounded-xl bg-white border border-sky-200 hover:bg-sky-50 text-slate-700 hover:text-sky-800 transition text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+              className="p-2 px-3 rounded-xl bg-white border border-sky-200 hover:bg-sky-50 text-slate-700 hover:text-sky-900 transition text-xs font-bold flex items-center gap-1.5 shadow-2xs"
               title="Refresh Firestore database state"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-sky-600 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Sync Firestore</span>
+              <span>Sync Firestore</span>
             </button>
           </div>
         </div>
       </section>
 
-      {/* Main Workspace Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Role Overview Header Banner */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-sky-100">
-          <div>
-            <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-extrabold text-slate-900">
-                {role === 'admin' ? 'INSTRUCTOR CONSOLE' : 'STUDENT SECOND BRAIN CONSTELLATION'}
-              </h2>
-              <span
-                className={`text-[10px] uppercase px-3 py-0.5 rounded-full font-extrabold ${
-                  role === 'admin'
-                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                    : 'bg-sky-100 text-sky-800 border border-sky-300'
-                }`}
-              >
-                {role === 'admin' ? 'Curriculum Commander' : 'Alex (Learner)'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {role === 'admin'
-                ? 'Upload markdown lessons, schedule incremental drip releases, and trigger Genkit knowledge ingestion into student graphs.'
-                : 'Your knowledge constellation illuminates progressively. Explore your Second Brain, interact with the grounded tutor, or regenerate multimodally.'}
-            </p>
-          </div>
-        </div>
-
-        {/* ADMIN VIEW */}
-        {role === 'admin' && selectedCourse && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <AdminCourseManager
-              course={selectedCourse}
-              modules={modules}
-              lessons={lessons}
-              onRefresh={refreshAllData}
-            />
-
-            <AdminReleaseManager
-              courseId={selectedCourse.id}
-              modules={modules}
-              lessons={lessons}
-              releases={releases}
-              onRefresh={refreshAllData}
-            />
-          </div>
-        )}
-
-        {/* STUDENT VIEW */}
+      {/* 3. MAIN CONTENT: 3-COLUMN LAYOUT (STUDENT) / 2-COLUMN LAYOUT (ADMIN) */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8">
+        {/* STUDENT EXPERIENCE: 3 STRUCTURED COLUMNS */}
         {role === 'student' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 1. Proactive Socratic Tutor Card (Agent-Initiated on Dashboard) */}
-            <SocraticTutorCard studentId={studentId} />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* COLUMN 1: LEFT CURRICULUM & NAVIGATION RAIL (3 cols) */}
+            <aside className="lg:col-span-3 space-y-4">
+              {/* Course Overview Widget */}
+              {selectedCourse && (
+                <div className="bg-white rounded-2xl border border-sky-100 p-4 shadow-sm shadow-sky-500/5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold text-sky-700 uppercase tracking-wider bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+                      {selectedCourse.code || 'CS-850'}
+                    </span>
+                    <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-sky-600" /> Lead Course
+                    </span>
+                  </div>
+                  <h3 className="text-xs font-extrabold text-slate-900 leading-snug">{selectedCourse.title}</h3>
+                  <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{selectedCourse.description}</p>
+                  
+                  {/* Progress Bar */}
+                  <div className="pt-1">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1">
+                      <span>Drip Progression</span>
+                      <span className="text-sky-700">{completionPercentage}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-sky-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {/* Student Navigation Sub-Tabs */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 pb-2.5">
-              <div className="flex space-x-2 bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/80 shadow-inner">
-                <button
-                  onClick={() => setActiveStudentTab('graph')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition ${
-                    activeStudentTab === 'graph'
-                      ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Network className="w-3.5 h-3.5" />
-                  <span>Knowledge Constellation</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveStudentTab('multimodal')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition ${
-                    activeStudentTab === 'multimodal'
-                      ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Multimodal Adaptation</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveStudentTab('chat')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition ${
-                    activeStudentTab === 'chat'
-                      ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Academic Tutor Chat</span>
-                </button>
-              </div>
-
-              <div className="text-xs text-slate-500 font-semibold bg-white px-3 py-1.5 rounded-full border border-sky-200 shadow-2xs">
-                Unlocked Curriculum: <span className="text-sky-700 font-extrabold">{releasedLessons.length}</span> of {lessons.length} Lessons
-              </div>
-            </div>
-
-            {/* Layout Grid: Curriculum Explorer on left, Dynamic Tab view on right */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column: Drip-Feed Curriculum Viewer */}
-              <div className="lg:col-span-4">
+              {/* Courseware Modules & Lessons List */}
+              <div className="h-[600px]">
                 <CoursewareViewer
                   modules={modules}
                   lessons={lessons}
@@ -280,40 +235,129 @@ export function LmsDashboardClient({
                   selectedLessonId={selectedLesson?.id || null}
                   onSelectLesson={(lesson) => {
                     setSelectedLesson(lesson);
-                    if (activeStudentTab === 'graph') {
-                      setActiveStudentTab('multimodal');
-                    }
+                    setCenterTab('multimodal');
                   }}
                   onOpenQuiz={(lesson) => setQuizModalLesson(lesson)}
                 />
               </div>
+            </aside>
 
-              {/* Right Column: Tab View */}
-              <div className="lg:col-span-8">
-                {activeStudentTab === 'graph' && (
-                  <KnowledgeGraphVisualizer
-                    nodes={graphData.nodes}
-                    edges={graphData.edges}
-                    onSelectConcept={handleConceptSelectFromGraph}
-                    isLoading={isSyncing}
-                  />
-                )}
+            {/* COLUMN 2: CENTER PRIMARY KNOWLEDGE & SECOND BRAIN CANVAS (6 cols) */}
+            <section className="lg:col-span-6 space-y-5">
+              {/* Top: Proactive Socratic Tutor Card (Agent-Initiated Challenge) */}
+              <SocraticTutorCard studentId={studentId} />
 
-                {activeStudentTab === 'multimodal' && selectedLesson && (
-                  <MultiFormatViewer
-                    lesson={selectedLesson}
-                    studentId={studentId}
-                  />
-                )}
+              {/* Center Canvas Header with View Mode Switcher */}
+              <div className="bg-white rounded-2xl border border-sky-100 shadow-sm shadow-sky-500/5 p-4 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-1.5 rounded-lg bg-sky-100 text-sky-700">
+                      {centerTab === 'graph' ? (
+                        <Network className="w-4 h-4" />
+                      ) : (
+                        <Layers className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                        {centerTab === 'graph'
+                          ? 'Second Brain Knowledge Constellation'
+                          : 'Multimodal Courseware Reader'}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        {centerTab === 'graph'
+                          ? 'Radial concept graph showing extracted entities & relational bonds'
+                          : `Currently viewing: ${selectedLesson?.title || 'Selected Lesson'}`}
+                      </p>
+                    </div>
+                  </div>
 
-                {activeStudentTab === 'chat' && (
-                  <StudentChat
-                    studentId={studentId}
-                    releasedLessonCount={releasedLessons.length}
-                    initialQuery={chatInitialQuery}
-                  />
-                )}
+                  {/* View Mode Toggle */}
+                  <div className="flex space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button
+                      onClick={() => setCenterTab('graph')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        centerTab === 'graph'
+                          ? 'bg-sky-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Network className="w-3.5 h-3.5" />
+                      <span>Graph Constellation</span>
+                    </button>
+
+                    <button
+                      onClick={() => setCenterTab('multimodal')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        centerTab === 'multimodal'
+                          ? 'bg-sky-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Multimodal Reader</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Primary Canvas Body */}
+                <div className="min-h-[500px]">
+                  {centerTab === 'graph' ? (
+                    <KnowledgeGraphVisualizer
+                      nodes={graphData.nodes}
+                      edges={graphData.edges}
+                      onSelectConcept={handleConceptSelectFromGraph}
+                      isLoading={isSyncing}
+                    />
+                  ) : selectedLesson ? (
+                    <MultiFormatViewer
+                      lesson={selectedLesson}
+                      studentId={studentId}
+                    />
+                  ) : (
+                    <div className="p-12 text-center text-xs text-slate-400">
+                      Select a lesson from the left column to view its content and generated formats.
+                    </div>
+                  )}
+                </div>
               </div>
+            </section>
+
+            {/* COLUMN 3: RIGHT ACADEMIC TUTOR CHAT RAIL (3 cols) */}
+            <aside className="lg:col-span-3 space-y-4">
+              <div className="h-[760px] sticky top-20">
+                <StudentChat
+                  studentId={studentId}
+                  releasedLessonCount={releasedLessons.length}
+                  initialQuery={chatInitialQuery}
+                />
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* ADMIN EXPERIENCE: 2 STRUCTURED COLUMNS */}
+        {role === 'admin' && selectedCourse && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Admin Left Column: Course Structure & Markdown Upload (5 cols) */}
+            <div className="lg:col-span-5 space-y-5">
+              <AdminCourseManager
+                course={selectedCourse}
+                modules={modules}
+                lessons={lessons}
+                onRefresh={refreshAllData}
+              />
+            </div>
+
+            {/* Admin Right Column: Incremental Release Manager & Logs (7 cols) */}
+            <div className="lg:col-span-7 space-y-5">
+              <AdminReleaseManager
+                courseId={selectedCourse.id}
+                modules={modules}
+                lessons={lessons}
+                releases={releases}
+                onRefresh={refreshAllData}
+              />
             </div>
           </div>
         )}
@@ -331,14 +375,14 @@ export function LmsDashboardClient({
         />
       )}
 
-      {/* Footer with Science & Saint Elms Fire Motif */}
+      {/* 4. BOTTOM FOOTER WITH REFINED METRICS & CREDITS */}
       <footer className="border-t border-sky-100 bg-white/90 py-5 mt-auto shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
           <div className="flex items-center space-x-2">
             <Flame className="w-4 h-4 text-sky-600" />
-            <span className="font-extrabold text-slate-800">SAINT ELMS FIRE</span>
+            <span className="font-extrabold text-slate-900">SAINT ELMS FIRE</span>
             <span>&bull;</span>
-            <span>Illuminating reasoned knowledge through AI-native orchestration</span>
+            <span>The Second Brain LMS &bull; Illuminating reasoned knowledge through AI-native orchestration</span>
           </div>
           <div className="flex items-center space-x-4 text-[11px] font-semibold text-slate-500">
             <span>Genkit 1.41.0</span>
