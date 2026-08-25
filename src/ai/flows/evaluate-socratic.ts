@@ -1,6 +1,7 @@
 import { z } from 'genkit';
-import { ai, GEMINI_FLASH } from '../genkit';
+import { ai } from '../genkit';
 import { DataService } from '../../lib/data-service';
+import { db } from '../../lib/firestore';
 
 export const EvaluateSocraticInputSchema = z.object({
   sessionId: z.string().describe('ID of the active Socratic session'),
@@ -24,11 +25,8 @@ export const evaluateSocraticFlow = ai.defineFlow(
   async (input) => {
     const { sessionId, studentResponse } = input;
 
-    // Fetch session details from Firestore
-    const directDoc = await import('../../../src/lib/firestore').then(async ({ db }) => {
-      const snap = await db.collection('socratic_sessions').doc(sessionId).get();
-      return snap.exists ? snap.data() : null;
-    });
+    const sessionSnapshot = await db.collection('socratic_sessions').doc(sessionId).get();
+    const directDoc = sessionSnapshot.exists ? sessionSnapshot.data() : null;
 
     const targetConcept = directDoc?.targetConcept || 'Core Principle';
     const originalQuestion = directDoc?.socraticQuestion || '';

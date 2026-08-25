@@ -11,6 +11,4 @@ await Promise.all([
   import('./flows/socratic-tutor'),
   import('./flows/evaluate-socratic'),
   import('./flows/generate-quiz'),
-  import('./flows/incident-summary'),
-  import('./flows/example'),
 ]);
