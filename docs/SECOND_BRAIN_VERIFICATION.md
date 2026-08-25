@@ -88,9 +88,9 @@ Checked while release was `failed`:
 | Firestore `knowledge_nodes` with failed releaseId | 0 | **0** |
 | RAG chat about lesson-2.1 content | refuses grounding | **502 "could not answer from indexed courseware"** |
 
-The failed lesson's content was provably absent from every student-facing knowledge surface.
+The failed lesson's content was provably absent from the Knowledge Constellation graph and from Firestore vector/graph storage.
 
-> **Post-runbook correction (2026-08-26):** the RAG rows above were later found to have a second contributing cause unrelated to release gating: Firestore's composite vector index for `(lessonId ASC, embedding vector-768)` had never been created, so *every* `findNearest` query failed with `FAILED_PRECONDITION` regardless of release state. The index was created during runbook follow-up (`gcloud firestore indexes composite create …` equivalent via the Admin API). After creation, retrieval succeeds and the only remaining chat failures are genuine Gemini 503 outages at the answer-generation step. The Firestore-level leakage evidence in this table is unaffected; treat this row as "chat unavailable" rather than "leakage prevented by gating". A setup note for future environments has been added below.
+> **Post-runbook correction (2026-08-26):** the RAG row above was later found to have a second contributing cause unrelated to release gating: Firestore's composite vector index for `(lessonId ASC, embedding vector-768)` had never been created, so *every* `findNearest` query failed with `FAILED_PRECONDITION` regardless of release state. The index was created during runbook follow-up (`gcloud firestore indexes composite create …` equivalent via the Admin API). **Therefore the leakage conclusion above is limited to the graph and Firestore checks; the RAG row is evidence of chat unavailability, not of leakage prevention.** After the index was created, a successful post-index retrieval check was performed (`POST /api/chat` → HTTP 200, `retrievedChunkCount: 2`, grounded answer with lesson sources), confirming retrieval itself works. The only remaining chat failures are genuine Gemini 503 outages at the answer-generation step, which the Sarvam fallback covers. A setup note for future environments has been added below.
 
 ### Step 4 — Retry resumes, recovers without duplication ✅
 

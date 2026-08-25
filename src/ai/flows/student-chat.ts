@@ -47,10 +47,7 @@ export const ragChat = ai.defineFlow(
     outputSchema: RagChatOutputSchema,
   },
   async ({ studentId, question, courseId, history = [], topK = 6 }) => {
-    const [releasedLessons, activeReleases] = await Promise.all([
-      DataService.getReleasedLessonsForStudent(studentId, courseId),
-      DataService.getReleasesForStudent(studentId),
-    ]);
+    const releasedLessons = await DataService.getReleasedLessonsForStudent(studentId, courseId);
     if (releasedLessons.length === 0) {
       return {
         answer: "You do not have any released courseware yet. Once your instructor unlocks a lesson, the Socratic Beacon can answer from it.",
@@ -61,6 +58,10 @@ export const ragChat = ai.defineFlow(
         retrievedChunkCount: 0,
       };
     }
+
+    // Only fetch the visible-release set once we know released lessons exist —
+    // the empty-courseware path returns above without an extra Firestore read.
+    const activeReleases = await DataService.getReleasesForStudent(studentId);
 
     const queryEmbedding = await ai.embed({
       embedder: COURSEWARE_EMBEDDER,
