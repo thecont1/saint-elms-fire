@@ -303,8 +303,8 @@ export const DataService = {
     edges: KnowledgeEdge[];
   }> {
     const [nodesSnap, edgesSnap, releases] = await Promise.all([
-      db.collection('knowledge_nodes').where('studentId', '==', studentId).get(),
-      db.collection('knowledge_edges').where('studentId', '==', studentId).get(),
+      db.collection('knowledge_nodes').where('studentId', 'in', [studentId, 'cohort-all']).get(),
+      db.collection('knowledge_edges').where('studentId', 'in', [studentId, 'cohort-all']).get(),
       this.getReleasesForStudent(studentId),
     ]);
     const visibleReleaseIds = new Set(releases.map(release => release.id));
