@@ -25,6 +25,7 @@
         "./src/*"
       ]
     },
+    "types": ["bun"],
     "allowJs": true,
     "incremental": true
   },
