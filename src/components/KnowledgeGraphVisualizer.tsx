@@ -97,7 +97,7 @@ export function KnowledgeGraphVisualizer({
               </span>
             </h3>
             <p className="text-xs text-slate-500">
-              Expands like St. Elmo&apos;s Fire across the masts of your unlocked curriculum
+              Expands like Saint Elms Fire across the masts of your unlocked curriculum
             </p>
           </div>
         </div>

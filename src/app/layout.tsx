@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: "St. Elmo's Fire — The Second Brain LMS",
+  title: "Saint Elms Fire — The Second Brain LMS",
   description: "Illuminating the Unknown with AI-native Knowledge Graphs, Strict Release-Gated RAG, and Proactive Socratic Guidance powered by Genkit & Gemini 3.7 Flash.",
 };
 

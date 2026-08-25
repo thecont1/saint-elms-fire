@@ -20,7 +20,7 @@ export function Navigation({
     <header className="border-b border-sky-100 bg-white/85 backdrop-blur-md sticky top-0 z-40 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand with St. Elmo's Luminous Fire Logo */}
+          {/* Brand with Saint Elms Luminous Fire Logo */}
           <div className="flex items-center space-x-3.5">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-cyan-500 to-blue-600 flex items-center justify-center shadow-md shadow-sky-500/20 ring-2 ring-sky-300/40">
               <Flame className="w-5 h-5 text-white animate-pulse" />
@@ -28,7 +28,7 @@ export function Navigation({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-extrabold text-lg tracking-tight text-slate-900 font-sans">
-                  ST. ELMO&apos;S FIRE
+                  SAINT ELMS FIRE
                 </span>
                 <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold bg-sky-50 text-sky-700 border border-sky-200">
                   Second Brain LMS

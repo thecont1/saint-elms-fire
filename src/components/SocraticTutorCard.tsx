@@ -83,7 +83,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
-                St. Elmo&apos;s Socratic Beacon
+                Saint Elms Socratic Beacon
               </h3>
               <span className="text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-bold bg-sky-100 text-sky-800 border border-sky-300">
                 Proactive Inquiry

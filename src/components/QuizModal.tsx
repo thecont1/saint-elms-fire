@@ -170,7 +170,7 @@ export function QuizModal({
             {quizData.explanation}
             {selectedOption !== quizData.correctIndex && (
               <div className="text-[11px] text-amber-800 mt-2 font-semibold">
-                🧭 St. Elmo&apos;s Socratic Beacon will formulate a proactive challenge on your dashboard to reinforce this concept!
+                🧭 Saint Elms Socratic Beacon will formulate a proactive challenge on your dashboard to reinforce this concept!
               </div>
             )}
           </div>

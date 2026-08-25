@@ -142,7 +142,7 @@ export function LmsDashboardClient({
         onTabChange={(t) => setActiveStudentTab(t as any)}
       />
 
-      {/* Hero Welcome / St. Elmo's Storytelling Header */}
+      {/* Hero Welcome / Saint Elms Storytelling Header */}
       <section className="bg-gradient-to-r from-sky-100/70 via-white to-blue-50/60 border-b border-sky-100 py-6 px-4 sm:px-6 lg:px-8 shadow-xs">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="max-w-3xl">
@@ -151,7 +151,7 @@ export function LmsDashboardClient({
               <span>The Beacon of Empirical Knowledge &bull; Victory of Science over the Unknown</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              St. Elmo&apos;s Fire — The Second Brain LMS
+              Saint Elms Fire — The Second Brain LMS
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
               In turbulent waters, sailors once saw electrical plasma on ship masts and believed in miracles. Science revealed it as the natural illumination of atmospheric energy. In this LMS, an AI-native Second Brain replaces uncertainty with structured clarity through incremental drip releases, strict release-gated RAG, and proactive Socratic guidance.
@@ -331,12 +331,12 @@ export function LmsDashboardClient({
         />
       )}
 
-      {/* Footer with Science & St. Elmo's Fire Motif */}
+      {/* Footer with Science & Saint Elms Fire Motif */}
       <footer className="border-t border-sky-100 bg-white/90 py-5 mt-auto shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
           <div className="flex items-center space-x-2">
             <Flame className="w-4 h-4 text-sky-600" />
-            <span className="font-extrabold text-slate-800">ST. ELMO&apos;S FIRE</span>
+            <span className="font-extrabold text-slate-800">SAINT ELMS FIRE</span>
             <span>&bull;</span>
             <span>Illuminating reasoned knowledge through AI-native orchestration</span>
           </div>
