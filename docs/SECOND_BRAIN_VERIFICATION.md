@@ -90,6 +90,8 @@ Checked while release was `failed`:
 
 The failed lesson's content was provably absent from every student-facing knowledge surface.
 
+> **Post-runbook correction (2026-08-26):** the RAG rows above were later found to have a second contributing cause unrelated to release gating: Firestore's composite vector index for `(lessonId ASC, embedding vector-768)` had never been created, so *every* `findNearest` query failed with `FAILED_PRECONDITION` regardless of release state. The index was created during runbook follow-up (`gcloud firestore indexes composite create …` equivalent via the Admin API). After creation, retrieval succeeds and the only remaining chat failures are genuine Gemini 503 outages at the answer-generation step. The Firestore-level leakage evidence in this table is unaffected; treat this row as "chat unavailable" rather than "leakage prevented by gating". A setup note for future environments has been added below.
+
 ### Step 4 — Retry resumes, recovers without duplication ✅
 
 Restored the embedder, rebuilt, then retried via `POST /api/releases/{id}/retry`:
@@ -128,6 +130,21 @@ After `overallStatus: released`, the previously-hidden content appeared everywhe
 | Total constellation size | 19 nodes | **24 nodes** |
 
 RAG chat answering from the recovered lesson could not be demonstrated during this window because Gemini 3.7-flash remained in its 503 high-demand state for all chat calls (the retrieval pipeline itself is exercised by the automated test suite). This is an honest gap, noted rather than papered over — and it is precisely the outage scenario the Sarvam fallback (merged in `3fa4625`) exists to cover once wired into the chat flow's generate call.
+
+## Setup note: required Firestore vector index
+
+`retrieveCoursewareChunks` filters on `lessonId` **and** performs a `findNearest` vector search, which requires this composite index. Create it once per environment (build time ~5 min):
+
+```bash
+gcloud firestore indexes composite create \
+  --project=<PROJECT_ID> \
+  --collection-group=courseware_chunks \
+  --query-scope=COLLECTION \
+  --field-config=order=ASCENDING,field-path=lessonId \
+  "--field-config=vector-config={\"dimension\":\"768\",\"flat\": \"{}\"},field-path=embedding"
+```
+
+Without it, every RAG retrieval fails with `FAILED_PRECONDITION: Missing vector index configuration` — the error message includes the exact command for the running project.
 
 ## Runbook conclusion
 
