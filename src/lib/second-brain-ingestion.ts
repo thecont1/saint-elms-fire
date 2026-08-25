@@ -295,6 +295,13 @@ export async function runLessonIngestion(input: LessonIngestionInput, deps: Inge
         itemsTotal: graph.nodes.length + graph.edges.length,
       });
     } catch (error) {
+      // Log the raw error before wrapping so provider-side failures are
+      // diagnosable even though only bounded categories reach Firestore.
+      console.error('graph_write_stage_error', {
+        releaseId: input.releaseId,
+        lessonId: input.lessonId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       const wrapped = error instanceof IngestionStageError
         ? error
         : new IngestionStageError('graph_write', error instanceof Error && error.message.includes('extract') ? 'graph_extraction_failed' : categorize('graph_write', error),

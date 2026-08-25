@@ -113,9 +113,11 @@ async function probeGemini(): Promise<DepStatus> {
 async function probeSarvam(): Promise<DepStatus> {
   const start = Date.now();
   try {
+    // sarvam-105b-conversations is slow (~40s for structured output), so the
+    // probe needs more headroom than the standard PROBE_TIMEOUT_MS.
     const text = await withTimeout(
-      sarvamGenerate({ prompt: 'Reply with exactly: OK', timeoutMs: PROBE_TIMEOUT_MS }),
-      PROBE_TIMEOUT_MS,
+      sarvamGenerate({ prompt: 'Reply with exactly: OK', timeoutMs: 60_000 }),
+      65_000,
       'sarvam',
     );
     if (!text) throw new Error('empty model response');

@@ -11,7 +11,14 @@
  */
 
 const SARVAM_BASE_URL = 'https://api.sarvam.ai/v1/chat/completions';
-export const SARVAM_MODEL = 'sarvam-105b';
+/**
+ * sarvam-105b-conversations is the structured-output-safe variant: the plain
+ * sarvam-105b is a reasoning model that can burn the whole completion budget
+ * on reasoning_content and emit empty content for complex schemas (observed
+ * with graph-extraction JSON). conversations returns complete content with no
+ * reasoning overhead at the cost of higher latency (~40s).
+ */
+export const SARVAM_MODEL = 'sarvam-105b-conversations';
 
 export function sarvamConfigured(): boolean {
   return Boolean(process.env.SARVAM_API_KEY);
@@ -38,7 +45,7 @@ interface SarvamOptions {
 export async function sarvamGenerate({
   system,
   prompt,
-  timeoutMs = 90_000,
+  timeoutMs = 120_000,
 }: SarvamOptions): Promise<string> {
   const apiKey = process.env.SARVAM_API_KEY;
   if (!apiKey) {
@@ -61,7 +68,7 @@ export async function sarvamGenerate({
           ...(system ? [{ role: 'system', content: system }] : []),
           { role: 'user', content: prompt },
         ],
-        max_completion_tokens: 4096,
+        max_completion_tokens: 8192,
       }),
       signal: controller.signal,
     });

@@ -19,6 +19,10 @@
 
 import { ai, GEMINI_FLASH } from './genkit';
 import { sarvamGenerate, SARVAM_MODEL } from './sarvam';
+// zod-to-json-schema (transitive dep of Genkit) converts both Zod v3 (the
+// version Genkit's `z` re-exports) and Zod v4 schemas into JSON Schema.
+// Zod v3 has no .toJSONSchema() method, so this is the version-agnostic path.
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export const ACTIVE_MODELS = {
   generation_primary: GEMINI_FLASH,
@@ -39,7 +43,7 @@ export interface RoutedResult<T> {
 
 function isAvailabilityError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /\b(429|500|502|503|504)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded/i.test(
+  return /\b(429|500|502|503|504)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded|JSON5: invalid|no schema with key or ref|parse error/i.test(
     message,
   );
 }
@@ -51,8 +55,73 @@ type GenerateArgs<T> = {
    * App-level Zod v4 schema. Converted once via its own toJSONSchema() and
    * handed to Genkit as plain JSON Schema — no cross-zod-version coupling.
    */
-  schema?: { parse: (data: unknown) => T; toJSONSchema?: () => unknown };
+  schema?: {
+    parse: (data: unknown) => T;
+    safeParse?: (data: unknown) => { success: boolean };
+    toJSONSchema?: () => unknown;
+  };
 };
+
+/**
+ * Extract the first balanced JSON object from a model response. Returns null
+ * when no complete JSON object is present.
+ */
+function extractJsonObject(text: string): unknown | null {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(start, i + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Build a schema-shaped placeholder object for example anchoring. Mirrors the
+ * required keys with valid placeholder values: enums pick their first member,
+ * numbers use 1, booleans use true, strings use a sentinel. Arrays get one
+ * minimal element. This is best-effort — the fallback only needs KEY structure.
+ */
+function schemaExample(schema: { toJSONSchema?: () => unknown }): Record<string, unknown> {
+  const js = (schema.toJSONSchema?.() ?? {}) as Record<string, unknown>;
+  const props = (js.properties ?? {}) as Record<string, unknown>;
+  const example: Record<string, unknown> = {};
+  for (const [key, prop] of Object.entries(props)) {
+    const p = prop as Record<string, unknown>;
+    if (p.type === 'array') {
+      const item = (p.items as Record<string, unknown>) ?? {};
+      const itemProps = (item.properties ?? {}) as Record<string, unknown>;
+      const itemExample: Record<string, unknown> = {};
+      for (const [ikey, iprop] of Object.entries(itemProps)) {
+        const ip = iprop as Record<string, unknown>;
+        if (Array.isArray(ip.enum)) itemExample[ikey] = ip.enum[0];
+        else if (ip.type === 'number' || ip.type === 'integer') itemExample[ikey] = 1;
+        else if (ip.type === 'boolean') itemExample[ikey] = true;
+        else itemExample[ikey] = `sample-${ikey}`;
+      }
+      example[key] = [itemExample];
+    } else if (Array.isArray(p.enum)) {
+      example[key] = p.enum[0];
+    } else if (p.type === 'number' || p.type === 'integer') {
+      example[key] = 1;
+    } else if (p.type === 'boolean') {
+      example[key] = true;
+    } else {
+      example[key] = `sample-${key}`;
+    }
+  }
+  return example;
+}
 
 /** Single entry point for all chat generation in the app. */
 export async function generateWithFallback<T>({
@@ -60,7 +129,13 @@ export async function generateWithFallback<T>({
   prompt,
   schema,
 }: GenerateArgs<T>): Promise<RoutedResult<T>> {
-  const jsonSchema = schema?.toJSONSchema?.();
+  const rawJsonSchema = schema
+    ? (zodToJsonSchema(schema as never, { target: 'draft-2020-12' as never }) as Record<string, unknown>)
+    : undefined;
+  // JSON Schema meta-key can confuse Genkit's format handler; strip it.
+  const jsonSchema = rawJsonSchema
+    ? { ...rawJsonSchema, $schema: undefined }
+    : undefined;
 
   try {
     const response = schema
@@ -80,6 +155,12 @@ export async function generateWithFallback<T>({
       if (!response.output) {
         throw new Error('UNAVAILABLE: primary model returned no structured output');
       }
+      // Gemini may return JSON that parses but does not match the requested
+      // schema (e.g. missing keys on complex shapes). Treat that as a
+      // fallback-eligible failure too — the caller asked for a verified shape.
+      if (schema.safeParse && !schema.safeParse(response.output).success) {
+        throw new Error('UNAVAILABLE: primary model returned schema-invalid output');
+      }
       return { output: schema.parse(response.output) as T, model: GEMINI_FLASH };
     }
     const text = (response.text || '').trim();
@@ -98,45 +179,45 @@ export async function generateWithFallback<T>({
       ? `${system ?? ''}\n\nRespond with ONLY a single valid JSON object matching this shape, no markdown fences, no commentary:\n${JSON.stringify(jsonSchema)}`
       : system;
 
-    const text = await sarvamGenerate({ system: jsonInstruction, prompt });
-    if (!schema) return { text, model: SARVAM_MODEL };
-
-    // Salvaged reasoning tails may be plain prose; extract the first balanced
-    // JSON object if present. Otherwise treat the whole text as the answer.
-    let candidate = text;
-    const start = text.indexOf('{');
-    if (start !== -1) {
-      // Walk to the matching closing brace so nested objects survive.
-      let depth = 0;
-      let end = -1;
-      for (let i = start; i < text.length; i++) {
-        if (text[i] === '{') depth++;
-        else if (text[i] === '}') {
-          depth--;
-          if (depth === 0) { end = i; break; }
-        }
-      }
-      if (end > start) candidate = text.slice(start, end + 1);
-      else candidate = '';
-    }
-
-    if (candidate) {
+    // sarvam-105b-conversations is nondeterministic on complex schemas: it
+    // sometimes returns a plausible-but-wrong shape (e.g. {id,label} nodes
+    // instead of the schema contract). Retry with escalating anchors until
+    // the response validates against the caller's schema.
+    if (schema) {
+      // The example anchors the exact shape; build defensively so a schema
+      // introspection failure can't mask the real fallback behavior.
+      let example: string;
       try {
-        return { output: schema.parse(JSON.parse(candidate)), model: SARVAM_MODEL };
-      } catch {
-        // fall through to prose-answer synthesis below
+        example = JSON.stringify(schema.parse(schemaExample(schema)));
+      } catch (exampleError) {
+        console.warn('fallback_example_build_failed', {
+          error: exampleError instanceof Error ? exampleError.message : String(exampleError),
+        });
+        example = '';
       }
+      const attempts = [
+        jsonInstruction,
+        `${jsonInstruction}\n\nWorked example — match this EXACT key structure (values are placeholders):\n${example}`,
+        `${jsonInstruction}\n\nWorked example — match this EXACT key structure (values are placeholders):\n${example}\n\nSTRICT REQUIREMENT: output ONLY the JSON object. Every key in the example must appear. No extra keys. No prose before or after.`,
+      ];
+      let text = '';
+      let parsed: unknown | null = null;
+      for (let i = 0; i < attempts.length; i++) {
+        text = await sarvamGenerate({ system: attempts[i], prompt });
+        parsed = extractJsonObject(text);
+        if (parsed && schema.safeParse && schema.safeParse(parsed).success) {
+          return { output: schema.parse(parsed), model: SARVAM_MODEL };
+        }
+        console.warn('fallback_schema_mismatch_retrying', {
+          model: SARVAM_MODEL,
+          attempt: i + 1,
+          received: text.slice(0, 120),
+        });
+      }
+      throw new Error(`fallback model could not produce schema-valid output: ${text.slice(0, 200)}`);
     }
 
-    // Prose salvage: wrap whatever text we got into the required shape.
-    return {
-      output: schema.parse({
-        answer: text.slice(-2000),
-        isGrounded: true,
-        groundedSources: [],
-        confidence: 0.5,
-      }),
-      model: SARVAM_MODEL,
-    };
+    const text = await sarvamGenerate({ system: jsonInstruction, prompt });
+    return { text, model: SARVAM_MODEL };
   }
 }

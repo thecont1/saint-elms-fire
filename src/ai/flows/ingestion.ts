@@ -1,5 +1,6 @@
 import { z } from 'genkit';
 import { ai, COURSEWARE_EMBEDDER, GEMINI_FLASH } from '../genkit';
+import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { chunkMarkdown } from '../../lib/courseware-rag';
 import { runLessonIngestion, type GraphExtraction } from '../../lib/second-brain-ingestion';
@@ -98,12 +99,18 @@ export const ingestCourseware = ai.defineFlow(
       verifyVectors: (records) => DataService.verifyCoursewareVectors(records),
       extractGraph: async (markdown): Promise<GraphExtraction> => {
         const existingGraph = await DataService.getStudentKnowledgeGraph(input.studentId);
-        const response = await ai.generate({
+        // Route through the model router so a retryable Gemini outage (429/5xx)
+        // degrades to Sarvam instead of failing the graph_write stage.
+        const { output, model } = await generateWithFallback({
+          system: 'You extract concise knowledge graphs from lesson Markdown. Return only facts present in the lesson text. Connect to prior concepts only when explicitly supported.',
           prompt: `Extract a concise knowledge graph from the lesson below. Use only facts in the Markdown. Connect to prior concepts only when explicitly supported.\n\nPrior concepts: ${JSON.stringify(existingGraph.nodes.map(node => node.concept))}\n\nLesson: ${lessonTitle}\n\n${markdown}`,
-          output: { schema: GraphExtractionSchema },
+          schema: GraphExtractionSchema,
         });
-        if (!response.output) throw new Error('graph extraction returned no output');
-        return GraphExtractionSchema.parse(response.output);
+        if (!output) throw new Error('graph extraction returned no output');
+        if (model !== GEMINI_FLASH) {
+          console.warn('graph_extraction_served_by_fallback', { model, lessonId: input.lessonId });
+        }
+        return GraphExtractionSchema.parse(output);
       },
       writeGraph: (graph) => DataService.writeVerifiedKnowledgeGraph(input.studentId, graph),
       verifyGraph: (graph) => DataService.verifyKnowledgeGraph(graph),
