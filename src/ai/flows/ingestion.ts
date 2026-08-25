@@ -2,8 +2,10 @@ import { z } from 'genkit';
 import { ai, COURSEWARE_EMBEDDER, GEMINI_FLASH } from '../genkit';
 import { DataService } from '../../lib/data-service';
 import { chunkMarkdown } from '../../lib/courseware-rag';
+import { runLessonIngestion, type GraphExtraction } from '../../lib/second-brain-ingestion';
 
 export const IngestCoursewareInputSchema = z.object({
+  releaseId: z.string().trim().min(1),
   lessonId: z.string().trim().min(1),
   courseId: z.string().trim().min(1),
   moduleId: z.string().trim().min(1),
@@ -25,7 +27,12 @@ const ExtractedEdgeSchema = z.object({
   targetConcept: z.string().min(1),
   relationshipType: z.enum(['prerequisite', 'builds_upon', 'related_to', 'contrasts_with', 'part_of']),
   description: z.string().min(1),
-  strength: z.number().int().min(1).max(5),
+  strength: z.number().int().min(1).max(5).optional(),
+});
+
+const GraphExtractionSchema = z.object({
+  nodes: z.array(ExtractedConceptSchema),
+  edges: z.array(ExtractedEdgeSchema),
 });
 
 export const IngestCoursewareOutputSchema = z.object({
@@ -40,10 +47,12 @@ export const IngestCoursewareOutputSchema = z.object({
   message: z.string(),
 });
 
-const GraphExtractionSchema = z.object({
-  nodes: z.array(ExtractedConceptSchema),
-  edges: z.array(ExtractedEdgeSchema),
-});
+function parseMarkdown(markdown: string): string {
+  const normalized = markdown.replace(/\r\n?/g, '\n').trim();
+  if (!normalized) throw new Error('Markdown content is required');
+  if (!/^#{1,6}\s+\S/m.test(normalized)) throw new Error('Markdown must contain at least one heading');
+  return normalized;
+}
 
 export const ingestCourseware = ai.defineFlow(
   {
@@ -52,83 +61,68 @@ export const ingestCourseware = ai.defineFlow(
     outputSchema: IngestCoursewareOutputSchema,
   },
   async (input) => {
-    const releaseTime = input.releaseTimestamp || new Date().toISOString();
+    const releaseTimestamp = input.releaseTimestamp || new Date().toISOString();
     const lessonTitle = input.lessonTitle || input.lessonId;
-    const chunks = chunkMarkdown(input.markdownContent);
-
-    const embeddings: number[][] = [];
-    for (let start = 0; start < chunks.length; start += 8) {
-      const batch = chunks.slice(start, start + 8);
-      const batchEmbeddings = await Promise.all(
-        batch.map(async (chunk) => {
-          const result = await ai.embed({
-            embedder: COURSEWARE_EMBEDDER,
-            content: `${lessonTitle}\n${chunk.heading}\n${chunk.content}`,
-            options: { taskType: 'RETRIEVAL_DOCUMENT', title: `${lessonTitle}: ${chunk.heading}` },
-          });
-          const embedding = result[0]?.embedding;
-          if (!embedding?.length) throw new Error(`Embedding failed for chunk ${chunk.index}`);
-          return embedding;
-        })
-      );
-      embeddings.push(...batchEmbeddings);
-    }
-
-    const existingGraph = await DataService.getStudentKnowledgeGraph(input.studentId);
-    const response = await ai.generate({
-      prompt: `Extract a concise knowledge graph from the released lesson below. Use only facts in the Markdown. Connect to prior concepts only when the lesson explicitly supports the relationship.\n\nPrior concepts: ${JSON.stringify(existingGraph.nodes.map((node) => node.concept))}\n\nLesson: ${lessonTitle}\n\n${input.markdownContent}`,
-      output: { schema: GraphExtractionSchema },
+    const result = await runLessonIngestion({
+      releaseId: input.releaseId,
+      lessonId: input.lessonId,
+      courseId: input.courseId,
+      moduleId: input.moduleId,
+      studentId: input.studentId,
+      markdownContent: input.markdownContent,
+      lessonTitle,
+      releaseTimestamp,
+    }, {
+      now: () => new Date().toISOString(),
+      getRelease: async (releaseId) => {
+        const release = await DataService.getRelease(releaseId);
+        if (!release) throw new Error('Release not found');
+        return release;
+      },
+      updateStep: (releaseId, lessonId, stage, patch) => DataService.updateIngestionStep(releaseId, lessonId, stage, patch),
+      loadArtifact: (releaseId, lessonId) => DataService.getIngestionArtifact(releaseId, lessonId),
+      saveArtifact: (releaseId, lessonId, patch) => DataService.saveIngestionArtifact(releaseId, lessonId, patch),
+      parseMarkdown,
+      chunkMarkdown,
+      getStagedEmbedding: (releaseId, lessonId, index) => DataService.getStagedEmbedding(releaseId, lessonId, index),
+      saveStagedEmbedding: (releaseId, lessonId, index, embedding) => DataService.saveStagedEmbedding(releaseId, lessonId, index, embedding),
+      embedChunk: async (content) => {
+        const response = await ai.embed({
+          embedder: COURSEWARE_EMBEDDER,
+          content,
+          options: { taskType: 'RETRIEVAL_DOCUMENT', title: lessonTitle },
+        });
+        return response[0]?.embedding ?? [];
+      },
+      writeVectors: (records) => DataService.writeVerifiedCoursewareVectors(records),
+      verifyVectors: (records) => DataService.verifyCoursewareVectors(records),
+      extractGraph: async (markdown): Promise<GraphExtraction> => {
+        const existingGraph = await DataService.getStudentKnowledgeGraph(input.studentId);
+        const response = await ai.generate({
+          prompt: `Extract a concise knowledge graph from the lesson below. Use only facts in the Markdown. Connect to prior concepts only when explicitly supported.\n\nPrior concepts: ${JSON.stringify(existingGraph.nodes.map(node => node.concept))}\n\nLesson: ${lessonTitle}\n\n${markdown}`,
+          output: { schema: GraphExtractionSchema },
+        });
+        if (!response.output) throw new Error('graph extraction returned no output');
+        return GraphExtractionSchema.parse(response.output);
+      },
+      writeGraph: (graph) => DataService.writeVerifiedKnowledgeGraph(input.studentId, graph),
+      verifyGraph: (graph) => DataService.verifyKnowledgeGraph(graph),
     });
-    if (!response.output) throw new Error('Gemini returned no structured knowledge graph');
-    const parsed = GraphExtractionSchema.parse(response.output);
-
-    const chunksStored = await DataService.replaceCoursewareChunks(
-      input.lessonId,
-      chunks.map((chunk, index) => ({
-        lessonId: input.lessonId,
-        lessonTitle,
-        courseId: input.courseId,
-        moduleId: input.moduleId,
-        chunkIndex: chunk.index,
-        heading: chunk.heading,
-        content: chunk.content,
-        embeddingModel: 'gemini-embedding-001/768',
-        embedding: embeddings[index],
-      }))
-    );
-
-    const { savedNodes, savedEdges } = await DataService.saveKnowledgeNodesAndEdges(
-      input.studentId,
-      parsed.nodes.map((node) => ({
-        lessonId: input.lessonId,
-        moduleId: input.moduleId,
-        courseId: input.courseId,
-        ...node,
-        releasedAt: releaseTime,
-      })),
-      parsed.edges.map((edge) => ({
-        sourceNodeId: '',
-        targetNodeId: '',
-        ...edge,
-        releasedAt: releaseTime,
-      }))
-    );
 
     return {
       lessonId: input.lessonId,
       studentId: input.studentId,
-      chunksStored,
+      chunksStored: result.chunksStored,
       embeddingModel: 'gemini-embedding-001/768',
-      extractedNodesCount: savedNodes.length,
-      extractedEdgesCount: savedEdges.length,
-      nodes: parsed.nodes,
-      edges: parsed.edges,
-      message: `Embedded ${chunksStored} chunks and updated the Knowledge Constellation using ${GEMINI_FLASH}.`,
+      extractedNodesCount: result.extractedNodesCount,
+      extractedEdgesCount: result.extractedEdgesCount,
+      nodes: result.nodes.map(({ id: _id, lessonId: _lessonId, moduleId: _moduleId, courseId: _courseId, releasedAt: _releasedAt, releaseId: _releaseId, ...node }) => node),
+      edges: result.edges.map(({ id: _id, sourceNodeId: _sourceNodeId, targetNodeId: _targetNodeId, releasedAt: _releasedAt, releaseId: _releaseId, ...edge }) => edge),
+      message: `Verified ${result.chunksStored} vectors and the Knowledge Constellation using ${GEMINI_FLASH}.`,
     };
   }
 );
 
-// Compatibility export for existing release-route callers.
 export const ingestCoursewareFlow = ingestCourseware;
 export const IngestionInputSchema = IngestCoursewareInputSchema;
 export const IngestionOutputSchema = IngestCoursewareOutputSchema;

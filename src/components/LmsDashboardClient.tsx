@@ -65,8 +65,12 @@ export function LmsDashboardClient({
     const releasedModIds = new Set<string>();
 
     for (const r of releases) {
+      const verified = r.overallStatus === 'released'
+        || (r.status === 'released' && r.overallStatus === undefined && r.steps === undefined);
+      if (!verified) continue;
+      for (const targetId of r.targetLessonIds ?? []) releasedIds.add(targetId);
       if (r.lessonId) releasedIds.add(r.lessonId);
-      if (r.moduleId) releasedModIds.add(r.moduleId);
+      if (!r.targetLessonIds?.length && !r.lessonId && r.moduleId) releasedModIds.add(r.moduleId);
     }
 
     const unLocked = lessons.filter(

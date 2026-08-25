@@ -38,6 +38,29 @@ export interface Lesson {
   createdAt: string;
 }
 
+export type IngestionStage = 'parsing' | 'chunking' | 'embedding' | 'vector_write' | 'graph_write';
+export type IngestionStageStatus = 'pending' | 'in_progress' | 'complete' | 'failed';
+export type IngestionErrorCategory =
+  | 'invalid_markdown'
+  | 'chunking_failed'
+  | 'embedding_unavailable'
+  | 'rate_limited'
+  | 'firestore_write_failed'
+  | 'verification_failed'
+  | 'graph_extraction_failed'
+  | 'unknown';
+
+export interface IngestionStepRecord {
+  lessonId: string;
+  stage: IngestionStage;
+  status: IngestionStageStatus;
+  startedAt?: string;
+  completedAt?: string;
+  error?: { category: IngestionErrorCategory; message: string };
+  itemsProcessed?: number;
+  itemsTotal?: number;
+}
+
 export interface ReleaseEvent {
   id: string;
   courseId: string;
@@ -45,8 +68,16 @@ export interface ReleaseEvent {
   lessonId?: string;
   studentId: string; // specific student ID or 'cohort-all'
   cohortId?: string;
+  /** Legacy compatibility field. New releases mirror overallStatus here. */
+  status: 'pending' | 'released' | 'failed' | 'scheduled';
+  overallStatus?: 'pending' | 'released' | 'failed';
+  steps?: IngestionStepRecord[];
+  targetLessonIds?: string[];
+  requestedAt?: string;
   releasedAt: string;
-  status: 'released' | 'scheduled';
+  lastAttemptAt?: string;
+  attemptCount?: number;
+  failureCategory?: IngestionErrorCategory;
 }
 
 export interface KnowledgeNode {

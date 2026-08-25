@@ -46,7 +46,10 @@ export const ragChat = ai.defineFlow(
     outputSchema: RagChatOutputSchema,
   },
   async ({ studentId, question, courseId, history = [], topK = 6 }) => {
-    const releasedLessons = await DataService.getReleasedLessonsForStudent(studentId, courseId);
+    const [releasedLessons, activeReleases] = await Promise.all([
+      DataService.getReleasedLessonsForStudent(studentId, courseId),
+      DataService.getReleasesForStudent(studentId),
+    ]);
     if (releasedLessons.length === 0) {
       return {
         answer: "You do not have any released courseware yet. Once your instructor unlocks a lesson, the Socratic Beacon can answer from it.",
@@ -67,8 +70,15 @@ export const ragChat = ai.defineFlow(
     if (!vector?.length) throw new Error('Gemini returned no query embedding');
 
     const releasedIds = new Set(releasedLessons.map((lesson) => lesson.id));
-    const rawChunks = await DataService.retrieveCoursewareChunks(vector, [...releasedIds], topK);
-    const chunks = filterReleasedRetrievedChunks(rawChunks, releasedIds, topK);
+    const rawChunks = await DataService.retrieveCoursewareChunks(
+      vector,
+      [...releasedIds],
+      topK,
+      activeReleases.map(release => release.id),
+    );
+    const visibleReleaseIds = new Set(activeReleases.map(release => release.id));
+    const chunks = filterReleasedRetrievedChunks(rawChunks, releasedIds, topK)
+      .filter(chunk => !chunk.releaseId || visibleReleaseIds.has(chunk.releaseId));
     if (chunks.length === 0) {
       return {
         answer: 'No indexed passage from your released lessons matched this question. Ask your instructor to re-ingest the released courseware, or try a question closer to the lesson text.',
