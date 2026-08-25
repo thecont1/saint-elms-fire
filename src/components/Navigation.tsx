@@ -1,7 +1,97 @@
 'use client';
 
-import React from 'react';
-import { Compass, Shield, User, Cpu, Database } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Compass, Shield, User } from 'lucide-react';
+
+interface ModelLightProps {
+  label: string;
+  /** up = green; down = red. */
+  up: boolean;
+  /** in-use = pulsing; idle/stable = solid. */
+  inUse: boolean;
+  title: string;
+}
+
+/** One model status light: green+solid = available, green+pulse = serving. */
+function ModelLight({ label, up, inUse, title }: ModelLightProps) {
+  return (
+    <span
+      className="flex items-center gap-1.5"
+      title={title}
+      data-testid={`model-light-${label}`}
+      aria-label={`${label} ${up ? 'available' : 'unavailable'}${inUse ? ', in use' : ''}`}
+    >
+      <span
+        className={`inline-block w-2 h-2 rounded-full ${
+          up ? 'bg-emerald-500' : 'bg-red-400'
+        } ${up && inUse ? 'animate-pulse' : ''} shadow-[0_0_4px_currentColor]`}
+      />
+      <span className="hidden xl:inline">{label}</span>
+    </span>
+  );
+}
+
+export function ModelStatusLights() {
+  const [status, setStatus] = useState<{
+    geminiUp: boolean;
+    sarvamUp: boolean;
+    active: 'gemini' | 'sarvam' | null;
+  }>({ geminiUp: false, sarvamUp: false, active: null });
+
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await fetch('/api/health', { cache: 'no-store' });
+        const data = await res.json();
+        if (cancelled) return;
+        const checks = data.checks ?? {};
+        // "In use" heuristic: a provider is actively serving when it is up and
+        // either the other generation provider is down or it is the primary.
+        const geminiUp = checks.gemini?.status === 'up';
+        const sarvamUp = checks.sarvam?.status === 'up';
+        setStatus({
+          geminiUp,
+          sarvamUp,
+          active: sarvamUp && !geminiUp ? 'sarvam' : geminiUp ? 'gemini' : null,
+        });
+      } catch {
+        if (!cancelled) setStatus({ geminiUp: false, sarvamUp: false, active: null });
+      }
+    };
+    void poll();
+    const timer = setInterval(poll, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  return (
+    <div className="flex items-center gap-3 chart-annotation">
+      <ModelLight
+        label="gemini-3.7-flash"
+        up={status.geminiUp}
+        inUse={status.active === 'gemini'}
+        title={
+          status.geminiUp
+            ? `Primary model · available${status.active === 'gemini' ? ' · serving requests' : ''}`
+            : 'Primary model · unavailable (falling back)'
+        }
+      />
+      <ModelLight
+        label="sarvam-105b"
+        up={status.sarvamUp}
+        inUse={status.active === 'sarvam'}
+        title={
+          status.sarvamUp
+            ? `Fallback model · available${status.active === 'sarvam' ? ' · serving requests' : ''}`
+            : 'Fallback model · unavailable'
+        }
+      />
+    </div>
+  );
+}
 
 interface NavigationProps {
   currentRole: 'admin' | 'student';
@@ -61,17 +151,9 @@ export function Navigation({
             </div>
           </div>
 
-          {/* Chart-margin status annotations */}
-          <div className="hidden lg:flex items-center gap-5 chart-annotation">
-            <span className="flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-beacon-500" />
-              gemini-3.7-flash
-            </span>
-            <span className="h-3 w-px bg-beacon-200" />
-            <span className="flex items-center gap-1.5">
-              <Database className="w-3.5 h-3.5 text-beacon-500" />
-              firestore · saint-elms-fire
-            </span>
+          {/* Model status lights — primary + fallback */}
+          <div className="hidden lg:flex items-center">
+            <ModelStatusLights />
           </div>
 
           {/* Role Switcher */}

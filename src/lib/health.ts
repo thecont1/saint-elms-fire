@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { db, FieldValue } from '@/lib/firestore';
 import { ai, GEMINI_FLASH } from '@/ai/genkit';
+import { sarvamGenerate, SARVAM_MODEL } from '@/ai/sarvam';
 
 /**
  * Shared deep-health implementation used by /api/health and /health.
@@ -22,7 +23,9 @@ export interface HealthReport {
   timestamp: string;
   project: string | null;
   model: string;
-  checks: { firestore: DepStatus; gemini: DepStatus };
+  fallbackModel: string;
+  embeddings: string;
+  checks: { firestore: DepStatus; gemini: DepStatus; sarvam: DepStatus };
 }
 
 type CacheEntry = { expiresAt: number; report: HealthReport };
@@ -106,10 +109,31 @@ async function probeGemini(): Promise<DepStatus> {
   }
 }
 
+/** Round-trip a trivial generation through the Sarvam fallback model. */
+async function probeSarvam(): Promise<DepStatus> {
+  const start = Date.now();
+  try {
+    const text = await withTimeout(
+      sarvamGenerate({ prompt: 'Reply with exactly: OK', timeoutMs: PROBE_TIMEOUT_MS }),
+      PROBE_TIMEOUT_MS,
+      'sarvam',
+    );
+    if (!text) throw new Error('empty model response');
+    return { status: 'up', latencyMs: Date.now() - start };
+  } catch (error: unknown) {
+    console.error('Sarvam health probe failed:', error);
+    return {
+      status: 'down',
+      latencyMs: Date.now() - start,
+      error: publicProbeError(error),
+    };
+  }
+}
+
 /**
- * Pings Firestore and Gemini in parallel and reports honest per-dependency
- * status. Cached for PROBE_CACHE_TTL_MS so repeated requests reuse the last
- * result instead of re-probing dependencies.
+ * Pings Firestore, Gemini, and the Sarvam fallback in parallel and reports
+ * honest per-dependency status. Cached for PROBE_CACHE_TTL_MS so repeated
+ * requests reuse the last result instead of re-probing dependencies.
  */
 export async function getHealthReport(): Promise<HealthReport> {
   const now = Date.now();
@@ -118,15 +142,23 @@ export async function getHealthReport(): Promise<HealthReport> {
     return { ...cache.report, timestamp: new Date().toISOString() };
   }
 
-  const [firestore, gemini] = await Promise.all([probeFirestore(), probeGemini()]);
-  const healthy = firestore.status === 'up' && gemini.status === 'up';
+  const [firestore, gemini, sarvam] = await Promise.all([
+    probeFirestore(),
+    probeGemini(),
+    probeSarvam(),
+  ]);
+  // Overall health requires Firestore plus at least ONE generation provider —
+  // either primary or fallback serving means the product still works.
+  const healthy = firestore.status === 'up' && (gemini.status === 'up' || sarvam.status === 'up');
 
   const report: HealthReport = {
     status: healthy ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     project: process.env.GOOGLE_CLOUD_PROJECT ?? null,
     model: GEMINI_FLASH,
-    checks: { firestore, gemini },
+    fallbackModel: SARVAM_MODEL,
+    embeddings: 'gemini-embedding-001@768',
+    checks: { firestore, gemini, sarvam },
   };
 
   cache = { expiresAt: now + PROBE_CACHE_TTL_MS, report };
