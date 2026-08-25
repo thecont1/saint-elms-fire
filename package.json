@@ -5,18 +5,35 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "dev": "genkit start -- npx tsx watch src/ai/dev.ts",
-    "start": "tsx watch src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "genkit:dev": "genkit start -- tsx watch src/ai/dev.ts",
+    "typecheck": "tsc --noEmit",
+    "smoke-test": "bun run scripts/smoke-test.ts"
   },
   "dependencies": {
     "@genkit-ai/express": "^1.41.0",
     "@genkit-ai/google-genai": "^1.41.0",
     "@google-cloud/firestore": "^9.0.0",
-    "genkit": "^1.41.0"
+    "@types/d3-force": "^3.0.10",
+    "clsx": "^2.1.1",
+    "d3-force": "^3.0.0",
+    "genkit": "^1.41.0",
+    "lucide-react": "^1.34.0",
+    "next": "^16.3.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "autoprefixer": "^10.5.4",
     "genkit-cli": "^1.41.0",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   }
