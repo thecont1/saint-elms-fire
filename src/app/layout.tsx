@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Saint Elms Fire — The Second Brain Multimodal LMS",
-  description: "AI-native Learning Management System with Drip-Feed Knowledge Graphs, Strict Release-Gated RAG, and Proactive Socratic Tutoring powered by Genkit & Gemini 3.7 Flash.",
+  title: "St. Elmo's Fire — The Second Brain LMS",
+  description: "Illuminating the Unknown with AI-native Knowledge Graphs, Strict Release-Gated RAG, and Proactive Socratic Guidance powered by Genkit & Gemini 3.7 Flash.",
 };
 
 export default function RootLayout({
@@ -12,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#090D16] text-slate-100 antialiased min-h-screen flex flex-col">
+    <html lang="en">
+      <body className="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col selection:bg-sky-200 selection:text-sky-900">
         {children}
       </body>
     </html>
