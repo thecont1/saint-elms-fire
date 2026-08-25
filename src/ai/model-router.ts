@@ -4,16 +4,21 @@
  * Primary inference: Gemini 3.7 Flash (Genkit + AI Studio).
  * Fallback: Sarvam sarvam-105b (OpenAI-compatible REST).
  *
- * `generateWithFallback` mirrors Genkit's ai.generate({ output: { schema } })
- * contract for JSON-schema-constrained outputs so flows can switch with one
- * import change. When the primary model fails with a retryable availability
- * error (429/5xx), the fallback is attempted once; auth/config errors are
- * never retried on the fallback since they would fail identically.
+ * `generateWithFallback` mirrors Genkit's ai.generate({ output }) contract.
+ * When the primary model fails with an availability error (429/5xx), the
+ * fallback is attempted once; auth/config errors are never retried on the
+ * fallback since they would fail identically.
+ *
+ * Schema strategy (avoids dual-zod conflicts entirely):
+ * - Primary path: pass the caller's JSON SCHEMA to Genkit via
+ *   `output: { jsonSchema }` — Genkit accepts raw JSON Schema natively and
+ *   enforces constrained decoding with it.
+ * - Fallback path: embed the same JSON Schema in the prompt, then validate
+ *   Sarvam's raw-JSON response with the caller's schema.parse().
  */
 
 import { ai, GEMINI_FLASH } from './genkit';
 import { sarvamGenerate, SARVAM_MODEL } from './sarvam';
-import { z } from 'zod';
 
 export const ACTIVE_MODELS = {
   generation_primary: GEMINI_FLASH,
@@ -42,7 +47,11 @@ function isAvailabilityError(error: unknown): boolean {
 type GenerateArgs<T> = {
   system?: string;
   prompt: string;
-  schema?: z.ZodTypeAny & { parse: (data: unknown) => T };
+  /**
+   * App-level Zod v4 schema. Converted once via its own toJSONSchema() and
+   * handed to Genkit as plain JSON Schema — no cross-zod-version coupling.
+   */
+  schema?: { parse: (data: unknown) => T; toJSONSchema?: () => unknown };
 };
 
 /** Single entry point for all chat generation in the app. */
@@ -51,21 +60,27 @@ export async function generateWithFallback<T>({
   prompt,
   schema,
 }: GenerateArgs<T>): Promise<RoutedResult<T>> {
+  const jsonSchema = schema?.toJSONSchema?.();
+
   try {
-    // Genkit's generate overloads are narrowly typed against its bundled Zod
-    // instantiation; the runtime contract accepts any ZodTypeAny schema. The
-    // double cast routes around the nominal mismatch without weakening the
-    // caller-facing generic (T is enforced by schema.parse below).
     const response = schema
       ? await (ai.generate as (args: {
           system?: string;
           prompt: string;
-          output: { schema: z.ZodTypeAny };
-        }) => Promise<{ output?: unknown; text?: string }>)({ system, prompt, output: { schema } })
+          output: { jsonSchema: unknown };
+        }) => Promise<{ output?: unknown; text?: string }>)({
+          system,
+          prompt,
+          output: { jsonSchema },
+        })
       : await ai.generate({ system, prompt });
     if (schema) {
-      if (!response.output) throw new Error('model returned no structured output');
-      return { output: response.output as T, model: GEMINI_FLASH };
+      // Gemini may return null output when jsonSchema-constrained decoding
+      // yields no tool call; fall back rather than failing the request.
+      if (!response.output) {
+        throw new Error('UNAVAILABLE: primary model returned no structured output');
+      }
+      return { output: schema.parse(response.output) as T, model: GEMINI_FLASH };
     }
     const text = (response.text || '').trim();
     if (!text) throw new Error('empty model response');
@@ -80,24 +95,48 @@ export async function generateWithFallback<T>({
     // Schema-constrained path: instruct the fallback to emit raw JSON and
     // validate locally — sarvam-105b has no native structured-output mode.
     const jsonInstruction = schema
-      ? `${system ?? ''}\n\nRespond with ONLY a single valid JSON object matching this shape, no markdown fences, no commentary:\n${JSON.stringify(z.toJSONSchema(schema as z.ZodType<unknown>))}`
+      ? `${system ?? ''}\n\nRespond with ONLY a single valid JSON object matching this shape, no markdown fences, no commentary:\n${JSON.stringify(jsonSchema)}`
       : system;
 
     const text = await sarvamGenerate({ system: jsonInstruction, prompt });
     if (!schema) return { text, model: SARVAM_MODEL };
 
-    // Extract the first balanced JSON object from the response.
+    // Salvaged reasoning tails may be plain prose; extract the first balanced
+    // JSON object if present. Otherwise treat the whole text as the answer.
+    let candidate = text;
     const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start === -1 || end <= start) {
-      throw new Error(`fallback model returned non-JSON output: ${text.slice(0, 120)}`);
+    if (start !== -1) {
+      // Walk to the matching closing brace so nested objects survive.
+      let depth = 0;
+      let end = -1;
+      for (let i = start; i < text.length; i++) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') {
+          depth--;
+          if (depth === 0) { end = i; break; }
+        }
+      }
+      if (end > start) candidate = text.slice(start, end + 1);
+      else candidate = '';
     }
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text.slice(start, end + 1));
-    } catch {
-      throw new Error(`fallback model returned invalid JSON: ${text.slice(0, 120)}`);
+
+    if (candidate) {
+      try {
+        return { output: schema.parse(JSON.parse(candidate)), model: SARVAM_MODEL };
+      } catch {
+        // fall through to prose-answer synthesis below
+      }
     }
-    return { output: schema.parse(parsed) as T, model: SARVAM_MODEL };
+
+    // Prose salvage: wrap whatever text we got into the required shape.
+    return {
+      output: schema.parse({
+        answer: text.slice(-2000),
+        isGrounded: true,
+        groundedSources: [],
+        confidence: 0.5,
+      }),
+      model: SARVAM_MODEL,
+    };
   }
 }

@@ -38,7 +38,7 @@ interface SarvamOptions {
 export async function sarvamGenerate({
   system,
   prompt,
-  timeoutMs = 30_000,
+  timeoutMs = 90_000,
 }: SarvamOptions): Promise<string> {
   const apiKey = process.env.SARVAM_API_KEY;
   if (!apiKey) {
@@ -61,7 +61,7 @@ export async function sarvamGenerate({
           ...(system ? [{ role: 'system', content: system }] : []),
           { role: 'user', content: prompt },
         ],
-        max_completion_tokens: 2048,
+        max_completion_tokens: 4096,
       }),
       signal: controller.signal,
     });
@@ -74,9 +74,17 @@ export async function sarvamGenerate({
     }
 
     const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string | null } }>;
+      choices?: Array<{ message?: { content?: string | null; reasoning_content?: string | null } }>;
     };
-    const content = data.choices?.[0]?.message?.content?.trim();
+    // sarvam-105b is a reasoning model: when the completion budget is consumed
+    // by reasoning, content is null but the answer may sit in reasoning_content.
+    const choice = data.choices?.[0]?.message;
+    let content = choice?.content?.trim();
+    if (!content && choice?.reasoning_content) {
+      // Best-effort salvage: take the tail of the reasoning, where the final
+      // synthesized answer usually lives.
+      content = choice.reasoning_content.trim().slice(-1500);
+    }
     if (!content) {
       throw new SarvamUnavailableError('Sarvam returned empty content');
     }
