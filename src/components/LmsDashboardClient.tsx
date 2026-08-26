@@ -178,21 +178,7 @@ export function LmsDashboardClient({
         isBooming={isBooming}
       />
 
-      {/* Metrics tab — hangs from the primary header's bottom border, under the Boom button */}
-      <div className={`sticky top-16 z-30 flex justify-end pl-4 sm:pl-6 lg:pl-8 pr-16 sm:pr-18 lg:pr-20 -mb-px transition-colors duration-500 ${heroExpanded ? 'bg-white/60' : 'bg-transparent'}`}>
-        <button
-          onClick={() => setHeroExpanded(v => !v)}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-b-lg border border-t-0 border-beacon-200 bg-white text-beacon-700 text-xs font-bold transition shadow-sm hover:bg-beacon-50"
-          title="Toggle metrics panel"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-3 h-3" fill="currentColor">
-            <path d="M46.05 60.163H31.923c-.836 0-1.513.677-1.513 1.513V83.61c0 .836.677 1.513 1.513 1.513H46.05c.836 0 1.512-.677 1.512-1.513V61.675c0-.836-.677-1.512-1.512-1.512zM68.077 14.878H53.95c-.836 0-1.513.677-1.513 1.513v67.218c0 .836.677 1.513 1.513 1.513h14.127c.836 0 1.513-.677 1.513-1.513V16.391c0-.836-.677-1.513-1.513-1.513zM90.217 35.299H76.09c-.836 0-1.513.677-1.513 1.513v46.797c0 .836.677 1.513 1.513 1.513h14.126c.836 0 1.513-.677 1.513-1.513V36.812c0-.835-.677-1.513-1.512-1.513zM23.91 35.299H9.783c-.836 0-1.513.677-1.513 1.513v46.797c0 .836.677 1.513 1.513 1.513H23.91c.836 0 1.513-.677 1.513-1.513V36.812c0-.835-.677-1.513-1.513-1.513z"/>
-          </svg>
-          Metrics
-        </button>
-      </div>
-
-      {/* 2. HERO — the legend of the fire (toggled by Metrics tab) */}
+      {/* 2. HERO — the legend of the fire (toggled by Hide/Show tab) */}
       <section
         className={`border-b border-beacon-100 bg-white/60 overflow-hidden transition-all duration-500 ease-in-out ${
           heroExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
@@ -247,6 +233,17 @@ export function LmsDashboardClient({
           </div>
         </div>
       </section>
+
+      {/* Hide/Show tab — hangs from the bottom of the hero section */}
+      <div className="flex justify-end pr-4 sm:pr-6 lg:pr-8 -mt-px">
+        <button
+          onClick={() => setHeroExpanded(v => !v)}
+          className="px-2.5 py-0.5 rounded-b-md border border-t-0 border-beacon-100 bg-white/80 text-marine-400 text-[10px] font-medium transition hover:text-beacon-600 hover:border-beacon-200"
+          title={heroExpanded ? 'Hide metrics panel' : 'Show metrics panel'}
+        >
+          {heroExpanded ? 'Hide' : 'Show'}
+        </button>
+      </div>
 
       {/* 3. MAIN CONTENT: 3-COLUMN LAYOUT (STUDENT) / 2-COLUMN LAYOUT (ADMIN) */}
       <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8">
