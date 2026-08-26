@@ -225,16 +225,16 @@ export function Navigation({
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-start gap-3 min-w-0">
             <div className="w-10 h-10 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
               <CoronaMark className="w-6 h-6 animate-glow-breathe" />
             </div>
-            <div className="min-w-0 flex items-baseline gap-2">
+            <div className="min-w-0 flex flex-col items-start gap-0.5">
               <span className="font-display text-3xl font-thin tracking-[-0.06em] text-marine-900 leading-none uppercase">
                 Saint Elms Fire
               </span>
               <span
-                className="hidden sm:inline font-mono text-xs text-marine-500 leading-none"
+                className="hidden sm:inline font-mono text-[10px] text-marine-500 leading-none"
                 suppressHydrationWarning
               >
                 {currentDateTime}
