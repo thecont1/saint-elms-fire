@@ -21,17 +21,17 @@ interface ModelLightProps {
 function ModelLight({ label, up, serving, title }: ModelLightProps) {
   return (
     <span
-      className="flex items-center gap-1.5"
+      className="flex items-center gap-1.5 text-xs"
       title={title}
       data-testid={`model-light-${label}`}
       aria-label={`${label} ${up ? 'available' : 'unavailable'}${serving ? ', serving requests' : ''}`}
     >
       <span
-        className={`inline-block w-2 h-2 rounded-full ${
+        className={`inline-block w-2 h-2 rounded-full shrink-0 ${
           up ? 'bg-emerald-500' : 'bg-red-400'
         } ${up && serving ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`}
       />
-      <span className="hidden xl:inline">{label}</span>
+      <span className="capitalize">{label.replace(/-/g, ' ')}</span>
     </span>
   );
 }
@@ -94,7 +94,7 @@ export function ModelStatusLights() {
   }, []);
 
   return (
-    <div className="flex items-center gap-3 chart-annotation">
+    <div className="flex flex-col gap-1.5 mt-0.5">
       <ModelLight
         label="gemini-3.7-flash"
         up={status.geminiUp}

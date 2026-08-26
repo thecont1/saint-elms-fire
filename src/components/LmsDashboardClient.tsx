@@ -158,7 +158,7 @@ export function LmsDashboardClient({
             </div>
 
             {/* Ship's-log metrics: 2x2 matrix, stretches to match hero text height */}
-            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[320px] items-stretch self-stretch">
+            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[640px] items-stretch self-stretch">
               <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Course plotted</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">
