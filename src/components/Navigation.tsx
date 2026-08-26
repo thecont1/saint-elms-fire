@@ -1,7 +1,23 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Compass, Shield, User, RefreshCw } from 'lucide-react';
+import { Compass, Shield, User } from 'lucide-react';
+
+function RefreshIcon({ className = 'w-3.5 h-3.5', spin = false }: { className?: string; spin?: boolean }) {
+  return (
+    <svg viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg" className={`${className} ${spin ? 'animate-spin' : ''}`} fill="currentColor">
+      <path d="M1639 1056q0 5-1 7-64 268-268 434.5T892 1664q-146 0-282.5-55T366 1452l-129 129q-19 19-45 19t-45-19-19-45v-448q0-26 19-45t45-19h448q26 0 45 19t19 45-19 45l-137 137q71 66 161 102t187 36q134 0 250-65t186-179q11-17 53-117 8-23 30-23h192q13 0 22.5 9.5t9.5 22.5zm25-800v448q0 26-19 45t-45 19h-448q-26 0-45-19t-19-45 19-45l138-138q-148-137-349-137-134 0-250 65T460 628q-11 17-53 117-8 23-30 23H178q-13 0-22.5-9.5T146 736v-7q65-268 270-434.5T896 128q146 0 284 55.5T1425 340l130-129q19-19 45-19t45 19 19 45z" />
+    </svg>
+  );
+}
+
+function BoomIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className={className} fill="currentColor">
+      <path d="M 432 0 L 459 53 L 432 0 L 459 53 L 512 80 L 512 80 L 459 107 L 459 107 L 432 160 L 432 160 L 405 107 L 405 107 L 352 80 L 352 80 L 405 53 L 405 53 L 432 0 L 432 0 Z M 291 164 L 262 153 L 291 164 L 262 153 Q 237 144 208 144 Q 140 146 95 191 Q 50 236 48 304 Q 50 372 95 417 Q 140 462 208 464 Q 276 462 321 417 Q 366 372 368 304 Q 368 275 359 250 L 348 221 L 348 221 L 361 208 L 361 208 L 304 151 L 304 151 L 291 164 L 291 164 Z M 338 117 L 395 174 L 338 117 L 395 174 L 407 185 L 407 185 L 429 208 L 429 208 L 407 231 L 407 231 L 404 234 L 404 234 Q 416 267 416 304 Q 414 392 355 451 Q 296 510 208 512 Q 120 510 61 451 Q 2 392 0 304 Q 2 216 61 157 Q 120 98 208 96 Q 245 96 279 108 L 281 105 L 281 105 L 304 83 L 304 83 L 327 105 L 327 105 L 338 117 L 338 117 Z M 208 224 Q 174 225 151 247 L 151 247 L 151 247 Q 129 270 128 304 L 80 304 L 80 304 Q 81 250 117 213 Q 154 177 208 176 L 208 224 L 208 224 Z" />
+    </svg>
+  );
+}
 
 interface ModelLightProps {
   label: string;
@@ -9,6 +25,7 @@ interface ModelLightProps {
   up: boolean;
   /** serving now or within the activity window = fast flicker. */
   serving: boolean;
+  latencyMs?: number | null;
   title: string;
 }
 
@@ -18,7 +35,7 @@ interface ModelLightProps {
  * - green solid = available, idle
  * - green fast-flicker = actively serving (data in/out)
  */
-function ModelLight({ label, up, serving, title }: ModelLightProps) {
+function ModelLight({ label, up, serving, latencyMs, title }: ModelLightProps) {
   return (
     <span
       className="flex items-center gap-1.5 text-xs"
@@ -32,6 +49,11 @@ function ModelLight({ label, up, serving, title }: ModelLightProps) {
         } ${up && serving ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`}
       />
       <span className="capitalize">{label.replace(/-/g, ' ')}</span>
+      {latencyMs != null && (
+        <span className={`tabular-nums ${up ? 'text-marine-400' : 'text-red-400'}`}>
+          {up ? `${(latencyMs / 1000).toFixed(1)}s` : '—'}
+        </span>
+      )}
     </span>
   );
 }
@@ -42,12 +64,14 @@ export function ModelStatusLights() {
     sarvamUp: boolean;
     geminiServing: boolean;
     sarvamServing: boolean;
-  }>({ geminiUp: false, sarvamUp: false, geminiServing: false, sarvamServing: false });
+    geminiLatency: number | null;
+    sarvamLatency: number | null;
+  }>({ geminiUp: false, sarvamUp: false, geminiServing: false, sarvamServing: false, geminiLatency: null, sarvamLatency: null });
 
   useEffect(() => {
     let cancelled = false;
 
-    // Availability: slow poll of the (cached) health endpoint.
+    // Availability: poll the (cached) health endpoint.
     const pollHealth = async () => {
       try {
         const res = await fetch('/api/health', { cache: 'no-store' });
@@ -58,9 +82,11 @@ export function ModelStatusLights() {
           ...prev,
           geminiUp: checks.gemini?.status === 'up',
           sarvamUp: checks.sarvam?.status === 'up',
+          geminiLatency: checks.gemini?.latencyMs ?? null,
+          sarvamLatency: checks.sarvam?.latencyMs ?? null,
         }));
       } catch {
-        if (!cancelled) setStatus((prev) => ({ ...prev, geminiUp: false, sarvamUp: false }));
+        if (!cancelled) setStatus((prev) => ({ ...prev, geminiUp: false, sarvamUp: false, geminiLatency: null, sarvamLatency: null }));
       }
     };
 
@@ -78,13 +104,13 @@ export function ModelStatusLights() {
           sarvamServing: models['sarvam-105b-conversations']?.inFlight || models['sarvam-105b-conversations']?.recent || false,
         }));
       } catch {
-        // ignore transient poll failures; lights keep last known state
+        if (!cancelled) setStatus((prev) => ({ ...prev, geminiServing: false, sarvamServing: false }));
       }
     };
 
     void pollHealth();
     void pollActivity();
-    const healthTimer = setInterval(pollHealth, 30_000);
+    const healthTimer = setInterval(pollHealth, 10_000);
     const activityTimer = setInterval(pollActivity, 1_500);
     return () => {
       cancelled = true;
@@ -99,9 +125,10 @@ export function ModelStatusLights() {
         label="gemini-3.7-flash"
         up={status.geminiUp}
         serving={status.geminiServing}
+        latencyMs={status.geminiLatency}
         title={
           status.geminiUp
-            ? `Primary model · available${status.geminiServing ? ' · serving requests (flickering)' : ''}`
+            ? `Primary model · available${status.geminiLatency != null ? ` (${(status.geminiLatency / 1000).toFixed(1)}s)` : ''}${status.geminiServing ? ' · serving requests (flickering)' : ''}`
             : 'Primary model · unavailable (falling back)'
         }
       />
@@ -109,9 +136,10 @@ export function ModelStatusLights() {
         label="sarvam-105b"
         up={status.sarvamUp}
         serving={status.sarvamServing}
+        latencyMs={status.sarvamLatency}
         title={
           status.sarvamUp
-            ? `Fallback model · available${status.sarvamServing ? ' · serving requests (flickering)' : ''}`
+            ? `Fallback model · available${status.sarvamLatency != null ? ` (${(status.sarvamLatency / 1000).toFixed(1)}s)` : ''}${status.sarvamServing ? ' · serving requests (flickering)' : ''}`
             : 'Fallback model · unavailable'
         }
       />
@@ -125,6 +153,9 @@ interface NavigationProps {
   /** Optional: renders a Sync button to the right of the role switcher. */
   onSync?: () => void;
   isSyncing?: boolean;
+  /** Optional: renders a Boom (flush all data) button next to Sync. */
+  onBoom?: () => void;
+  isBooming?: boolean;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
@@ -161,6 +192,8 @@ export function Navigation({
   onRoleChange,
   onSync,
   isSyncing = false,
+  onBoom,
+  isBooming = false,
 }: NavigationProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-beacon-100 bg-white/90 backdrop-blur-md">
@@ -216,8 +249,20 @@ export function Navigation({
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
                 title="Refresh Firestore database state"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <RefreshIcon className="w-3.5 h-3.5" spin={isSyncing} />
                 <span className="hidden sm:inline">Sync</span>
+              </button>
+            )}
+
+            {onBoom && (
+              <button
+                onClick={onBoom}
+                disabled={isBooming}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-red-600 bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
+                title="Flush all data from Firestore — start from scratch"
+              >
+                <BoomIcon className={`w-3.5 h-3.5 ${isBooming ? 'animate-pulse' : ''}`} />
+                <span className="hidden sm:inline">Boom</span>
               </button>
             )}
           </div>

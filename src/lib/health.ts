@@ -10,10 +10,10 @@ import { sarvamGenerate, SARVAM_MODEL } from '@/ai/sarvam';
  */
 
 const PROBE_TIMEOUT_MS = 8000;
-// Above the UI's 30s polling interval so normal requests are served from
+// Above the UI's 10s polling interval so normal requests are served from
 // cache without firing generation probes on every poll. Deep checks happen
 // only when explicitly requested (?deep=true) or on cold cache.
-const PROBE_CACHE_TTL_MS = 60_000;
+const PROBE_CACHE_TTL_MS = 10_000;
 
 export type DepStatus = {
   status: 'up' | 'down';
@@ -96,7 +96,7 @@ async function probeGemini(): Promise<DepStatus> {
   try {
     const res = await withTimeout(
       ai.generate('Reply with exactly: OK'),
-      PROBE_TIMEOUT_MS,
+      30_000,
       'gemini',
     );
     const text = (res.text || '').trim();
