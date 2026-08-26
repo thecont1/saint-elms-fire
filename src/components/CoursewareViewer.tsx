@@ -66,6 +66,7 @@ export function CoursewareViewer({
                     Leg {mod.order}
                   </span>
                   <h4 className="text-xs font-bold text-marine-900 truncate">{mod.title}</h4>
+                {mod.description && <p className="text-[10px] text-marine-500 mt-0.5 line-clamp-2">{mod.description}</p>}
                 </div>
 
                 <div className="flex items-center shrink-0">

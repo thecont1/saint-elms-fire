@@ -164,7 +164,7 @@ export function AdminCourseManager({
                   </span>
                 </div>
                 <h3 className="text-sm font-extrabold text-slate-900 mb-1">{mod.title}</h3>
-                <p className="text-xs text-slate-500 mb-4 leading-relaxed">{mod.description}</p>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">{mod.description || ''}</p>
 
                 <div className="space-y-2">
                   {modLessons.map((l) => (
