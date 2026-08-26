@@ -105,15 +105,26 @@ type GenerateArgs<T> = {
 
 /**
  * Extract the first balanced JSON object from a model response. Returns null
- * when no complete JSON object is present.
+ * when no complete JSON object is present. String-aware: braces inside JSON
+ * string values (e.g. {"answer":"uses { term: n } voting"}) are content, not
+ * delimiters — backslash escapes are honored so \" never opens a string.
+ * Exported for regression tests of the brace-in-string failure mode.
  */
-function extractJsonObject(text: string): unknown | null {
+export function extractJsonObject(text: string): unknown | null {
   const start = text.indexOf('{');
   if (start === -1) return null;
   let depth = 0;
+  let inString = false;
   for (let i = start; i < text.length; i++) {
-    if (text[i] === '{') depth++;
-    else if (text[i] === '}') {
+    const ch = text[i];
+    if (inString) {
+      if (ch === '\\') i++; // skip escaped character (\" \\ \n etc.)
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}') {
       depth--;
       if (depth === 0) {
         try {
