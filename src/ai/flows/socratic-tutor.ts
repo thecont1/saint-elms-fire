@@ -75,7 +75,7 @@ export const proactiveTutor = ai.defineFlow(
     });
 
     const response = await ai.generate({
-      system: 'You are the proactive Socratic Beacon. Ask one question that tests reasoning without revealing the answer. Use only the supplied released lesson.',
+      system: 'You are Socrates my Guide. Ask one question that tests reasoning without revealing the answer. Use only the supplied released lesson.',
       prompt: `TARGET: ${target.concept}\nREASON: ${target.triggerReason}\nRELEASED LESSON: ${target.lessonTitle}\n\n${target.lessonContent}`,
       output: { schema: GeneratedChallengeSchema },
     });

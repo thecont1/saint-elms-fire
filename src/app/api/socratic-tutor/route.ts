@@ -25,8 +25,8 @@ export async function GET(req: Request) {
   } catch (error: unknown) {
     const authResponse = authorizationResponse(error);
     if (authResponse) return authResponse;
-    console.error('Socratic tutor error:', error);
-    return NextResponse.json({ error: 'Unable to load Socratic tutor session' }, { status: 500 });
+    console.error('Socrates my Philosopher error:', error);
+    return NextResponse.json({ error: 'Unable to load Socrates my Philosopher session' }, { status: 500 });
   }
 }
 

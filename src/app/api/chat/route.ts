@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     if (authResponse) return authResponse;
     console.error('Chat flow execution error:', error);
     return NextResponse.json(
-      { error: 'The Socratic Beacon could not answer from indexed courseware.' },
+      { error: 'Socrates my Guide could not answer from indexed courseware.' },
       { status: publicErrorStatus(error) }
     );
   }
