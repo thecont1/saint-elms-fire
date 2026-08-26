@@ -54,7 +54,7 @@ export function StudentChat({
   }, [releasedLessonCount]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages, isLoading]);
 
   const handleSend = async (e?: React.FormEvent) => {
