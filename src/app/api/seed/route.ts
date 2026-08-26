@@ -13,16 +13,66 @@ export async function POST() {
       });
     }
 
-    // 1. Create Course
+    // 1. Create UGC hierarchy: Programme → Subject → Semester → Course
+    const programmes = await DataService.getProgrammes();
+    let programme;
+    if (programmes.length === 0) {
+      programme = await DataService.createProgramme({
+        title: 'M.Sc. in Computer Science',
+        level: 'postgraduate',
+        durationSemesters: 4,
+        totalCredits: 80,
+        description: 'Postgraduate programme in distributed systems and AI architectures.',
+      });
+    } else {
+      programme = programmes[0];
+    }
+
+    let subjects = await DataService.getSubjects(programme.id);
+    let subject;
+    if (subjects.length === 0) {
+      subject = await DataService.createSubject({
+        programmeId: programme.id,
+        title: 'Computer Science',
+        code: 'CS',
+        description: 'Core computer science discipline.',
+      });
+    } else {
+      subject = subjects[0];
+    }
+
+    let semesters = await DataService.getSemesters(subject.id);
+    let semester;
+    if (semesters.length === 0) {
+      semester = await DataService.createSemester({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        title: 'Year I - Semester 1',
+        yearNumber: 1,
+        semesterNumber: 1,
+        order: 1,
+      });
+    } else {
+      semester = semesters[0];
+    }
+
     const course = await DataService.createCourse({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       title: 'CS-850: Distributed Systems & Autonomous AI Architectures',
       description: 'Foundations of resilient consensus, vector index partitioning, event-driven streaming, and decentralized agent graphs.',
+      category: 'core',
+      credits: 4,
       instructor: 'Dr. Elena Vance & Staff',
       code: 'CS-850',
     });
 
     // 2. Create Modules
     const mod1 = await DataService.createModule({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       courseId: course.id,
       title: 'Module 1: Consensus & State Machine Replication',
       description: 'Raft protocol, Byzantine Fault Tolerance, and distributed WALs.',
@@ -30,6 +80,9 @@ export async function POST() {
     });
 
     const mod2 = await DataService.createModule({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       courseId: course.id,
       title: 'Module 2: High-Throughput Vector Indices & RAG Partitioning',
       description: 'HNSW, Quantization, Sharding strategies, and multi-tenant graph memory.',
@@ -37,6 +90,9 @@ export async function POST() {
     });
 
     const mod3 = await DataService.createModule({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       courseId: course.id,
       title: 'Module 3: Autonomous Agent Orbits & Multi-Agent Consensus',
       description: 'Durable workflows, actor mailboxes, and agentic reflection loops.',
@@ -45,6 +101,9 @@ export async function POST() {
 
     // 3. Create Lessons with rich Markdown
     const lesson1_1 = await DataService.createLesson({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       courseId: course.id,
       moduleId: mod1.id,
       title: '1.1 The Raft Consensus Algorithm & Leader Election',
@@ -98,6 +157,9 @@ If two logs contain an entry with the same index and term:
     });
 
     const lesson1_2 = await DataService.createLesson({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       courseId: course.id,
       moduleId: mod1.id,
       title: '1.2 Log Replication, Commit Indexes, and Byzantine Resistance',
@@ -129,6 +191,9 @@ Consider a 5-node cluster \`[S1, S2, S3, S4, S5]\` partitioned into \`{S1, S2}\`
     });
 
     const lesson2_1 = await DataService.createLesson({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       courseId: course.id,
       moduleId: mod2.id,
       title: '2.1 Vector Indexing with HNSW & Product Quantization',
@@ -164,6 +229,9 @@ To fit billions of vectors in RAM:
     });
 
     const lesson3_1 = await DataService.createLesson({
+      programmeId: programme.id,
+      subjectId: subject.id,
+      semesterId: semester.id,
       courseId: course.id,
       moduleId: mod3.id,
       title: '3.1 Durable Agent Workflows & State Synchronization',

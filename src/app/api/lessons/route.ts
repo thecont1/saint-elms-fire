@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { courseId, moduleId, title, markdownContent, summary, tags, order } = body;
+    const { courseId, moduleId, title, markdownContent, summary, tags, order, programmeId, subjectId, semesterId } = body;
 
     if (!courseId || !moduleId || !title || !markdownContent) {
       return NextResponse.json(
@@ -39,6 +39,9 @@ export async function POST(req: Request) {
       summary: summary || '',
       tags: tags || [],
       order: order ?? 1,
+      ...(programmeId && { programmeId }),
+      ...(subjectId && { subjectId }),
+      ...(semesterId && { semesterId }),
     });
 
     return NextResponse.json({ lesson });

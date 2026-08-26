@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, description, instructor, code } = body;
+    const { title, description, instructor, code, programmeId, subjectId, semesterId, category, credits } = body;
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
@@ -23,6 +23,11 @@ export async function POST(req: Request) {
       description: description || '',
       instructor: instructor || 'Faculty Lead',
       code: code || 'CS-701',
+      ...(programmeId && { programmeId }),
+      ...(subjectId && { subjectId }),
+      ...(semesterId && { semesterId }),
+      ...(category && { category }),
+      ...(credits != null && { credits }),
     });
     return NextResponse.json({ course });
   } catch (error: any) {

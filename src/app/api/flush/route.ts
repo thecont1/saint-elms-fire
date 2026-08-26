@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/firestore';
 
 const COLLECTIONS = [
+  'programmes',
+  'subjects',
+  'semesters',
   'courses',
   'modules',
   'lessons',

@@ -4,7 +4,7 @@ import { DataService } from '@/lib/data-service';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { courseId, title, description, order } = body;
+    const { courseId, title, description, order, programmeId, subjectId, semesterId } = body;
     if (!courseId || !title) {
       return NextResponse.json({ error: 'courseId and title are required' }, { status: 400 });
     }
@@ -13,6 +13,9 @@ export async function POST(req: Request) {
       title,
       description: description || '',
       order: order ?? 1,
+      ...(programmeId && { programmeId }),
+      ...(subjectId && { subjectId }),
+      ...(semesterId && { semesterId }),
     });
     return NextResponse.json({ module });
   } catch (error: any) {
