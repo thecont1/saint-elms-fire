@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
+import { resolveRequestIdentity, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const identity = resolveRequestIdentity(req);
+    requireAdmin(identity);
+
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+      return NextResponse.json(
+        { error: 'Seeding is disabled in production. Set ALLOW_PRODUCTION_SEED=true to override.' },
+        { status: 403 },
+      );
+    }
+
     // Check if courses already exist
     const existingCourses = await DataService.getCourses();
     if (existingCourses.length > 0) {
@@ -268,8 +279,10 @@ Durable Execution provides:
       modules: [mod1, mod2, mod3],
       lessons: [lesson1_1, lesson1_2, lesson2_1, lesson3_1],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Seed error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Seeding failed' }, { status: 500 });
   }
 }

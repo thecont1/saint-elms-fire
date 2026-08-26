@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
+import { resolveRequestIdentity, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 
 export async function GET(req: Request) {
   try {
@@ -21,6 +22,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const identity = resolveRequestIdentity(req);
+    requireAdmin(identity);
     const body = await req.json();
     const { courseId, moduleId, title, markdownContent, summary, tags, order, programmeId, subjectId, semesterId } = body;
 
@@ -45,8 +48,10 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ lesson });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Failed to create lesson:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create lesson' }, { status: 500 });
   }
 }

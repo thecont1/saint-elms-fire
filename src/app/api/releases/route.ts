@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { ingestCoursewareFlow } from '@/ai/flows/ingestion';
 import { IngestionStageError } from '@/lib/second-brain-ingestion';
+import { resolveRequestIdentity, resolveStudentScope, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 import type { IngestionErrorCategory, Lesson, ReleaseEvent } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -9,11 +10,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
+    const identity = resolveRequestIdentity(req);
     const { searchParams } = new URL(req.url);
-    const studentId = searchParams.get('studentId') || 'student-alex';
+    const studentId = resolveStudentScope(identity, searchParams.get('studentId'));
     const releases = await DataService.getReleaseAuditForStudent(studentId);
     return NextResponse.json({ releases });
   } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Failed to get release audit log:', error);
     return NextResponse.json({ error: 'Unable to load releases' }, { status: 500 });
   }
@@ -62,8 +66,11 @@ export async function ingestRelease(release: ReleaseEvent, lessons: Lesson[]) {
 
 export async function POST(req: Request) {
   try {
+    const identity = resolveRequestIdentity(req);
+    requireAdmin(identity);
     const body = await req.json();
-    const { courseId, moduleId, lessonId, studentId = 'student-alex' } = body;
+    const { courseId, moduleId, lessonId } = body;
+    const studentId = resolveStudentScope(identity, body.studentId);
     if (!courseId || !moduleId) {
       return NextResponse.json({ error: 'courseId and moduleId are required' }, { status: 400 });
     }
@@ -108,6 +115,8 @@ export async function POST(req: Request) {
       retryUrl: result.release.overallStatus === 'failed' ? `/api/releases/${result.release.id}/retry` : undefined,
     }, { status: result.release.overallStatus === 'failed' ? 502 : 201 });
   } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Failed to process release:', error);
     return NextResponse.json({ error: 'Release processing failed' }, { status: 500 });
   }
