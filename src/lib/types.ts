@@ -9,10 +9,60 @@ export interface UserProfile {
   avatarUrl?: string;
 }
 
-export interface Course {
+// ── UGC Academic Hierarchy ──────────────────────────────────────────────
+// Programme → Subject → Semester → Course → CourseModule → Lesson
+// Every descendant carries its full ancestor chain as flat optional string
+// fields, mirroring the KnowledgeNode pattern. Fields are optional so
+// existing Firestore documents without ancestor IDs remain valid.
+
+export type ProgrammeLevel = 'undergraduate' | 'postgraduate' | 'diploma' | 'certificate';
+
+export interface Programme {
   id: string;
   title: string;
+  level: ProgrammeLevel;
+  durationSemesters: number;
+  totalCredits?: number;
+  description?: string;
+  createdAt: string;
+}
+
+export interface Subject {
+  id: string;
+  programmeId: string;
+  title: string;
+  code?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface Semester {
+  id: string;
+  programmeId: string;
+  subjectId: string;
+  title: string;
+  yearNumber: number;
+  semesterNumber: number;
+  order: number;
+  createdAt: string;
+}
+
+export type CourseCategory =
+  | 'core'
+  | 'elective_discipline_specific'
+  | 'elective_generic'
+  | 'ability_enhancement'
+  | 'skill_enhancement';
+
+export interface Course {
+  id: string;
+  programmeId?: string;
+  subjectId?: string;
+  semesterId?: string;
+  title: string;
   description: string;
+  category?: CourseCategory;
+  credits?: number;
   instructor?: string;
   code?: string;
   createdAt: string;
@@ -20,14 +70,21 @@ export interface Course {
 
 export interface CourseModule {
   id: string;
+  programmeId?: string;
+  subjectId?: string;
+  semesterId?: string;
   courseId: string;
   title: string;
-  description: string;
+  description?: string;
   order: number;
+  createdAt?: string;
 }
 
 export interface Lesson {
   id: string;
+  programmeId?: string;
+  subjectId?: string;
+  semesterId?: string;
   courseId: string;
   moduleId: string;
   title: string;
