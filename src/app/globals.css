@@ -207,3 +207,111 @@ body {
   font-style: italic;
   margin-bottom: 1rem;
 }
+
+/* ── Admin theme: #E3442F / #F7EEE0 ────────────────────────────────── */
+/* Applied when <html class="admin-theme"> — overrides the mariner's chart
+   palette with warm cream (#F7EEE0) accented by orange-red (#E3442F). */
+
+.admin-theme {
+  --color-paper: oklch(0.945 0.014 75);
+  --color-chart: oklch(0.920 0.016 75);
+
+  --color-beacon-50: oklch(0.950 0.015 30);
+  --color-beacon-100: oklch(0.920 0.025 30);
+  --color-beacon-200: oklch(0.860 0.045 30);
+  --color-beacon-300: oklch(0.780 0.080 30);
+  --color-beacon-400: oklch(0.680 0.130 30);
+  --color-beacon-500: oklch(0.600 0.180 30);
+  --color-beacon-600: oklch(0.555 0.195 28);
+  --color-beacon-700: oklch(0.500 0.190 28);
+  --color-beacon-800: oklch(0.450 0.170 28);
+  --color-beacon-900: oklch(0.400 0.140 28);
+  --color-beacon-950: oklch(0.330 0.100 28);
+
+  --color-marine-400: oklch(0.550 0.020 40);
+  --color-marine-500: oklch(0.480 0.025 40);
+  --color-marine-600: oklch(0.400 0.025 40);
+  --color-marine-700: oklch(0.330 0.022 40);
+  --color-marine-800: oklch(0.270 0.020 40);
+  --color-marine-900: oklch(0.220 0.018 40);
+  --color-marine-950: oklch(0.170 0.015 40);
+}
+
+.admin-theme body {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse 60% 34% at 50% -6%, oklch(0.555 0.195 28 / 0.10) 0%, transparent 70%),
+    linear-gradient(to right, oklch(0.555 0.195 28 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.555 0.195 28 / 0.04) 1px, transparent 1px);
+  color: var(--color-marine-900);
+}
+
+.admin-theme ::selection {
+  background: oklch(0.555 0.195 28 / 0.25);
+  color: oklch(0.170 0.015 40);
+}
+
+.admin-theme .chart-card {
+  background: #ffffff;
+  border-color: oklch(0.860 0.045 30);
+  box-shadow:
+    0 1px 2px oklch(0.555 0.195 28 / 0.05),
+    0 8px 24px -16px oklch(0.555 0.195 28 / 0.14);
+}
+
+.admin-theme .chart-annotation {
+  color: var(--color-marine-500);
+}
+
+.admin-theme .course-line {
+  background-image: repeating-linear-gradient(
+    to right,
+    oklch(0.600 0.180 30 / 0.6) 0 7px,
+    transparent 7px 14px
+  );
+}
+
+.admin-theme .corona-glow {
+  box-shadow:
+    0 0 0 4px oklch(0.555 0.195 28 / 0.14),
+    0 0 22px 4px oklch(0.555 0.195 28 / 0.30);
+}
+
+/* Map bg-white → cream in admin mode (covers main header, hero, modals) */
+.admin-theme .bg-white { background-color: oklch(0.945 0.014 75) !important; }
+.admin-theme .bg-white\/90 { background-color: oklch(0.945 0.014 75 / 0.92) !important; }
+.admin-theme .bg-white\/60 { background-color: oklch(0.945 0.014 75 / 0.65) !important; }
+.admin-theme .bg-white\/70 { background-color: oklch(0.945 0.014 75 / 0.75) !important; }
+.admin-theme .bg-white\/95 { background-color: oklch(0.945 0.014 75 / 0.96) !important; }
+
+.admin-theme .hover\:bg-white:hover { background-color: oklch(0.920 0.016 75) !important; }
+.admin-theme .focus\:bg-white:focus { background-color: oklch(0.920 0.016 75) !important; }
+
+/* Map bg-slate → warm cream surface */
+.admin-theme .bg-slate-50 { background-color: oklch(0.930 0.012 75) !important; }
+.admin-theme .bg-slate-100 { background-color: oklch(0.910 0.014 75) !important; }
+.admin-theme .bg-slate-100\/40 { background-color: oklch(0.910 0.014 75 / 0.45) !important; }
+
+/* Map slate text → warm dark brown */
+.admin-theme .text-slate-900 { color: oklch(0.220 0.018 40) !important; }
+.admin-theme .text-slate-800 { color: oklch(0.270 0.020 40) !important; }
+.admin-theme .text-slate-700 { color: oklch(0.330 0.022 40) !important; }
+.admin-theme .text-slate-600 { color: oklch(0.400 0.025 40) !important; }
+.admin-theme .text-slate-500 { color: oklch(0.480 0.025 40) !important; }
+.admin-theme .text-slate-400 { color: oklch(0.550 0.020 40) !important; }
+
+/* Map slate borders → warm cream borders */
+.admin-theme .border-slate-200 { border-color: oklch(0.880 0.020 75) !important; }
+.admin-theme .border-slate-200\/80 { border-color: oklch(0.880 0.020 75 / 0.80) !important; }
+.admin-theme .border-slate-300 { border-color: oklch(0.840 0.025 75) !important; }
+
+/* Modal backdrop */
+.admin-theme .bg-slate-900\/40 { background-color: oklch(0.220 0.018 40 / 0.40) !important; }
+
+/* Red hover for retry button */
+.admin-theme .hover\:bg-red-50:hover { background-color: oklch(0.920 0.025 30 / 0.50) !important; }
+
+/* Scrollbar */
+.admin-theme ::-webkit-scrollbar-track { background: oklch(0.920 0.016 75); }
+.admin-theme ::-webkit-scrollbar-thumb { background: oklch(0.860 0.045 30); border-radius: 4px; }
+.admin-theme ::-webkit-scrollbar-thumb:hover { background: oklch(0.780 0.080 30); }
