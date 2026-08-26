@@ -1,24 +1,28 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
+import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
 
 export async function GET(req: Request) {
   try {
+    const identity = resolveRequestIdentity(req);
     const { searchParams } = new URL(req.url);
-    const studentId = searchParams.get('studentId') || 'student-alex';
+    const studentId = resolveStudentScope(identity, searchParams.get('studentId'));
 
     const history = await DataService.getQuizHistory(studentId);
     return NextResponse.json({ history });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Failed to get quiz history:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to load quiz history' }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const identity = resolveRequestIdentity(req);
     const body = await req.json();
     const {
-      studentId = 'student-alex',
       lessonId,
       concept,
       question,
@@ -26,6 +30,8 @@ export async function POST(req: Request) {
       isCorrect,
       feedback,
     } = body;
+
+    const studentId = resolveStudentScope(identity, body.studentId);
 
     if (!lessonId || !concept || !question || selectedOptionIndex === undefined) {
       return NextResponse.json(
@@ -46,8 +52,10 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ submission });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Failed to record quiz submission:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to record quiz submission' }, { status: 500 });
   }
 }

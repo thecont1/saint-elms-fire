@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateQuizFlow } from '@/ai/flows/generate-quiz';
+import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
 
 // Uses the Firestore client + Google AI SDK, neither of which runs on the edge.
 export const runtime = 'nodejs';
@@ -25,43 +26,36 @@ function publicGenerationError(error: unknown): string {
  * content) so callers can tell live output from a dead dependency.
  */
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const lessonId = searchParams.get('lessonId');
-  const studentId = searchParams.get('studentId');
-  const difficultyParam = searchParams.get('difficulty');
-
-  if (!lessonId) {
-    return NextResponse.json(
-      { error: 'lessonId query parameter is required' },
-      { status: 400 },
-    );
-  }
-
-  if (!studentId) {
-    return NextResponse.json(
-      { error: 'studentId query parameter is required' },
-      { status: 400 },
-    );
-  }
-
-  const DIFFICULTIES = ['foundational', 'intermediate', 'advanced'] as const;
-  const difficulty = DIFFICULTIES.find((value) => value === difficultyParam);
-  if (difficultyParam && !difficulty) {
-    return NextResponse.json(
-      { error: 'difficulty must be foundational, intermediate, or advanced' },
-      { status: 400 },
-    );
-  }
-
   try {
+    const identity = resolveRequestIdentity(req);
+    const { searchParams } = new URL(req.url);
+    const lessonId = searchParams.get('lessonId');
+    const studentId = resolveStudentScope(identity, searchParams.get('studentId'));
+    const difficultyParam = searchParams.get('difficulty');
+
+    if (!lessonId) {
+      return NextResponse.json(
+        { error: 'lessonId query parameter is required' },
+        { status: 400 },
+      );
+    }
+
+    const DIFFICULTIES = ['foundational', 'intermediate', 'advanced'] as const;
+    const difficulty = DIFFICULTIES.find((value) => value === difficultyParam);
+    if (difficultyParam && !difficulty) {
+      return NextResponse.json(
+        { error: 'difficulty must be foundational, intermediate, or advanced' },
+        { status: 400 },
+      );
+    }
+
     const quiz = await generateQuizFlow({ lessonId, studentId, difficulty });
     return NextResponse.json({ quiz });
   } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
+
     const message = error instanceof Error ? error.message : 'Quiz generation failed';
-    // Release-gate denials map to 403; missing lesson to 404; everything else 502
-    // (the upstream model/data dependency failed — an honest, visible failure).
-    // Only our flow's own anchored error strings map to 403/404, and client
-    // messages are fixed — never raw error text or lesson titles.
     const status = /^Access Denied:/i.test(message)
       ? 403
       : /^Lesson with id ".+" not found$/.test(message)
