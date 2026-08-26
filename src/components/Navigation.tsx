@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Compass, Shield, User } from 'lucide-react';
+import { Shield, User } from 'lucide-react';
 
 function RefreshIcon({ className = 'w-3.5 h-3.5', spin = false }: { className?: string; spin?: boolean }) {
   return (
@@ -195,6 +195,31 @@ export function Navigation({
   onBoom,
   isBooming = false,
 }: NavigationProps) {
+  const formatDateTime = (d: Date) => {
+    const date = d.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).replace(/,/g, '');
+    const time = d.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    return `${date} ${time}`;
+  };
+
+  const [currentDateTime, setCurrentDateTime] = useState<string>(formatDateTime(new Date()));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(formatDateTime(new Date()));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 border-b border-beacon-100 bg-white/90 backdrop-blur-md">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -204,14 +229,16 @@ export function Navigation({
             <div className="w-10 h-10 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
               <CoronaMark className="w-6 h-6 animate-glow-breathe" />
             </div>
-            <div className="min-w-0">
-              <span className="font-display text-xl font-semibold tracking-tight text-marine-900 leading-none">
+            <div className="min-w-0 flex items-baseline gap-2">
+              <span className="font-display text-3xl font-thin tracking-[-0.06em] text-marine-900 leading-none uppercase">
                 Saint Elms Fire
               </span>
-              <p className="chart-annotation mt-1 hidden sm:flex items-center gap-1.5 truncate">
-                <Compass className="w-3 h-3 text-beacon-500" />
-                A beacon for weary navigators
-              </p>
+              <span
+                className="hidden sm:inline font-mono text-xs text-marine-500 leading-none"
+                suppressHydrationWarning
+              >
+                {currentDateTime}
+              </span>
             </div>
           </div>
 

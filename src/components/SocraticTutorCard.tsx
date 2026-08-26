@@ -77,7 +77,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
           onClick={() => fetchActiveSession(true)}
           disabled={isLoadingSession}
           className="p-2 text-marine-400 hover:text-beacon-700 rounded-full hover:bg-beacon-50 transition border border-transparent hover:border-beacon-200"
-          title="Request new Socratic challenge"
+          title="Request a new challenge from Socrates my Philosopher"
         >
           <RefreshCw className={`w-4 h-4 ${isLoadingSession ? 'animate-spin' : ''}`} />
         </button>

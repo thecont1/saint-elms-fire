@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, ShieldCheck, AlertTriangle, BookOpen, User, HelpCircle, Loader2 } from 'lucide-react';
+import { Send, ShieldCheck, AlertTriangle, BookOpen, User, HelpCircle, Loader2 } from 'lucide-react';
 import { CoronaMark } from '@/components/Navigation';
+import { InfoIcon } from '@/components/InfoIcon';
 import type { ChatMessage } from '@/lib/types';
 
 interface StudentChatProps {
@@ -20,8 +21,8 @@ export function StudentChat({
     {
       id: 'welcome',
       sender: 'tutor',
-      content: `Welcome aboard! I am the Socratic Beacon — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: `Welcome aboard! I am Socrates my Guide — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       isGrounded: true,
     },
   ]);
@@ -43,8 +44,8 @@ export function StudentChat({
           {
             id: 'welcome',
             sender: 'tutor',
-            content: `Welcome aboard! I am the Socratic Beacon — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
-            timestamp: prev[0].timestamp,
+            content: `Welcome aboard! I am Socrates my Guide — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             isGrounded: true,
           },
         ];
@@ -66,7 +67,7 @@ export function StudentChat({
       id: `user-${Date.now()}`,
       sender: 'student',
       content: query,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       isGrounded: false,
     };
 
@@ -107,7 +108,7 @@ export function StudentChat({
         id: `tutor-${Date.now()}`,
         sender: 'tutor',
         content: data.answer,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         isGrounded: data.isGrounded,
         groundedSources: data.groundedSources,
       };
@@ -118,7 +119,7 @@ export function StudentChat({
         id: `err-${Date.now()}`,
         sender: 'system',
         content: `Error: ${err.message}. Please verify Gemini API key settings.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         isGrounded: false,
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -138,26 +139,29 @@ export function StudentChat({
     <div className="chart-card overflow-hidden flex flex-col h-full">
       {/* Header with Grounding Indicator */}
       <div className="p-4 border-b border-beacon-100 bg-beacon-50/60">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
-            <CoronaMark className="w-5 h-5" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
+              <CoronaMark className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-display text-sm font-semibold text-marine-900">
+                Socrates my Guide
+              </h3>
+              <p className="text-xs text-marine-500 leading-snug">
+                Lit by your {releasedLessonCount} unlocked lesson(s)
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h3 className="font-display text-sm font-semibold text-marine-900">
-              The Socratic Beacon
-            </h3>
-            <p className="text-xs text-marine-500 leading-snug">
-              Lit by your {releasedLessonCount} unlocked lesson(s)
-            </p>
-          </div>
+          <InfoIcon text="Socrates my Guide is your AI study companion. It answers questions using only your unlocked lessons as context, so it won't reveal topics from future waypoints." />
         </div>
         <div className="flex items-center gap-1.5 mt-2.5">
           <span className="chart-annotation px-2 py-0.5 rounded-full bg-white text-beacon-700 border border-beacon-200">
             Release-gated
           </span>
           <span className="chart-annotation flex items-center gap-1 text-beacon-700 bg-white px-2 py-0.5 rounded-full border border-beacon-200">
-            <Sparkles className="w-3 h-3 text-beacon-500" />
-            Gemini 3.7
+            <ShieldCheck className="w-3 h-3 text-beacon-500" />
+            Grounded
           </span>
         </div>
       </div>
@@ -188,12 +192,6 @@ export function StudentChat({
               ) : msg.sender === 'tutor' ? (
                 <>
                   <CoronaMark className="w-3.5 h-3.5 text-beacon-500" />
-                  <span className="text-xs font-bold text-marine-900">Socratic Beacon</span>
-                  {msg.isGrounded && (
-                    <span className="chart-annotation px-2 py-0.5 rounded-full bg-beacon-50 text-beacon-700 border border-beacon-200">
-                      Grounded
-                    </span>
-                  )}
                 </>
               ) : (
                 <span className="text-xs font-bold text-rose-600">System</span>
@@ -271,7 +269,7 @@ export function StudentChat({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask the beacon about your unlocked courseware..."
+          placeholder="Ask Socrates my Guide about your unlocked courseware..."
           disabled={isLoading}
           className="flex-1 bg-chart border border-beacon-100 focus:border-beacon-500 focus:bg-white rounded-full px-4 py-2.5 text-xs text-marine-900 placeholder-marine-400 focus:outline-none focus:ring-2 focus:ring-beacon-200 disabled:opacity-50 transition"
         />

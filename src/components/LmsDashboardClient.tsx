@@ -7,9 +7,7 @@ import {
   Network,
   Layers,
   Anchor,
-  Star,
   ChevronDown,
-  Activity,
 } from 'lucide-react';
 import { Navigation, CoronaMark, ModelStatusLights } from '@/components/Navigation';
 import { KnowledgeGraphVisualizer } from '@/components/KnowledgeGraphVisualizer';
@@ -20,6 +18,7 @@ import { CoursewareViewer } from '@/components/CoursewareViewer';
 import { AdminCourseManager } from '@/components/AdminCourseManager';
 import { AdminReleaseManager } from '@/components/AdminReleaseManager';
 import { QuizModal } from '@/components/QuizModal';
+import { InfoIcon } from '@/components/InfoIcon';
 import type { Course, CourseModule, Lesson, ReleaseEvent, KnowledgeNode, KnowledgeEdge, SocraticSession } from '@/lib/types';
 
 interface LmsDashboardClientProps {
@@ -179,22 +178,18 @@ export function LmsDashboardClient({
       />
 
       {/* 2. HERO — the legend of the fire (toggled by Hide/Show tab) */}
-      <section
-        className={`border-b border-beacon-100 bg-white/60 overflow-hidden transition-all duration-500 ease-in-out ${
-          heroExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
-          <div className="flex flex-wrap items-end justify-between gap-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 border-b border-beacon-100 bg-white/60 grid grid-cols-1 sm:grid-cols-[1fr_minmax(500px,auto)]">
+        <section
+          className={`col-span-2 overflow-hidden transition-all duration-500 ease-in-out ${
+            heroExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="pt-10 pb-8 grid grid-cols-1 sm:grid-cols-[1fr_minmax(500px,auto)] gap-6">
             <div className="max-w-2xl">
-              <p className="chart-annotation flex items-center gap-2 mb-3">
-                <Star className="w-3.5 h-3.5 text-beacon-500" />
-                The light sailors trusted at the masthead
-              </p>
               <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-marine-950 leading-[1.05]">
-                Guidance through<br />the <span className="text-beacon-600 italic">storm</span>.
+                Guidance through the <span className="text-beacon-600 italic">storm</span>.
               </h1>
-              <p className="mt-4 text-sm sm:text-[15px] text-marine-600 leading-relaxed max-w-xl">
+              <p className="mt-4 text-sm sm:text-[15px] text-marine-600 leading-relaxed max-w-2xl">
                 When St. Elmo's Fire danced blue upon the rigging, sailors knew the worst
                 of the tempest was behind them — a corona of science, not superstition.
                 This is that light for learners: knowledge held steady against the
@@ -203,46 +198,63 @@ export function LmsDashboardClient({
             </div>
 
             {/* Ship's-log metrics: 2x2 matrix, stretches to match hero text height */}
-            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[500px] items-stretch self-stretch">
-              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
-                <p className="chart-annotation mb-1">Course plotted</p>
-                <p className="font-display text-2xl font-semibold text-marine-900">
-                  {releasedLessons.length}<span className="text-marine-400 text-lg">/{lessons.length}</span>
-                </p>
-                <p className="text-[11px] text-marine-500 font-medium">lessons unlocked</p>
-              </div>
-              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
-                <p className="chart-annotation mb-1">Constellation</p>
-                <p className="font-display text-2xl font-semibold text-marine-900">{graphData.nodes.length}</p>
-                <p className="text-[11px] text-marine-500 font-medium">stars mapped</p>
-              </div>
-              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
-                <p className="chart-annotation mb-1">Voyage</p>
-                <p className="font-display text-2xl font-semibold text-beacon-600">{completionPercentage}%</p>
-                <p className="text-[11px] text-marine-500 font-medium">complete</p>
-              </div>
-              <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Activity className="w-3.5 h-3.5 text-beacon-500" />
-                  <p className="chart-annotation">Active models</p>
+            <div className="grid grid-cols-2 gap-3 w-full items-stretch self-stretch">
+              <div className="chart-card px-4 py-4 flex flex-col justify-between h-full">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="chart-annotation">Course plotted</p>
+                  <InfoIcon text="This counter shows how many lessons have been released to you out of the total course. New waypoints unlock as your instructor releases them." />
                 </div>
-                <ModelStatusLights />
-                <p className="text-[11px] text-marine-500 font-medium mt-1.5">latency shown per model</p>
+                <div>
+                  <p className="font-display text-2xl font-semibold text-marine-900">
+                    {releasedLessons.length}<span className="text-marine-400 text-lg">/{lessons.length}</span>
+                  </p>
+                  <p className="text-[11px] text-marine-500 font-medium">lessons unlocked</p>
+                </div>
+              </div>
+              <div className="chart-card px-4 py-4 flex flex-col justify-between h-full">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="chart-annotation">Constellation</p>
+                  <InfoIcon text="The number of concepts extracted from your released lessons and mapped as stars in the Knowledge Constellation. It grows as more lessons are unlocked." />
+                </div>
+                <div>
+                  <p className="font-display text-2xl font-semibold text-marine-900">{graphData.nodes.length}</p>
+                  <p className="text-[11px] text-marine-500 font-medium">stars mapped</p>
+                </div>
+              </div>
+              <div className="chart-card px-4 py-4 flex flex-col justify-between h-full">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="chart-annotation">Voyage</p>
+                  <InfoIcon text="Your overall progress through the course, calculated from the lessons you have unlocked so far. 100% means the entire voyage is in view." />
+                </div>
+                <div>
+                  <p className="font-display text-2xl font-semibold text-beacon-600">{completionPercentage}%</p>
+                  <p className="text-[11px] text-marine-500 font-medium">complete</p>
+                </div>
+              </div>
+              <div className="chart-card px-4 py-4 flex flex-col justify-between h-full">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="chart-annotation">Active models</p>
+                  <InfoIcon text="Live health and response-time telemetry for the two models that power Saint Elms Fire. Green means the model is available; the number is its last measured latency." />
+                </div>
+                <div>
+                  <ModelStatusLights />
+                  <p className="text-[11px] text-marine-500 font-medium mt-1.5">latency shown per model</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Hide/Show tab — hangs from the bottom of the hero section */}
-      <div className="flex justify-end pr-4 sm:pr-6 lg:pr-8 -mt-px">
-        <button
-          onClick={() => setHeroExpanded(v => !v)}
-          className="px-2.5 py-0.5 rounded-b-md border border-t-0 border-beacon-100 bg-white/80 text-marine-400 text-[10px] font-medium transition hover:text-beacon-600 hover:border-beacon-200"
-          title={heroExpanded ? 'Hide metrics panel' : 'Show metrics panel'}
-        >
-          {heroExpanded ? 'Hide' : 'Show'}
-        </button>
+        {/* Hide/Show tab — hangs from the bottom of the hero section */}
+        <div className="sm:col-start-2 flex justify-center -mt-px">
+          <button
+            onClick={() => setHeroExpanded(v => !v)}
+            className="px-2.5 py-0.5 rounded-b-md border border-t-0 border-beacon-100 bg-white/80 text-marine-400 text-[10px] font-medium transition hover:text-beacon-600 hover:border-beacon-200"
+            title={heroExpanded ? 'Hide metrics panel' : 'Show metrics panel'}
+          >
+            {heroExpanded ? 'Hide' : 'Show'}
+          </button>
+        </div>
       </div>
 
       {/* 3. MAIN CONTENT: 3-COLUMN LAYOUT (STUDENT) / 2-COLUMN LAYOUT (ADMIN) */}
@@ -302,11 +314,11 @@ export function LmsDashboardClient({
 
             {/* COLUMN 2: CENTER PRIMARY KNOWLEDGE & SECOND BRAIN CANVAS (6 cols) */}
             <section className="lg:col-span-6 space-y-5">
-              {/* Top: Proactive Socratic Tutor Card (Agent-Initiated Challenge) */}
+              {/* Top: Proactive Socrates my Philosopher Card (Agent-Initiated Challenge) */}
               <div className="chart-card overflow-hidden">
                 <button
                   onClick={() => setSocraticCollapsed(v => !v)}
-                  className="w-full flex items-center justify-between p-5 text-left border-b border-beacon-100"
+                  className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
@@ -314,14 +326,17 @@ export function LmsDashboardClient({
                     </div>
                     <div>
                       <h3 className="font-display text-base font-semibold text-marine-900">
-                        Socratic Tutor
+                        Socrates my Philosopher
                       </h3>
                       <p className="chart-annotation mt-0.5">
                         Proactive inquiry from your curriculum
                       </p>
                     </div>
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${socraticCollapsed ? '' : 'rotate-180'}`} />
+                  <div className="flex items-center gap-2">
+                    <InfoIcon text="Socrates my Philosopher sends you unprompted challenge questions based on your quiz performance. Answer them to strengthen your understanding of weak areas." />
+                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${socraticCollapsed ? '' : 'rotate-180'}`} />
+                  </div>
                 </button>
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${socraticCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
                   <SocraticTutorCard studentId={studentId} />
@@ -332,7 +347,7 @@ export function LmsDashboardClient({
               <div className="chart-card overflow-hidden">
                 <button
                   onClick={() => setCanvasCollapsed(v => !v)}
-                  className="w-full flex items-center justify-between p-5 text-left border-b border-beacon-100"
+                  className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
@@ -355,7 +370,14 @@ export function LmsDashboardClient({
                       </p>
                     </div>
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${canvasCollapsed ? '' : 'rotate-180'}`} />
+                  <div className="flex items-center gap-2">
+                    {centerTab === 'graph' ? (
+                      <InfoIcon text="The Knowledge Constellation is a visual map of concepts extracted from your released lessons. Each star is a concept; lines show how they connect. It grows as more lessons are unlocked." />
+                    ) : (
+                      <InfoIcon text="The Reader shows your lesson in multiple formats — structured notes, a podcast dialogue script, or a video lecture script — all generated from the same source material." />
+                    )}
+                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${canvasCollapsed ? '' : 'rotate-180'}`} />
+                  </div>
                 </button>
 
                 {/* View Mode Toggle */}
@@ -489,7 +511,7 @@ export function LmsDashboardClient({
 
             <p className="text-[11px] text-marine-500 max-w-md leading-relaxed text-center">
               Trust the light, not the thunder. Reasoned knowledge, drip-fed with
-              courage, mapped as a constellation, and guarded by a Socratic beacon.
+              courage, mapped as a constellation, and guarded by Socrates my Guide.
             </p>
 
             <div className="chart-annotation flex items-center gap-4">

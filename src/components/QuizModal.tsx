@@ -216,7 +216,7 @@ export function QuizModal({
                 {quizData.explanation}
                 {selectedOption !== quizData.correctIndex && (
                   <div className="text-[11px] text-amber-800 mt-2 font-semibold">
-                    The Socratic Beacon will light a proactive challenge on your dashboard to reinforce this concept.
+                    Socrates my Guide will light a proactive challenge on your dashboard to reinforce this concept.
                   </div>
                 )}
               </div>
