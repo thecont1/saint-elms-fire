@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Compass,
   GraduationCap,
@@ -8,6 +8,8 @@ import {
   Layers,
   Anchor,
   Star,
+  ChevronDown,
+  Activity,
 } from 'lucide-react';
 import { Navigation, CoronaMark, ModelStatusLights } from '@/components/Navigation';
 import { KnowledgeGraphVisualizer } from '@/components/KnowledgeGraphVisualizer';
@@ -57,6 +59,23 @@ export function LmsDashboardClient({
 
   // Loading & Sync States
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isBooming, setIsBooming] = useState(false);
+  const [heroExpanded, setHeroExpanded] = useState(true);
+  const [socraticCollapsed, setSocraticCollapsed] = useState(false);
+  const [canvasCollapsed, setCanvasCollapsed] = useState(false);
+
+  // Toggle admin theme class on <html>; scroll to top on role switch (not initial mount)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (role === 'admin') root.classList.add('admin-theme');
+    else root.classList.remove('admin-theme');
+    if (!isFirstRender.current) {
+      window.scrollTo(0, 0);
+    }
+    isFirstRender.current = false;
+    return () => root.classList.remove('admin-theme');
+  }, [role]);
 
   // Compute released lessons
   useEffect(() => {
@@ -121,6 +140,26 @@ export function LmsDashboardClient({
     }
   };
 
+  const handleBoom = async () => {
+    if (!confirm('This will permanently delete ALL data (courses, modules, lessons, releases, graph, quizzes, sessions). Are you sure?')) return;
+    setIsBooming(true);
+    try {
+      await fetch('/api/flush', { method: 'POST' });
+      setCourses([]);
+      setSelectedCourse(null);
+      setModules([]);
+      setLessons([]);
+      setReleases([]);
+      setReleasedLessons([]);
+      setGraphData({ nodes: [], edges: [] });
+      setSelectedLesson(null);
+    } catch (err) {
+      console.error('Boom failed:', err);
+    } finally {
+      setIsBooming(false);
+    }
+  };
+
   const handleConceptSelectFromGraph = (concept: string) => {
     setChatInitialQuery(`Can you explain the significance of "${concept}" in our courseware?`);
   };
@@ -135,10 +174,30 @@ export function LmsDashboardClient({
         onRoleChange={setRole}
         onSync={refreshAllData}
         isSyncing={isSyncing}
+        onBoom={handleBoom}
+        isBooming={isBooming}
       />
 
-      {/* 2. HERO — the legend of the fire */}
-      <section className="border-b border-beacon-100 bg-white/60">
+      {/* Metrics tab — hangs from the primary header's bottom border, under the Boom button */}
+      <div className={`sticky top-16 z-30 flex justify-end pl-4 sm:pl-6 lg:pl-8 pr-16 sm:pr-18 lg:pr-20 -mb-px transition-colors duration-500 ${heroExpanded ? 'bg-white/60' : 'bg-transparent'}`}>
+        <button
+          onClick={() => setHeroExpanded(v => !v)}
+          className="flex items-center gap-1.5 px-4 py-1.5 rounded-b-lg border border-t-0 border-beacon-200 bg-white text-beacon-700 text-xs font-bold transition shadow-sm hover:bg-beacon-50"
+          title="Toggle metrics panel"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-3 h-3" fill="currentColor">
+            <path d="M46.05 60.163H31.923c-.836 0-1.513.677-1.513 1.513V83.61c0 .836.677 1.513 1.513 1.513H46.05c.836 0 1.512-.677 1.512-1.513V61.675c0-.836-.677-1.512-1.512-1.512zM68.077 14.878H53.95c-.836 0-1.513.677-1.513 1.513v67.218c0 .836.677 1.513 1.513 1.513h14.127c.836 0 1.513-.677 1.513-1.513V16.391c0-.836-.677-1.513-1.513-1.513zM90.217 35.299H76.09c-.836 0-1.513.677-1.513 1.513v46.797c0 .836.677 1.513 1.513 1.513h14.126c.836 0 1.513-.677 1.513-1.513V36.812c0-.835-.677-1.513-1.512-1.513zM23.91 35.299H9.783c-.836 0-1.513.677-1.513 1.513v46.797c0 .836.677 1.513 1.513 1.513H23.91c.836 0 1.513-.677 1.513-1.513V36.812c0-.835-.677-1.513-1.513-1.513z"/>
+          </svg>
+          Metrics
+        </button>
+      </div>
+
+      {/* 2. HERO — the legend of the fire (toggled by Metrics tab) */}
+      <section
+        className={`border-b border-beacon-100 bg-white/60 overflow-hidden transition-all duration-500 ease-in-out ${
+          heroExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-2xl">
@@ -158,7 +217,7 @@ export function LmsDashboardClient({
             </div>
 
             {/* Ship's-log metrics: 2x2 matrix, stretches to match hero text height */}
-            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[384px] items-stretch self-stretch">
+            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[500px] items-stretch self-stretch">
               <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Course plotted</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">
@@ -177,8 +236,12 @@ export function LmsDashboardClient({
                 <p className="text-[11px] text-marine-500 font-medium">complete</p>
               </div>
               <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
-                <p className="chart-annotation mb-1">Active models</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Activity className="w-3.5 h-3.5 text-beacon-500" />
+                  <p className="chart-annotation">Active models</p>
+                </div>
                 <ModelStatusLights />
+                <p className="text-[11px] text-marine-500 font-medium mt-1.5">latency shown per model</p>
               </div>
             </div>
           </div>
@@ -191,7 +254,7 @@ export function LmsDashboardClient({
         {role === 'student' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* COLUMN 1: LEFT CURRICULUM & NAVIGATION RAIL (3 cols) */}
-            <aside className="lg:col-span-3 space-y-4">
+            <aside className="lg:col-span-3 space-y-4 sticky top-20 self-start">
               {/* Course Overview Widget */}
               {selectedCourse && (
                 <div className="chart-card p-5 space-y-3">
@@ -243,11 +306,37 @@ export function LmsDashboardClient({
             {/* COLUMN 2: CENTER PRIMARY KNOWLEDGE & SECOND BRAIN CANVAS (6 cols) */}
             <section className="lg:col-span-6 space-y-5">
               {/* Top: Proactive Socratic Tutor Card (Agent-Initiated Challenge) */}
-              <SocraticTutorCard studentId={studentId} />
+              <div className="chart-card overflow-hidden">
+                <button
+                  onClick={() => setSocraticCollapsed(v => !v)}
+                  className="w-full flex items-center justify-between p-5 text-left border-b border-beacon-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
+                      <Compass className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-base font-semibold text-marine-900">
+                        Socratic Tutor
+                      </h3>
+                      <p className="chart-annotation mt-0.5">
+                        Proactive inquiry from your curriculum
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${socraticCollapsed ? '' : 'rotate-180'}`} />
+                </button>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${socraticCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
+                  <SocraticTutorCard studentId={studentId} />
+                </div>
+              </div>
 
               {/* Center Canvas Header with View Mode Switcher */}
-              <div className="chart-card p-5 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-beacon-100 pb-4">
+              <div className="chart-card overflow-hidden">
+                <button
+                  onClick={() => setCanvasCollapsed(v => !v)}
+                  className="w-full flex items-center justify-between p-5 text-left border-b border-beacon-100"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
                       {centerTab === 'graph' ? (
@@ -269,61 +358,68 @@ export function LmsDashboardClient({
                       </p>
                     </div>
                   </div>
+                  <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${canvasCollapsed ? '' : 'rotate-180'}`} />
+                </button>
 
-                  {/* View Mode Toggle */}
-                  <div className="flex gap-1 bg-beacon-50 p-1 rounded-full border border-beacon-100">
-                    <button
-                      onClick={() => setCenterTab('graph')}
-                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
-                        centerTab === 'graph'
-                          ? 'bg-beacon-600 text-white shadow-sm'
-                          : 'text-marine-500 hover:text-marine-800'
-                      }`}
-                    >
-                      <Network className="w-3.5 h-3.5" />
-                      <span>Constellation</span>
-                    </button>
+                {/* View Mode Toggle */}
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${canvasCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
+                  <div className="p-5 space-y-4">
+                    <div className="flex flex-wrap items-center justify-end gap-3">
+                      <div className="flex gap-1 bg-beacon-50 p-1 rounded-full border border-beacon-100">
+                        <button
+                          onClick={() => setCenterTab('graph')}
+                          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
+                            centerTab === 'graph'
+                              ? 'bg-beacon-600 text-white shadow-sm'
+                              : 'text-marine-500 hover:text-marine-800'
+                          }`}
+                        >
+                          <Network className="w-3.5 h-3.5" />
+                          <span>Constellation</span>
+                        </button>
 
-                    <button
-                      onClick={() => setCenterTab('multimodal')}
-                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
-                        centerTab === 'multimodal'
-                          ? 'bg-beacon-600 text-white shadow-sm'
-                          : 'text-marine-500 hover:text-marine-800'
-                      }`}
-                    >
-                      <Layers className="w-3.5 h-3.5" />
-                      <span>Reader</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Primary Canvas Body */}
-                <div className="min-h-[500px]">
-                  {centerTab === 'graph' ? (
-                    <KnowledgeGraphVisualizer
-                      nodes={graphData.nodes}
-                      edges={graphData.edges}
-                      onSelectConcept={handleConceptSelectFromGraph}
-                      isLoading={isSyncing}
-                    />
-                  ) : selectedLesson ? (
-                    <MultiFormatViewer
-                      lesson={selectedLesson}
-                      studentId={studentId}
-                    />
-                  ) : (
-                    <div className="p-12 text-center text-xs text-marine-400">
-                      Select a lesson from the left column to view its content and generated formats.
+                        <button
+                          onClick={() => setCenterTab('multimodal')}
+                          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
+                            centerTab === 'multimodal'
+                              ? 'bg-beacon-600 text-white shadow-sm'
+                              : 'text-marine-500 hover:text-marine-800'
+                          }`}
+                        >
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Reader</span>
+                        </button>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Primary Canvas Body */}
+                    <div className="min-h-[500px]">
+                      {centerTab === 'graph' ? (
+                        <KnowledgeGraphVisualizer
+                          nodes={graphData.nodes}
+                          edges={graphData.edges}
+                          onSelectConcept={handleConceptSelectFromGraph}
+                          isLoading={isSyncing}
+                        />
+                      ) : selectedLesson ? (
+                        <MultiFormatViewer
+                          lesson={selectedLesson}
+                          studentId={studentId}
+                        />
+                      ) : (
+                        <div className="p-12 text-center text-xs text-marine-400">
+                          Select a lesson from the left column to view its content and generated formats.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
 
             {/* COLUMN 3: RIGHT ACADEMIC TUTOR CHAT RAIL (3 cols) */}
-            <aside className="lg:col-span-3 space-y-4">
-              <div className="h-[760px] sticky top-20">
+            <aside className="lg:col-span-3 space-y-4 sticky top-20 self-start">
+              <div className="h-[760px]">
                 <StudentChat
                   studentId={studentId}
                   releasedLessonCount={releasedLessons.length}

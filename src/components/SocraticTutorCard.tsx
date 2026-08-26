@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { CoronaMark } from '@/components/Navigation';
 
 interface SocraticTutorCardProps {
   studentId: string;
@@ -68,31 +67,12 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
   };
 
   return (
-    <div className="chart-card p-6 relative overflow-hidden">
+    <div className="relative overflow-hidden p-5">
       {/* The beacon's glow */}
       <div className="absolute -top-20 -right-20 w-56 h-56 bg-beacon-200/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Card Header */}
-      <div className="relative flex items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
-            <CoronaMark className="w-6 h-6 animate-glow-breathe" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-display text-lg font-semibold text-marine-950 tracking-tight">
-                The Beacon Calls
-              </h3>
-              <span className="chart-annotation px-2.5 py-0.5 rounded-full bg-beacon-50 text-beacon-700 border border-beacon-200">
-                Proactive inquiry
-              </span>
-            </div>
-            <p className="text-xs text-marine-500 mt-0.5">
-              A light against uncertainty — a challenge drawn from your recent quizzes
-            </p>
-          </div>
-        </div>
-
+      {/* Refresh button */}
+      <div className="relative flex justify-end mb-3">
         <button
           onClick={() => fetchActiveSession(true)}
           disabled={isLoadingSession}
