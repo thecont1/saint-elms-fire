@@ -125,6 +125,18 @@ export function completeArtifact(
   return { ...artifact, status: 'ready', sizeBytes, completedAt, error: undefined };
 }
 
+/**
+ * Retry policy (Phase 6, Track C3): only failed artifacts may be retried;
+ * retry resets the record to pending and clears the bounded error so the
+ * job runner regenerates into the same storage path.
+ */
+export function retryArtifact(artifact: GeneratedArtifact, retriedAt: string): GeneratedArtifact {
+  if (artifact.status !== 'failed') {
+    throw new Error('Only failed artifacts can be retried');
+  }
+  return { ...artifact, status: 'pending', error: undefined, completedAt: undefined, sizeBytes: undefined, createdAt: retriedAt };
+}
+
 export function failArtifact(
   artifact: GeneratedArtifact,
   category: ArtifactErrorCategory,

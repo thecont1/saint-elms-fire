@@ -8,6 +8,7 @@ import {
   failArtifact,
   ArtifactAccessError,
   ARTIFACT_ERROR_CATEGORIES,
+  retryArtifact,
 } from './artifacts';
 
 const base = {
@@ -105,5 +106,26 @@ describe('artifact lifecycle', () => {
 
   test('failArtifact rejects unbounded categories', () => {
     expect(() => failArtifact(buildPendingArtifact(base), 'raw upstream stacktrace' as never)).toThrow();
+  });
+});
+
+describe('retryArtifact', () => {
+  const failed = {
+    ...buildPendingArtifact({ id: 'a1', studentId: 's1', lessonId: 'l1', formatType: 'notes_pdf' as const, requestedAt: '2026-08-27T00:00:00.000Z' }),
+    status: 'failed' as const,
+    error: 'pdf_render_failed' as const,
+  };
+
+  test('failed artifact resets to pending and clears bounded error', () => {
+    const retried = retryArtifact(failed, '2026-08-27T01:00:00.000Z');
+    expect(retried.status).toBe('pending');
+    expect(retried.error).toBeUndefined();
+    expect(retried.completedAt).toBeUndefined();
+    expect(retried.createdAt).toBe('2026-08-27T01:00:00.000Z');
+  });
+
+  test('only failed artifacts are retryable', () => {
+    expect(() => retryArtifact({ ...failed, status: 'pending' as const }, '2026-08-27T01:00:00.000Z')).toThrow();
+    expect(() => retryArtifact({ ...failed, status: 'ready' as const }, '2026-08-27T01:00:00.000Z')).toThrow();
   });
 });

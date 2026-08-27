@@ -24,6 +24,7 @@ import {
   buildPendingArtifact,
   completeArtifact,
   failArtifact as failArtifactRecord,
+  retryArtifact as retryArtifactRecord,
   type ArtifactErrorCategory,
   type GeneratedArtifact,
 } from './artifacts';
@@ -782,6 +783,39 @@ export const DataService = {
       transaction.set(ref, updated);
       return updated;
     });
+  },
+
+  async beginArtifactRetry(id: string): Promise<GeneratedArtifact> {
+    const ref = db.collection('generated_artifacts').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Artifact not found');
+      const updated = retryArtifactRecord(sanitizeDoc<GeneratedArtifact>(snap), new Date().toISOString());
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  /** Observability (Phase 6, Track C3): cheap aggregate counts for artifacts + shares. */
+  async getGenerationMetrics(): Promise<{
+    artifacts: { total: number; pending: number; ready: number; failed: number };
+    shares: { active: number; withdrawn: number };
+  }> {
+    const [artifactsSnap, sharesSnap] = await Promise.all([
+      db.collection('generated_artifacts').get(),
+      db.collection('shared_items').get(),
+    ]);
+    const artifacts = { total: artifactsSnap.size, pending: 0, ready: 0, failed: 0 };
+    for (const doc of artifactsSnap.docs) {
+      const status = doc.data().status as 'pending' | 'ready' | 'failed';
+      if (status in artifacts) artifacts[status] += 1;
+    }
+    const shares = { active: 0, withdrawn: 0 };
+    for (const doc of sharesSnap.docs) {
+      const status = doc.data().status as 'active' | 'withdrawn';
+      if (status in shares) shares[status] += 1;
+    }
+    return { artifacts, shares };
   },
 
   // SECOND-BRAIN CORPUS (Phase 6, Track A0)

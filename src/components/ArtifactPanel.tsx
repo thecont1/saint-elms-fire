@@ -65,11 +65,16 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
     setBusy(formatType);
     setNotice(null);
     try {
-      const res = await fetch('/api/artifacts/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lessonId, studentId, formatType }),
-      });
+      // Failed artifacts re-run through the retry endpoint (Track C3), which
+      // does not count against the daily generation quota a second time.
+      const failed = artifacts[formatType];
+      const res = failed?.status === 'failed'
+        ? await fetch(`/api/artifacts/${failed.id}/retry?studentId=${studentId}`, { method: 'POST' })
+        : await fetch('/api/artifacts/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lessonId, studentId, formatType }),
+          });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
       await refresh();
