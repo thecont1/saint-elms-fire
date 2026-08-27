@@ -20,6 +20,13 @@ import type {
 } from './types';
 import type { IngestionArtifact, StagedVectorRecord, ExtractedGraphNode, ExtractedGraphEdge } from './second-brain-ingestion';
 import { buildPendingRelease, completeRelease, failRelease, isReleaseVisible } from './release-integrity';
+import {
+  buildPendingArtifact,
+  completeArtifact,
+  failArtifact as failArtifactRecord,
+  type ArtifactErrorCategory,
+  type GeneratedArtifact,
+} from './artifacts';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -699,6 +706,74 @@ export const DataService = {
       .filter(chunk => !visibleSet || !chunk.releaseId || visibleSet.has(chunk.releaseId))
       .sort((a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY))
       .slice(0, limit);
+  },
+
+  // GENERATED BINARY ARTIFACTS (Phase 6, Track A)
+  async createArtifact(input: {
+    studentId: string;
+    lessonId: string;
+    formatType: GeneratedArtifact['formatType'];
+    sources?: GeneratedArtifact['sources'];
+  }): Promise<GeneratedArtifact> {
+    const ref = db.collection('generated_artifacts').doc();
+    const artifact = buildPendingArtifact({
+      id: ref.id,
+      studentId: input.studentId,
+      lessonId: input.lessonId,
+      formatType: input.formatType,
+      requestedAt: new Date().toISOString(),
+      sources: input.sources,
+    });
+    await ref.set(artifact);
+    return artifact;
+  },
+
+  async getArtifact(id: string): Promise<GeneratedArtifact | null> {
+    const doc = await db.collection('generated_artifacts').doc(id).get();
+    return doc.exists ? sanitizeDoc<GeneratedArtifact>(doc) : null;
+  },
+
+  async getArtifactsForLesson(studentId: string, lessonId: string): Promise<GeneratedArtifact[]> {
+    const snap = await db
+      .collection('generated_artifacts')
+      .where('studentId', '==', studentId)
+      .where('lessonId', '==', lessonId)
+      .get();
+    return snap.docs
+      .map(doc => sanitizeDoc<GeneratedArtifact>(doc))
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  },
+
+  async countArtifactsCreatedSince(studentId: string, sinceIso: string): Promise<number> {
+    const snap = await db
+      .collection('generated_artifacts')
+      .where('studentId', '==', studentId)
+      .get();
+    return snap.docs
+      .map(doc => sanitizeDoc<GeneratedArtifact>(doc))
+      .filter(a => Date.parse(a.createdAt) >= Date.parse(sinceIso)).length;
+  },
+
+  async markArtifactReady(id: string, sizeBytes: number): Promise<GeneratedArtifact> {
+    const ref = db.collection('generated_artifacts').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Artifact not found');
+      const updated = completeArtifact(sanitizeDoc<GeneratedArtifact>(snap), sizeBytes, new Date().toISOString());
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  async markArtifactFailed(id: string, category: ArtifactErrorCategory): Promise<GeneratedArtifact> {
+    const ref = db.collection('generated_artifacts').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Artifact not found');
+      const updated = failArtifactRecord(sanitizeDoc<GeneratedArtifact>(snap), category);
+      transaction.set(ref, updated);
+      return updated;
+    });
   },
 
   // MULTI-FORMAT GENERATION ARTIFACTS
