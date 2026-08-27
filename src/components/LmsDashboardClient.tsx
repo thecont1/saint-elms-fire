@@ -7,7 +7,6 @@ import {
   Network,
   Layers,
   Anchor,
-  Star,
   ChevronDown,
   Activity,
 } from 'lucide-react';
@@ -180,31 +179,15 @@ export function LmsDashboardClient({
       />
 
       {/* 2. HERO — the legend of the fire (toggled by Hide/Show tab) */}
-      <section
-        className={`border-b border-beacon-100 bg-white/60 overflow-hidden transition-all duration-500 ease-in-out ${
-          heroExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div className="max-w-2xl">
-              <p className="chart-annotation flex items-center gap-2 mb-3">
-                <Star className="w-3.5 h-3.5 text-beacon-500" />
-                The light sailors trusted at the masthead
-              </p>
-              <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-marine-950 leading-[1.05]">
-                Guidance through<br />the <span className="text-beacon-600 italic">storm</span>.
-              </h1>
-              <p className="mt-4 text-sm sm:text-[15px] text-marine-600 leading-relaxed max-w-xl">
-                When St. Elmo's Fire danced blue upon the rigging, sailors knew the worst
-                of the tempest was behind them — a corona of science, not superstition.
-                This is that light for learners: knowledge held steady against the
-                unknown, one unlocked lesson at a time.
-              </p>
-            </div>
-
-            {/* Ship's-log metrics: 2x2 matrix, stretches to match hero text height */}
-            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:min-w-[500px] items-stretch self-stretch">
+      <div className="sticky top-16 z-30 border-b border-beacon-100 bg-white/90">
+        <section
+          className={`overflow-hidden transition-all duration-500 ease-in-out ${
+            heroExpanded ? 'max-h-[260px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            {/* Ship's-log metrics: single row, responsive to 2x2 on very small screens */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full items-stretch">
               <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Course plotted</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">
@@ -232,18 +215,20 @@ export function LmsDashboardClient({
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Hide/Show tab — hangs from the bottom of the hero section */}
-      <div className="flex justify-end pr-4 sm:pr-6 lg:pr-8 -mt-px">
-        <button
-          onClick={() => setHeroExpanded(v => !v)}
-          className="px-2.5 py-0.5 rounded-b-md border border-t-0 border-beacon-100 bg-white/80 text-marine-400 text-[10px] font-medium transition hover:text-beacon-600 hover:border-beacon-200"
-          title={heroExpanded ? 'Hide metrics panel' : 'Show metrics panel'}
-        >
-          {heroExpanded ? 'Hide' : 'Show'}
-        </button>
+        {/* Hide/Show tab — hangs from the bottom of the hero section */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-end -mt-px">
+            <button
+              onClick={() => setHeroExpanded(v => !v)}
+              className="px-2.5 py-0.5 rounded-b-md border border-t-0 border-beacon-100 bg-white/80 text-marine-400 text-[10px] font-medium transition hover:text-beacon-600 hover:border-beacon-200"
+              title={heroExpanded ? 'Hide metrics panel' : 'Show metrics panel'}
+            >
+              {heroExpanded ? 'Hide' : 'Show'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 3. MAIN CONTENT: 3-COLUMN LAYOUT (STUDENT) / 2-COLUMN LAYOUT (ADMIN) */}
