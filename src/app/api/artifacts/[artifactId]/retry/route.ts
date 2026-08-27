@@ -44,6 +44,7 @@ export async function POST(
       kind: retried.formatType,
       payload,
     });
+    await DataService.setArtifactJobId(retried.id, job.id);
     getArtifactJobRunner().kick();
 
     return NextResponse.json(

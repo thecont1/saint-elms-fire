@@ -41,6 +41,8 @@ export interface GeneratedArtifact {
   /** Generation options preserved so retries can replay the original request. */
   persona?: string;
   corpusScope?: 'lesson' | 'second_brain';
+  /** Backing job id for this artifact; used for idempotent create and polling. */
+  jobId?: string;
   createdAt: string;
   completedAt?: string;
   error?: ArtifactErrorCategory;
@@ -88,6 +90,7 @@ export function buildPendingArtifact(input: {
   persona?: string;
   corpusScope?: 'lesson' | 'second_brain';
   sources?: ArtifactSource[];
+  jobId?: string;
 }): GeneratedArtifact {
   const meta = FORMAT_META[input.formatType];
   if (!meta) throw new Error(`Unknown artifact format type: ${String(input.formatType)}`);
@@ -102,6 +105,7 @@ export function buildPendingArtifact(input: {
     sources: input.sources,
     persona: input.persona,
     corpusScope: input.corpusScope,
+    jobId: input.jobId,
     createdAt: input.requestedAt,
   };
 }

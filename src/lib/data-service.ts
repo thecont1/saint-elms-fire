@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { db, FieldValue } from './firestore';
 import type { RequestIdentity } from './request-identity';
 import type {
@@ -731,7 +732,42 @@ export const DataService = {
     sources?: GeneratedArtifact['sources'];
   }): Promise<{ artifact: GeneratedArtifact; job: JobRecord }> {
     const cap = input.cap ?? ARTIFACTS_PER_DAY;
+
+    // Stable request key based on the generation parameters. Using this as the
+    // artifact doc id makes identical concurrent requests collide on the same
+    // document, so the second transaction retries and returns the first's record.
+    const requestKey = createHash('sha256')
+      .update(
+        [
+          input.studentId,
+          input.lessonId,
+          input.formatType,
+          input.persona ?? '',
+          input.corpusScope ?? 'second_brain',
+        ].join(':'),
+      )
+      .digest('hex');
+
     return db.runTransaction(async (transaction) => {
+      const ref = db.collection('generated_artifacts').doc(requestKey);
+      const existingSnap = await transaction.get(ref);
+
+      if (existingSnap.exists) {
+        const existing = sanitizeDoc<GeneratedArtifact>(existingSnap);
+        // Return any non-failed artifact and its backing job. The retry endpoint
+        // handles explicit regeneration of a failed artifact.
+        if (existing.status !== 'failed' && existing.jobId) {
+          const jobSnap = await transaction.get(db.collection('jobs').doc(existing.jobId));
+          if (jobSnap.exists) {
+            const job = sanitizeDoc<JobRecord>(jobSnap);
+            return { artifact: existing, job };
+          }
+        }
+        // If the existing artifact is active but its job record is missing,
+        // continue and allocate a new job below. A failed artifact with no job
+        // will also be re-created (the client should prefer the retry route).
+      }
+
       const snap = await transaction.get(
         db.collection('generated_artifacts').where('studentId', '==', input.studentId)
       );
@@ -743,9 +779,10 @@ export const DataService = {
       }
 
       const requestedAt = new Date().toISOString();
-      const artifactRef = db.collection('generated_artifacts').doc();
+      const jobRef = db.collection('jobs').doc();
+
       const artifact = buildPendingArtifact({
-        id: artifactRef.id,
+        id: requestKey,
         studentId: input.studentId,
         lessonId: input.lessonId,
         formatType: input.formatType,
@@ -753,8 +790,9 @@ export const DataService = {
         persona: input.persona,
         corpusScope: input.corpusScope,
         sources: input.sources,
+        jobId: jobRef.id,
       });
-      transaction.set(artifactRef, artifact);
+      transaction.set(ref, artifact);
 
       const payload: Record<string, string> = {
         artifactId: artifact.id,
@@ -764,7 +802,6 @@ export const DataService = {
       if (input.persona) payload.persona = input.persona.slice(0, 200);
       if (input.corpusScope) payload.corpusScope = input.corpusScope;
 
-      const jobRef = db.collection('jobs').doc();
       const job = buildPendingJob({
         id: jobRef.id,
         kind: input.formatType,
@@ -824,6 +861,10 @@ export const DataService = {
       transaction.set(ref, updated);
       return updated;
     });
+  },
+
+  async setArtifactJobId(id: string, jobId: string): Promise<void> {
+    await db.collection('generated_artifacts').doc(id).set({ jobId }, { merge: true });
   },
 
   /** Observability (Phase 6, Track C3): cheap aggregate counts for artifacts + shares. */
