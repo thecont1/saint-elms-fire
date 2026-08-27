@@ -29,6 +29,7 @@ import {
 } from './artifacts';
 import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
 import type { LibraryItem, LibraryItemInput } from './library-catalog';
+import type { RecommendedReading } from './reading-recommendation';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -776,6 +777,65 @@ export const DataService = {
       transaction.set(ref, updated);
       return updated;
     });
+  },
+
+  // RECOMMENDED READINGS (Phase 6, Track B1)
+  async saveRecommendedReadings(readings: RecommendedReading[]): Promise<void> {
+    if (readings.length === 0) return;
+    const batch = db.batch();
+    for (const reading of readings) {
+      // Deterministic id (nodeId__libraryItemId) → retries upsert, no duplicates.
+      batch.set(db.collection('recommended_readings').doc(reading.id), reading);
+    }
+    await batch.commit();
+  },
+
+  async getRecommendedReadingsForStudent(studentId: string, nodeIds?: string[]): Promise<RecommendedReading[]> {
+    const snap = await db.collection('recommended_readings').where('studentId', '==', studentId).get();
+    const list = snap.docs.map(doc => sanitizeDoc<RecommendedReading>(doc));
+    if (!nodeIds) return list;
+    const wanted = new Set(nodeIds);
+    return list.filter(reading => wanted.has(reading.nodeId));
+  },
+
+  /**
+   * Ingest licensed library excerpt chunks into a student's vector space,
+   * tagged origin:'library' so they participate in RAG and generation.
+   */
+  async writeLibraryExcerptChunks(input: {
+    studentId: string;
+    libraryItemId: string;
+    lessonId: string;
+    courseId: string;
+    moduleId: string;
+    itemTitle: string;
+    chunks: Array<{ index: number; heading: string; content: string; embedding: number[] }>;
+  }): Promise<number> {
+    const createdAt = new Date().toISOString();
+    const batch = db.batch();
+    for (const chunk of input.chunks) {
+      const ref = db.collection('courseware_chunks').doc(
+        `lib_${input.studentId}_${input.libraryItemId}_${String(chunk.index).padStart(5, '0')}`
+      );
+      batch.set(ref, {
+        id: ref.id,
+        origin: 'library',
+        studentId: input.studentId,
+        libraryItemId: input.libraryItemId,
+        lessonId: input.lessonId,
+        lessonTitle: input.itemTitle,
+        courseId: input.courseId,
+        moduleId: input.moduleId,
+        chunkIndex: chunk.index,
+        heading: chunk.heading,
+        content: chunk.content,
+        embeddingModel: 'gemini-embedding-001/768',
+        embedding: FieldValue.vector(chunk.embedding),
+        createdAt,
+      });
+    }
+    await batch.commit();
+    return input.chunks.length;
   },
 
   // LIBRARY CATALOG (Phase 6, Track B1)

@@ -164,7 +164,18 @@ export interface KnowledgeEdge {
   releasedAt: string;
 }
 
+/** Source origin for Second Brain material (Phase 6). Default (absent) = released lesson. */
+export type CorpusOrigin = 'lesson' | 'library' | 'peer_share';
+
 export interface CoursewareChunk {
+  /** Phase 6: origin tag; absent means released lesson content. */
+  origin?: CorpusOrigin;
+  /** Phase 6: set for library/peer_share chunks, which are per-student. */
+  studentId?: string;
+  /** Phase 6: backing shared item for origin 'peer_share'. */
+  sharedItemId?: string;
+  /** Phase 6: backing catalog item for origin 'library'. */
+  libraryItemId?: string;
   id: string;
   lessonId: string;
   lessonTitle: string;
