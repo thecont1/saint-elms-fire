@@ -1140,6 +1140,33 @@ export const DataService = {
   },
 
   /**
+   * Reset a failed job back to pending so the runner can claim and re-execute it.
+   * Recommendations are SOFT-failure by design and their writes are idempotent,
+   * so re-running is safe. Returns null when the job is missing or not failed.
+   */
+  async requeueJob(id: string): Promise<JobRecord | null> {
+    return db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(db.collection('jobs').doc(id));
+      if (!snap.exists) return null;
+      const job = sanitizeDoc<JobRecord>(snap);
+      if (job.status !== 'failed') return null;
+      transaction.update(snap.ref, {
+        status: 'pending',
+        errorCategory: FieldValue.delete(),
+        startedAt: FieldValue.delete(),
+        completedAt: FieldValue.delete(),
+      });
+      return {
+        ...job,
+        status: 'pending',
+        errorCategory: undefined,
+        startedAt: undefined,
+        completedAt: undefined,
+      };
+    });
+  },
+
+  /**
    * Firestore-backed JobStore. Claiming runs in a transaction so a job can
    * only transition pending→running once even under concurrent drains.
    */
