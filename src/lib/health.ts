@@ -9,11 +9,13 @@ import { sarvamGenerate, SARVAM_MODEL } from '@/ai/sarvam';
  * into hammering Firestore/Gemini on every request.
  */
 
-const PROBE_TIMEOUT_MS = 8000;
+const PROBE_TIMEOUT_MS = 15_000;
 // Above the UI's 10s polling interval so normal requests are served from
 // cache without firing generation probes on every poll. Deep checks happen
 // only when explicitly requested (?deep=true) or on cold cache.
-const PROBE_CACHE_TTL_MS = 10_000;
+// 30s keeps the lights responsive without re-probing during temporary
+// Gemini capacity blips.
+const PROBE_CACHE_TTL_MS = 30_000;
 
 export type DepStatus = {
   status: 'up' | 'down';
@@ -46,9 +48,13 @@ function publicProbeError(error: unknown): string {
   return 'dependency probe failed';
 }
 
-/** Reject if a probe hangs; always clears its timer once the race settles. */
+/** Reject if a probe hangs; always clears its timer once the race settles.
+ *  Also catch the underlying promise so a slow call that eventually fails
+ *  after the timeout does not leak as an unhandled rejection. */
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   let handle: ReturnType<typeof setTimeout> | undefined;
+  // Observe the slow path so a rejected call after the timeout is not unhandled.
+  void p.catch(() => {});
   try {
     return Promise.race([
       p,
@@ -118,7 +124,8 @@ async function probeGemini(): Promise<DepStatus> {
         delay *= 2;
         continue;
       }
-      console.error('Gemini health probe failed:', error);
+      const summary = error instanceof Error ? error.message : String(error);
+      console.warn('Gemini health probe failed:', summary);
       return {
         status: 'down',
         latencyMs: Date.now() - start,

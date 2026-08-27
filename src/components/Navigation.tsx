@@ -113,12 +113,27 @@ export function ModelStatusLights() {
 
     void pollHealth();
     void pollActivity();
-    const healthTimer = setInterval(pollHealth, 10_000);
-    const activityTimer = setInterval(pollActivity, 1_500);
+    let healthTimer = setInterval(pollHealth, 10_000);
+    let activityTimer = setInterval(pollActivity, 1_500);
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        clearInterval(healthTimer);
+        clearInterval(activityTimer);
+      } else {
+        void pollHealth();
+        void pollActivity();
+        healthTimer = setInterval(pollHealth, 10_000);
+        activityTimer = setInterval(pollActivity, 1_500);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     return () => {
       cancelled = true;
       clearInterval(healthTimer);
       clearInterval(activityTimer);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 
