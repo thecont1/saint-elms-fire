@@ -198,6 +198,13 @@ export function LmsDashboardClient({
           }`}
         >
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            {/* Inspirational ship's motto */}
+            <div className="mb-3 border-l-2 border-beacon-300 pl-4">
+              <p className="font-display italic text-sm sm:text-base text-marine-800 leading-relaxed">
+                “I can see the new horizon underneath the blazing sky, I’ll be where the eagle’s flying, higher and higher...”
+              </p>
+            </div>
+
             {/* Ship's-log metrics: single row, responsive to 2x2 on very small screens */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full items-stretch">
               <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
