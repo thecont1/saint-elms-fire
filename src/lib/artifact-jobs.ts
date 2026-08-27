@@ -11,6 +11,7 @@ import { createJobRunner, JobExecutionError, type JobRecord, type JobRunner } fr
 import { renderNotesPdf } from './pdf-notes';
 import { synthesizePodcast } from '../ai/tts';
 import { multiFormatGenerationFlow } from '../ai/flows/multi-format';
+import { runRecommendReadingStage } from '../ai/flows/recommend-readings';
 import type { ArtifactErrorCategory } from './artifacts';
 
 /**
@@ -21,7 +22,7 @@ export interface ArtifactPipelineDeps {
   getArtifact: typeof DataService.getArtifact;
   markArtifactReady: typeof DataService.markArtifactReady;
   markArtifactFailed: typeof DataService.markArtifactFailed;
-  generate(job: JobRecord, formatType: 'structured_notes' | 'podcast_dialogue'): Promise<string>;
+  generate(job: JobRecord, formatType: 'structured_notes' | 'podcast_dialogue'): Promise<{ content: string; sources?: import('./artifacts').ArtifactSource[] }>;
   synthesizePodcast(script: string): Promise<Buffer>;
   renderPdf(job: JobRecord, markdown: string): Promise<Buffer>;
   save(storagePath: string, data: Buffer, contentType: string): Promise<{ sizeBytes: number }>;
@@ -43,8 +44,11 @@ export async function handleNotesPdfJob(job: JobRecord, deps: ArtifactPipelineDe
   if (!artifact) throw new JobExecutionError('unknown', 'Artifact record missing');
 
   let markdown: string;
+  let sources: import('./artifacts').ArtifactSource[] | undefined;
   try {
-    markdown = await deps.generate(job, 'structured_notes');
+    const result = await deps.generate(job, 'structured_notes');
+    markdown = result.content;
+    sources = result.sources;
   } catch (error) {
     await failBoth(deps, job, 'generation_failed', error);
     return;
@@ -60,7 +64,7 @@ export async function handleNotesPdfJob(job: JobRecord, deps: ArtifactPipelineDe
 
   try {
     const { sizeBytes } = await deps.save(artifact.storagePath, pdf, artifact.mimeType);
-    await deps.markArtifactReady(artifact.id, sizeBytes);
+    await deps.markArtifactReady(artifact.id, sizeBytes, sources);
   } catch (error) {
     await failBoth(deps, job, 'storage_write_failed', error);
   }
@@ -71,8 +75,11 @@ export async function handlePodcastAudioJob(job: JobRecord, deps: ArtifactPipeli
   if (!artifact) throw new JobExecutionError('unknown', 'Artifact record missing');
 
   let script: string;
+  let sources: import('./artifacts').ArtifactSource[] | undefined;
   try {
-    script = await deps.generate(job, 'podcast_dialogue');
+    const result = await deps.generate(job, 'podcast_dialogue');
+    script = result.content;
+    sources = result.sources;
   } catch (error) {
     await failBoth(deps, job, 'generation_failed', error);
     return;
@@ -88,9 +95,35 @@ export async function handlePodcastAudioJob(job: JobRecord, deps: ArtifactPipeli
 
   try {
     const { sizeBytes } = await deps.save(artifact.storagePath, audio, artifact.mimeType);
-    await deps.markArtifactReady(artifact.id, sizeBytes);
+    await deps.markArtifactReady(artifact.id, sizeBytes, sources);
   } catch (error) {
     await failBoth(deps, job, 'storage_write_failed', error);
+  }
+}
+
+export async function handleReadingRecommendationJob(job: JobRecord): Promise<void> {
+  const release = await DataService.getRelease(job.payload.releaseId);
+  if (!release) throw new JobExecutionError('unknown', 'Release record missing for recommendation job');
+
+  const payloadTarget = job.payload.targetLessonIds?.split(',').filter(Boolean) ?? [];
+  const targetLessonIds = payloadTarget.length
+    ? payloadTarget
+    : (release.targetLessonIds ?? (release.lessonId ? [release.lessonId] : []));
+
+  const graph = await DataService.getStudentKnowledgeGraph(release.studentId);
+  const nodes = graph.nodes
+    .filter((node) => targetLessonIds.includes(node.lessonId))
+    .map((node) => ({ id: node.id, lessonId: node.lessonId, concept: node.concept, summary: node.summary }));
+
+  const result = await runRecommendReadingStage({
+    studentId: release.studentId,
+    courseId: release.courseId,
+    moduleId: release.moduleId,
+    nodes,
+  });
+
+  if (result.failed) {
+    throw new JobExecutionError('unknown', 'Reading recommendation stage failed');
   }
 }
 
@@ -108,7 +141,10 @@ function defaultDeps(): ArtifactPipelineDeps {
         corpusScope: (job.payload.corpusScope as 'lesson' | 'second_brain') || 'second_brain',
       });
       if (!result.content) throw new Error('empty generation');
-      return result.content;
+      return {
+        content: result.content,
+        sources: (result.metadata?.sources as import('./artifacts').ArtifactSource[] | undefined) || undefined,
+      };
     },
     synthesizePodcast: (script) => synthesizePodcast(script),
     async renderPdf(job, markdown) {
@@ -143,9 +179,7 @@ export function getArtifactJobRunner(): JobRunner {
     runner = createJobRunner(DataService.jobStore, {
       notes_pdf: handleNotesPdfJob,
       podcast_audio: handlePodcastAudioJob,
-      reading_recommendation: async () => {
-        // Placeholder retry hook; the recommend stage runs post-release inline.
-      },
+      reading_recommendation: handleReadingRecommendationJob,
     });
   }
   return runner;
