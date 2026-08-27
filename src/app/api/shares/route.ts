@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import {
   validateSharedItemInput,
-  checkShareRateLimit,
   ShareLimitError,
 } from '@/lib/shared-items';
 import { resolveRequestIdentity, authorizationResponse } from '@/lib/request-identity';
@@ -59,14 +58,14 @@ export async function POST(req: Request) {
     }
 
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const sharesToday = await DataService.countSharesSince(identity.userId, since);
-    checkShareRateLimit(sharesToday);
-
-    const item = await DataService.createSharedItem({
-      ...input,
-      sharerId: identity.userId,
-      cohortId: DEFAULT_COHORT,
-    });
+    const item = await DataService.createSharedItemWithRateLimit(
+      {
+        ...input,
+        sharerId: identity.userId,
+        cohortId: DEFAULT_COHORT,
+      },
+      since,
+    );
     return NextResponse.json({ item }, { status: 201 });
   } catch (error: unknown) {
     const authResponse = authorizationResponse(error);
