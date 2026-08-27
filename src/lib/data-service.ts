@@ -28,10 +28,12 @@ import {
   type ArtifactErrorCategory,
   type GeneratedArtifact,
 } from './artifacts';
+import { ARTIFACTS_PER_DAY, ArtifactQuotaError } from './quotas';
 import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
 import type { LibraryItem, LibraryItemInput } from './library-catalog';
 import type { RecommendedReading } from './reading-recommendation';
 import type { SharedItem, SharedItemInput } from './shared-items';
+import { SHARES_PER_DAY, ShareLimitError } from './shared-items';
 import type { PeerChunkRecord, PeerNodeRecord, PeerEdgeRecord } from './peer-acceptance';
 import type { CorpusChunk } from './corpus-assembly';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
@@ -718,23 +720,61 @@ export const DataService = {
   },
 
   // GENERATED BINARY ARTIFACTS (Phase 6, Track A)
-  async createArtifact(input: {
+  async createArtifactAndJob(input: {
     studentId: string;
     lessonId: string;
     formatType: GeneratedArtifact['formatType'];
+    sinceIso: string;
+    cap?: number;
+    persona?: string;
+    corpusScope?: 'lesson' | 'second_brain';
     sources?: GeneratedArtifact['sources'];
-  }): Promise<GeneratedArtifact> {
-    const ref = db.collection('generated_artifacts').doc();
-    const artifact = buildPendingArtifact({
-      id: ref.id,
-      studentId: input.studentId,
-      lessonId: input.lessonId,
-      formatType: input.formatType,
-      requestedAt: new Date().toISOString(),
-      sources: input.sources,
+  }): Promise<{ artifact: GeneratedArtifact; job: JobRecord }> {
+    const cap = input.cap ?? ARTIFACTS_PER_DAY;
+    return db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(
+        db.collection('generated_artifacts').where('studentId', '==', input.studentId)
+      );
+      const generatedToday = snap.docs
+        .map(doc => sanitizeDoc<GeneratedArtifact>(doc))
+        .filter(a => Date.parse(a.createdAt) >= Date.parse(input.sinceIso)).length;
+      if (generatedToday >= cap) {
+        throw new ArtifactQuotaError(`Daily artifact generation limit reached (${cap}/day)`);
+      }
+
+      const requestedAt = new Date().toISOString();
+      const artifactRef = db.collection('generated_artifacts').doc();
+      const artifact = buildPendingArtifact({
+        id: artifactRef.id,
+        studentId: input.studentId,
+        lessonId: input.lessonId,
+        formatType: input.formatType,
+        requestedAt,
+        persona: input.persona,
+        corpusScope: input.corpusScope,
+        sources: input.sources,
+      });
+      transaction.set(artifactRef, artifact);
+
+      const payload: Record<string, string> = {
+        artifactId: artifact.id,
+        studentId: input.studentId,
+        lessonId: input.lessonId,
+      };
+      if (input.persona) payload.persona = input.persona.slice(0, 200);
+      if (input.corpusScope) payload.corpusScope = input.corpusScope;
+
+      const jobRef = db.collection('jobs').doc();
+      const job = buildPendingJob({
+        id: jobRef.id,
+        kind: input.formatType,
+        payload,
+        requestedAt,
+      });
+      transaction.set(jobRef, job);
+
+      return { artifact, job };
     });
-    await ref.set(artifact);
-    return artifact;
   },
 
   async getArtifact(id: string): Promise<GeneratedArtifact | null> {
@@ -753,22 +793,12 @@ export const DataService = {
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   },
 
-  async countArtifactsCreatedSince(studentId: string, sinceIso: string): Promise<number> {
-    const snap = await db
-      .collection('generated_artifacts')
-      .where('studentId', '==', studentId)
-      .get();
-    return snap.docs
-      .map(doc => sanitizeDoc<GeneratedArtifact>(doc))
-      .filter(a => Date.parse(a.createdAt) >= Date.parse(sinceIso)).length;
-  },
-
-  async markArtifactReady(id: string, sizeBytes: number): Promise<GeneratedArtifact> {
+  async markArtifactReady(id: string, sizeBytes: number, sources?: GeneratedArtifact['sources']): Promise<GeneratedArtifact> {
     const ref = db.collection('generated_artifacts').doc(id);
     return db.runTransaction(async transaction => {
       const snap = await transaction.get(ref);
       if (!snap.exists) throw new Error('Artifact not found');
-      const updated = completeArtifact(sanitizeDoc<GeneratedArtifact>(snap), sizeBytes, new Date().toISOString());
+      const updated = completeArtifact(sanitizeDoc<GeneratedArtifact>(snap), sizeBytes, new Date().toISOString(), sources);
       transaction.set(ref, updated);
       return updated;
     });
@@ -938,6 +968,38 @@ export const DataService = {
     return item;
   },
 
+  async createSharedItemWithRateLimit(
+    input: SharedItemInput & { sharerId: string; cohortId: string },
+    sinceIso: string,
+    cap = SHARES_PER_DAY,
+  ): Promise<SharedItem> {
+    return db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(
+        db.collection('shared_items').where('sharerId', '==', input.sharerId)
+      );
+      const sharesToday = snap.docs
+        .map(doc => sanitizeDoc<SharedItem>(doc))
+        .filter(item => Date.parse(item.createdAt) >= Date.parse(sinceIso)).length;
+      if (sharesToday >= cap) {
+        throw new ShareLimitError(`Daily share limit reached (${cap}/day)`);
+      }
+      const ref = db.collection('shared_items').doc();
+      const item: SharedItem = {
+        id: ref.id,
+        sharerId: input.sharerId,
+        cohortId: input.cohortId,
+        kind: input.kind,
+        title: input.title,
+        body: input.body,
+        sourceLessonId: input.sourceLessonId,
+        createdAt: new Date().toISOString(),
+        status: 'active',
+      };
+      transaction.set(ref, item);
+      return item;
+    });
+  },
+
   async getSharedItem(id: string): Promise<SharedItem | null> {
     const doc = await db.collection('shared_items').doc(id).get();
     return doc.exists ? sanitizeDoc<SharedItem>(doc) : null;
@@ -1000,6 +1062,7 @@ export const DataService = {
   async writeLibraryExcerptChunks(input: {
     studentId: string;
     libraryItemId: string;
+    nodeId: string;
     lessonId: string;
     courseId: string;
     moduleId: string;
@@ -1010,13 +1073,14 @@ export const DataService = {
     const batch = db.batch();
     for (const chunk of input.chunks) {
       const ref = db.collection('courseware_chunks').doc(
-        `lib_${input.studentId}_${input.libraryItemId}_${String(chunk.index).padStart(5, '0')}`
+        `lib_${input.studentId}_${input.libraryItemId}_${input.nodeId}_${String(chunk.index).padStart(5, '0')}`
       );
       batch.set(ref, {
         id: ref.id,
         origin: 'library',
         studentId: input.studentId,
         libraryItemId: input.libraryItemId,
+        nodeId: input.nodeId,
         lessonId: input.lessonId,
         lessonTitle: input.itemTitle,
         courseId: input.courseId,
