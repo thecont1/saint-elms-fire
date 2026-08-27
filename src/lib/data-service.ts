@@ -30,6 +30,7 @@ import {
 import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
 import type { LibraryItem, LibraryItemInput } from './library-catalog';
 import type { RecommendedReading } from './reading-recommendation';
+import type { SharedItem, SharedItemInput } from './shared-items';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -774,6 +775,60 @@ export const DataService = {
       const snap = await transaction.get(ref);
       if (!snap.exists) throw new Error('Artifact not found');
       const updated = failArtifactRecord(sanitizeDoc<GeneratedArtifact>(snap), category);
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  // PEER SHARES (Phase 6, Track B2)
+  async createSharedItem(input: SharedItemInput & { sharerId: string; cohortId: string }): Promise<SharedItem> {
+    const ref = db.collection('shared_items').doc();
+    const item: SharedItem = {
+      id: ref.id,
+      sharerId: input.sharerId,
+      cohortId: input.cohortId,
+      kind: input.kind,
+      title: input.title,
+      body: input.body,
+      sourceLessonId: input.sourceLessonId,
+      createdAt: new Date().toISOString(),
+      status: 'active',
+    };
+    await ref.set(item);
+    return item;
+  },
+
+  async getSharedItem(id: string): Promise<SharedItem | null> {
+    const doc = await db.collection('shared_items').doc(id).get();
+    return doc.exists ? sanitizeDoc<SharedItem>(doc) : null;
+  },
+
+  async getActiveSharedItems(cohortId: string): Promise<SharedItem[]> {
+    const snap = await db
+      .collection('shared_items')
+      .where('cohortId', '==', cohortId)
+      .where('status', '==', 'active')
+      .get();
+    return snap.docs
+      .map(doc => sanitizeDoc<SharedItem>(doc))
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  },
+
+  async countSharesSince(sharerId: string, sinceIso: string): Promise<number> {
+    const snap = await db.collection('shared_items').where('sharerId', '==', sharerId).get();
+    return snap.docs
+      .map(doc => sanitizeDoc<SharedItem>(doc))
+      .filter(item => Date.parse(item.createdAt) >= Date.parse(sinceIso)).length;
+  },
+
+  async withdrawSharedItem(id: string, sharerId: string): Promise<SharedItem> {
+    const ref = db.collection('shared_items').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Shared item not found');
+      const item = sanitizeDoc<SharedItem>(snap);
+      if (item.sharerId !== sharerId) throw new Error('Only the sharer may withdraw a shared item');
+      const updated: SharedItem = { ...item, status: 'withdrawn' };
       transaction.set(ref, updated);
       return updated;
     });
