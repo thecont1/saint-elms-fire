@@ -12,9 +12,3 @@ export class ArtifactQuotaError extends Error {
     this.name = 'ArtifactQuotaError';
   }
 }
-
-export function checkArtifactQuota(generatedToday: number, cap = ARTIFACTS_PER_DAY): void {
-  if (generatedToday >= cap) {
-    throw new ArtifactQuotaError(`Daily artifact generation limit reached (${cap}/day)`);
-  }
-}

@@ -38,6 +38,9 @@ export interface GeneratedArtifact {
   mimeType: string;
   sizeBytes?: number;
   sources?: ArtifactSource[];
+  /** Generation options preserved so retries can replay the original request. */
+  persona?: string;
+  corpusScope?: 'lesson' | 'second_brain';
   createdAt: string;
   completedAt?: string;
   error?: ArtifactErrorCategory;
@@ -82,6 +85,8 @@ export function buildPendingArtifact(input: {
   lessonId: string;
   formatType: ArtifactFormatType;
   requestedAt: string;
+  persona?: string;
+  corpusScope?: 'lesson' | 'second_brain';
   sources?: ArtifactSource[];
 }): GeneratedArtifact {
   const meta = FORMAT_META[input.formatType];
@@ -95,6 +100,8 @@ export function buildPendingArtifact(input: {
     storagePath: artifactStoragePath(input.studentId, input.lessonId, input.id, meta.ext),
     mimeType: meta.mimeType,
     sources: input.sources,
+    persona: input.persona,
+    corpusScope: input.corpusScope,
     createdAt: input.requestedAt,
   };
 }
@@ -121,8 +128,9 @@ export function completeArtifact(
   artifact: GeneratedArtifact,
   sizeBytes: number,
   completedAt: string,
+  sources?: ArtifactSource[],
 ): GeneratedArtifact {
-  return { ...artifact, status: 'ready', sizeBytes, completedAt, error: undefined };
+  return { ...artifact, status: 'ready', sizeBytes, completedAt, sources: sources ?? artifact.sources, error: undefined };
 }
 
 /**
