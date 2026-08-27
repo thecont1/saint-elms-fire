@@ -32,7 +32,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const identity = requireAdmin(resolveRequestIdentity(req));
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     let input;
     try {
       input = validateLibraryItemInput(body);

@@ -7,6 +7,18 @@ import { DataService } from '@/lib/data-service';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const METRICS_TTL_MS = 30_000;
+
+let cachedMetrics: Awaited<ReturnType<typeof DataService.getGenerationMetrics>> | undefined;
+let cachedAt = 0;
+
+async function getCachedGenerationMetrics(): Promise<Awaited<ReturnType<typeof DataService.getGenerationMetrics>>> {
+  if (cachedMetrics && Date.now() - cachedAt < METRICS_TTL_MS) return cachedMetrics;
+  cachedMetrics = await DataService.getGenerationMetrics();
+  cachedAt = Date.now();
+  return cachedMetrics;
+}
+
 /**
  * GET /api/model-activity
  *
@@ -25,7 +37,7 @@ export async function GET(req: Request) {
   let generation: Awaited<ReturnType<typeof DataService.getGenerationMetrics>> | undefined;
   if (searchParams.get('metrics') === '1') {
     try {
-      generation = await DataService.getGenerationMetrics();
+      generation = await getCachedGenerationMetrics();
     } catch (error) {
       console.error('Failed to load generation metrics:', error);
     }

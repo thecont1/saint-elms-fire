@@ -146,19 +146,26 @@ export async function runPeerAcceptance(
         releasedAt: now,
       };
     });
-    edges = extracted.edges.map((edge) => ({
-      id: `peer_${acceptorId}_${share.id}_edge_${slug(edge.sourceConcept)}_${slug(edge.targetConcept)}_${edge.relationshipType}`,
-      studentId: acceptorId,
-      origin: 'peer_share' as const,
-      sharedItemId: share.id,
-      sourceNodeId: nodeIdByConcept.get(edge.sourceConcept.toLowerCase().trim()) ?? '',
-      targetNodeId: nodeIdByConcept.get(edge.targetConcept.toLowerCase().trim()) ?? '',
-      sourceConcept: edge.sourceConcept,
-      targetConcept: edge.targetConcept,
-      relationshipType: edge.relationshipType,
-      description: edge.description,
-      releasedAt: now,
-    }));
+    edges = extracted.edges
+      .map((edge) => ({
+        edge,
+        sourceNodeId: nodeIdByConcept.get(edge.sourceConcept.toLowerCase().trim()),
+        targetNodeId: nodeIdByConcept.get(edge.targetConcept.toLowerCase().trim()),
+      }))
+      .filter(({ sourceNodeId, targetNodeId }) => sourceNodeId && targetNodeId)
+      .map(({ edge, sourceNodeId, targetNodeId }) => ({
+        id: `peer_${acceptorId}_${share.id}_edge_${slug(edge.sourceConcept)}_${slug(edge.targetConcept)}_${edge.relationshipType}`,
+        studentId: acceptorId,
+        origin: 'peer_share' as const,
+        sharedItemId: share.id,
+        sourceNodeId: sourceNodeId as string,
+        targetNodeId: targetNodeId as string,
+        sourceConcept: edge.sourceConcept,
+        targetConcept: edge.targetConcept,
+        relationshipType: edge.relationshipType,
+        description: edge.description,
+        releasedAt: now,
+      }));
     await deps.writePeerGraph(nodes, edges);
   } catch (error) {
     graphExtracted = false;

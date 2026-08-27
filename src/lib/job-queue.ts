@@ -76,6 +76,7 @@ export interface JobRunner {
 
 export function createJobRunner(store: JobStore, handlers: JobHandlers): JobRunner {
   let draining = false;
+  let kickedWhileDraining = false;
 
   async function drainOnce(): Promise<number> {
     let processed = 0;
@@ -108,16 +109,22 @@ export function createJobRunner(store: JobStore, handlers: JobHandlers): JobRunn
     return processed;
   }
 
-  return {
-    drainOnce,
-    kick() {
-      if (draining) return;
-      draining = true;
-      void drainOnce()
-        .catch((error) => console.error('job_drain_error', error instanceof Error ? error.message : String(error)))
-        .finally(() => {
-          draining = false;
-        });
-    },
-  };
+  function kick(): void {
+    if (draining) {
+      kickedWhileDraining = true;
+      return;
+    }
+    draining = true;
+    void drainOnce()
+      .catch((error) => console.error('job_drain_error', error instanceof Error ? error.message : String(error)))
+      .finally(() => {
+        draining = false;
+        if (kickedWhileDraining) {
+          kickedWhileDraining = false;
+          kick();
+        }
+      });
+  }
+
+  return { drainOnce, kick };
 }

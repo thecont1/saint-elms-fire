@@ -39,13 +39,15 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
       const res = await fetch(`/api/artifacts?lessonId=${lessonId}&studentId=${studentId}`);
       if (!res.ok) return;
       const data = await res.json();
-      const map: Record<string, ArtifactRecord> = {};
+      const next: Record<string, ArtifactRecord> = { ...artifacts };
       for (const artifact of data.artifacts ?? []) {
-        // Keep the newest per formatType (list is sorted newest-first).
-        if (!map[artifact.formatType]) map[artifact.formatType] = artifact;
+        const existing = next[artifact.formatType];
+        if (!existing || Date.parse(artifact.createdAt) > Date.parse(existing.createdAt)) {
+          next[artifact.formatType] = artifact;
+        }
       }
-      setArtifacts(map);
-      if (Object.values(map).some((a) => a.status === 'pending')) {
+      setArtifacts(next);
+      if (Object.values(next).some((a) => a.status === 'pending')) {
         if (pollTimer.current) clearTimeout(pollTimer.current);
         pollTimer.current = setTimeout(refresh, 4000);
       }
