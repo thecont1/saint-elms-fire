@@ -12,24 +12,47 @@ interface StudentChatProps {
   initialQuery?: string;
 }
 
+function welcomeMessage(releasedLessonCount: number): ChatMessage {
+  return {
+    id: 'welcome',
+    sender: 'tutor',
+    content: `Welcome aboard! I am Socrates my Guide — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    isGrounded: true,
+  };
+}
+
 export function StudentChat({
   studentId,
   releasedLessonCount,
   initialQuery = '',
 }: StudentChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'tutor',
-      content: `Welcome aboard! I am Socrates my Guide — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      isGrounded: true,
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(initialQuery);
   const [isLoading, setIsLoading] = useState(false);
   const [unreleasedWarning, setUnreleasedWarning] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load persisted chat history on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/chat/history?studentId=${studentId}`, { cache: 'no-store' });
+        const data = await res.json();
+        if (cancelled) return;
+        const history: ChatMessage[] = data.messages ?? [];
+        if (history.length > 0) {
+          setMessages(history);
+        } else {
+          setMessages([welcomeMessage(releasedLessonCount)]);
+        }
+      } catch {
+        if (!cancelled) setMessages([welcomeMessage(releasedLessonCount)]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [studentId]);
 
   useEffect(() => {
     if (initialQuery) {
@@ -40,15 +63,7 @@ export function StudentChat({
   useEffect(() => {
     setMessages((prev) => {
       if (prev.length === 1 && prev[0].id === 'welcome') {
-        return [
-          {
-            id: 'welcome',
-            sender: 'tutor',
-            content: `Welcome aboard! I am Socrates my Guide — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            isGrounded: true,
-          },
-        ];
+        return [welcomeMessage(releasedLessonCount)];
       }
       return prev;
     });
@@ -167,6 +182,12 @@ export function StudentChat({
 
       {/* Messages Scroll Area */}
       <div className="flex-1 p-5 overflow-y-auto space-y-4 min-h-[320px] bg-chart/60">
+        {messages.length === 0 && (
+          <div className="flex items-center justify-center h-full text-beacon-700 text-xs font-medium gap-2">
+            <Loader2 className="w-4 h-4 animate-spin text-beacon-500" />
+            <span>Loading conversation history...</span>
+          </div>
+        )}
         {messages.map((msg) => (
           <div
             key={msg.id}

@@ -18,6 +18,7 @@ import type {
   IngestionErrorCategory,
   IngestionStage,
   IngestionStepRecord,
+  ChatMessage,
 } from './types';
 import type { IngestionArtifact, StagedVectorRecord, ExtractedGraphNode, ExtractedGraphEdge } from './second-brain-ingestion';
 import { buildPendingRelease, completeRelease, failRelease, isReleaseVisible } from './release-integrity';
@@ -1309,6 +1310,28 @@ export const DataService = {
       ...updates,
       updatedAt: new Date().toISOString(),
     });
+  },
+
+  // CHAT MESSAGES
+  async saveChatMessage(studentId: string, msg: Omit<ChatMessage, 'id'>): Promise<ChatMessage> {
+    const ref = db.collection('chat_messages').doc();
+    const record: ChatMessage = {
+      id: ref.id,
+      ...msg,
+    };
+    await ref.set({ ...record, studentId, createdAt: msg.timestamp });
+    return record;
+  },
+
+  async getChatHistory(studentId: string, limit = 100): Promise<ChatMessage[]> {
+    const snap = await db
+      .collection('chat_messages')
+      .where('studentId', '==', studentId)
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get();
+    const list = snap.docs.map(doc => sanitizeDoc<ChatMessage>(doc));
+    return list.reverse();
   },
 
   // AUTOMATIC INITIAL SEED HELPER

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { studentChatFlow } from '@/ai/flows/student-chat';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
+import { DataService } from '@/lib/data-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,12 +26,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
+    const now = new Date().toISOString();
+
+    // Persist the student's question before generating the response.
+    await DataService.saveChatMessage(studentId, {
+      sender: 'student',
+      content: question,
+      timestamp: now,
+      isGrounded: false,
+    });
+
     const result = await studentChatFlow({
       studentId,
       question,
       courseId,
       history,
       topK,
+    });
+
+    // Persist the tutor's response.
+    await DataService.saveChatMessage(studentId, {
+      sender: 'tutor',
+      content: result.answer,
+      timestamp: new Date().toISOString(),
+      isGrounded: result.isGrounded,
+      groundedSources: result.groundedSources,
     });
 
     return NextResponse.json(result);
