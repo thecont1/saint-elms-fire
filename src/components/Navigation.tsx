@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Compass, Shield, User } from 'lucide-react';
+import { Shield, User } from 'lucide-react';
 
 function RefreshIcon({ className = 'w-3.5 h-3.5', spin = false }: { className?: string; spin?: boolean }) {
   return (
@@ -156,6 +156,8 @@ interface NavigationProps {
   /** Optional: renders a Boom (flush all data) button next to Sync. */
   onBoom?: () => void;
   isBooming?: boolean;
+  /** Optional: hides all header controls (role switcher, sync, boom). */
+  controlsHidden?: boolean;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
@@ -194,78 +196,108 @@ export function Navigation({
   isSyncing = false,
   onBoom,
   isBooming = false,
+  controlsHidden = false,
 }: NavigationProps) {
+  const formatDateTime = (d: Date) => {
+    const date = d.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).replace(/,/g, '');
+    const time = d.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    return `${date} ${time}`;
+  };
+
+  const [currentDateTime, setCurrentDateTime] = useState<string>(formatDateTime(new Date()));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(formatDateTime(new Date()));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 border-b border-beacon-100 bg-white/90 backdrop-blur-md">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-start gap-3 min-w-0">
             <div className="w-10 h-10 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
               <CoronaMark className="w-6 h-6 animate-glow-breathe" />
             </div>
-            <div className="min-w-0">
-              <span className="font-display text-xl font-semibold tracking-tight text-marine-900 leading-none">
+            <div className="min-w-0 flex flex-col items-start gap-0.5">
+              <span className="font-display text-3xl font-thin tracking-[-0.06em] text-marine-900 leading-none uppercase">
                 Saint Elms Fire
               </span>
-              <p className="chart-annotation mt-1 hidden sm:flex items-center gap-1.5 truncate">
-                <Compass className="w-3 h-3 text-beacon-500" />
-                A beacon for weary navigators
-              </p>
+              <span
+                className="hidden sm:inline font-mono text-[10px] text-marine-500 leading-none"
+                suppressHydrationWarning
+              >
+                {currentDateTime}
+              </span>
             </div>
           </div>
 
           {/* Role Switcher + Sync */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
-              <button
-                onClick={() => onRoleChange('admin')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  currentRole === 'admin'
-                    ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
-                    : 'text-marine-500 hover:text-marine-800'
-                }`}
-              >
-                <Shield className="w-3.5 h-3.5" />
-                <span>Admin</span>
-              </button>
+          {!controlsHidden && (
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
+                <button
+                  onClick={() => onRoleChange('admin')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                    currentRole === 'admin'
+                      ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
+                      : 'text-marine-500 hover:text-marine-800'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Admin</span>
+                </button>
 
-              <button
-                onClick={() => onRoleChange('student')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  currentRole === 'student'
-                    ? 'bg-beacon-600 text-white shadow-sm'
-                    : 'text-marine-500 hover:text-marine-800'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Student · Alex</span>
-              </button>
+                <button
+                  onClick={() => onRoleChange('student')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                    currentRole === 'student'
+                      ? 'bg-beacon-600 text-white shadow-sm'
+                      : 'text-marine-500 hover:text-marine-800'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Student · Alex</span>
+                </button>
+              </div>
+
+              {onSync && (
+                <button
+                  onClick={onSync}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
+                  title="Refresh Firestore database state"
+                >
+                  <RefreshIcon className="w-3.5 h-3.5" spin={isSyncing} />
+                  <span className="hidden sm:inline">Sync</span>
+                </button>
+              )}
+
+              {onBoom && (
+                <button
+                  onClick={onBoom}
+                  disabled={isBooming}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-red-600 bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
+                  title="Flush all data from Firestore — start from scratch"
+                >
+                  <BoomIcon className={`w-3.5 h-3.5 ${isBooming ? 'animate-pulse' : ''}`} />
+                  <span className="hidden sm:inline">Boom</span>
+                </button>
+              )}
             </div>
-
-            {onSync && (
-              <button
-                onClick={onSync}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
-                title="Refresh Firestore database state"
-              >
-                <RefreshIcon className="w-3.5 h-3.5" spin={isSyncing} />
-                <span className="hidden sm:inline">Sync</span>
-              </button>
-            )}
-
-            {onBoom && (
-              <button
-                onClick={onBoom}
-                disabled={isBooming}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-red-600 bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
-                title="Flush all data from Firestore — start from scratch"
-              >
-                <BoomIcon className={`w-3.5 h-3.5 ${isBooming ? 'animate-pulse' : ''}`} />
-                <span className="hidden sm:inline">Boom</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </header>

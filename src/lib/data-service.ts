@@ -1,8 +1,12 @@
 import { db, FieldValue } from './firestore';
+import type { RequestIdentity } from './request-identity';
 import type {
   Course,
   CourseModule,
   Lesson,
+  Programme,
+  Subject,
+  Semester,
   ReleaseEvent,
   KnowledgeNode,
   KnowledgeEdge,
@@ -43,6 +47,84 @@ function edgeKey(
 }
 
 export const DataService = {
+  // PROGRAMMES
+  async getProgrammes(): Promise<Programme[]> {
+    const snap = await db.collection('programmes').orderBy('createdAt', 'desc').get();
+    return snap.docs.map(doc => sanitizeDoc<Programme>(doc));
+  },
+
+  async getProgramme(id: string): Promise<Programme | null> {
+    const doc = await db.collection('programmes').doc(id).get();
+    if (!doc.exists) return null;
+    return sanitizeDoc<Programme>(doc);
+  },
+
+  async createProgramme(programme: Omit<Programme, 'id' | 'createdAt'>): Promise<Programme> {
+    const ref = db.collection('programmes').doc();
+    const newProgramme: Programme = {
+      id: ref.id,
+      ...programme,
+      createdAt: new Date().toISOString(),
+    };
+    await ref.set(newProgramme);
+    return newProgramme;
+  },
+
+  // SUBJECTS
+  async getSubjects(programmeId?: string): Promise<Subject[]> {
+    let query: import('@google-cloud/firestore').Query = db.collection('subjects');
+    if (programmeId) {
+      query = query.where('programmeId', '==', programmeId);
+    }
+    const snap = await query.get();
+    return snap.docs.map(doc => sanitizeDoc<Subject>(doc));
+  },
+
+  async getSubject(id: string): Promise<Subject | null> {
+    const doc = await db.collection('subjects').doc(id).get();
+    if (!doc.exists) return null;
+    return sanitizeDoc<Subject>(doc);
+  },
+
+  async createSubject(subject: Omit<Subject, 'id' | 'createdAt'>): Promise<Subject> {
+    const ref = db.collection('subjects').doc();
+    const newSubject: Subject = {
+      id: ref.id,
+      ...subject,
+      createdAt: new Date().toISOString(),
+    };
+    await ref.set(newSubject);
+    return newSubject;
+  },
+
+  // SEMESTERS
+  async getSemesters(subjectId?: string): Promise<Semester[]> {
+    let query: import('@google-cloud/firestore').Query = db.collection('semesters');
+    if (subjectId) {
+      query = query.where('subjectId', '==', subjectId);
+    }
+    const snap = await query.get();
+    const list = snap.docs.map(doc => sanitizeDoc<Semester>(doc));
+    return list.sort((a, b) => a.order - b.order);
+  },
+
+  async getSemester(id: string): Promise<Semester | null> {
+    const doc = await db.collection('semesters').doc(id).get();
+    if (!doc.exists) return null;
+    return sanitizeDoc<Semester>(doc);
+  },
+
+  async createSemester(semester: Omit<Semester, 'id' | 'createdAt'>): Promise<Semester> {
+    const ref = db.collection('semesters').doc();
+    const newSemester: Semester = {
+      id: ref.id,
+      ...semester,
+      createdAt: new Date().toISOString(),
+    };
+    await ref.set(newSemester);
+    return newSemester;
+  },
+
   // COURSES
   async getCourses(): Promise<Course[]> {
     const snap = await db.collection('courses').orderBy('createdAt', 'desc').get();
@@ -76,9 +158,13 @@ export const DataService = {
     return list.sort((a, b) => a.order - b.order);
   },
 
-  async createModule(mod: Omit<CourseModule, 'id'>): Promise<CourseModule> {
+  async createModule(mod: Omit<CourseModule, 'id' | 'createdAt'>): Promise<CourseModule> {
     const ref = db.collection('modules').doc();
-    const newMod: CourseModule = { id: ref.id, ...mod };
+    const newMod: CourseModule = {
+      id: ref.id,
+      ...mod,
+      createdAt: new Date().toISOString(),
+    };
     await ref.set(newMod);
     return newMod;
   },
@@ -92,6 +178,29 @@ export const DataService = {
     const snap = await query.get();
     const list = snap.docs.map(doc => sanitizeDoc<Lesson>(doc));
     return list.sort((a, b) => a.order - b.order);
+  },
+
+  /**
+   * Shared courseware read used by both `GET /api/courses/[courseId]` and
+   * `GET /api/lessons`. Admins see all lessons; students only see released
+   * lessons with unreleased markdown content redacted.
+   */
+  async getCoursewareLessons(
+    courseId: string,
+    moduleId: string | undefined,
+    identity: RequestIdentity,
+    targetStudentId?: string | null,
+  ): Promise<Lesson[]> {
+    const allLessons = await this.getLessons(courseId, moduleId);
+    if (identity.role === 'admin' && !targetStudentId) {
+      return allLessons;
+    }
+    const studentId = identity.role === 'admin' && targetStudentId ? targetStudentId : identity.userId;
+    const released = await this.getReleasedLessonsForStudent(studentId, courseId);
+    const releasedIds = new Set(released.map(l => l.id));
+    return allLessons.map(l =>
+      releasedIds.has(l.id) ? l : { ...l, markdownContent: '' }
+    );
   },
 
   async getLesson(id: string): Promise<Lesson | null> {
@@ -688,14 +797,65 @@ export const DataService = {
     let lessons: Lesson[];
 
     if (courses.length === 0) {
+      // Create UGC hierarchy: Programme → Subject → Semester → Course
+      const programmes = await this.getProgrammes();
+      let programme: Programme;
+      if (programmes.length === 0) {
+        programme = await this.createProgramme({
+          title: 'M.Sc. in Computer Science',
+          level: 'postgraduate',
+          durationSemesters: 4,
+          totalCredits: 80,
+          description: 'Postgraduate programme in distributed systems and AI architectures.',
+        });
+      } else {
+        programme = programmes[0];
+      }
+
+      let subjects = await this.getSubjects(programme.id);
+      let subject: Subject;
+      if (subjects.length === 0) {
+        subject = await this.createSubject({
+          programmeId: programme.id,
+          title: 'Computer Science',
+          code: 'CS',
+          description: 'Core computer science discipline.',
+        });
+      } else {
+        subject = subjects[0];
+      }
+
+      let semesters = await this.getSemesters(subject.id);
+      let semester: Semester;
+      if (semesters.length === 0) {
+        semester = await this.createSemester({
+          programmeId: programme.id,
+          subjectId: subject.id,
+          title: 'Year I - Semester 1',
+          yearNumber: 1,
+          semesterNumber: 1,
+          order: 1,
+        });
+      } else {
+        semester = semesters[0];
+      }
+
       course = await this.createCourse({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         title: 'CS-850: Distributed Systems & Autonomous AI Architectures',
         description: 'Foundations of resilient consensus, vector index partitioning, event-driven streaming, and decentralized agent graphs.',
+        category: 'core',
+        credits: 4,
         instructor: 'Dr. Elena Vance & Staff',
         code: 'CS-850',
       });
 
       const mod1 = await this.createModule({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         courseId: course.id,
         title: 'Module 1: Consensus & State Machine Replication',
         description: 'Raft protocol, Byzantine Fault Tolerance, and distributed WALs.',
@@ -703,6 +863,9 @@ export const DataService = {
       });
 
       const mod2 = await this.createModule({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         courseId: course.id,
         title: 'Module 2: High-Throughput Vector Indices & RAG Partitioning',
         description: 'HNSW, Quantization, Sharding strategies, and multi-tenant graph memory.',
@@ -710,6 +873,9 @@ export const DataService = {
       });
 
       const mod3 = await this.createModule({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         courseId: course.id,
         title: 'Module 3: Autonomous Agent Orbits & Multi-Agent Consensus',
         description: 'Durable workflows, actor mailboxes, and agentic reflection loops.',
@@ -719,6 +885,9 @@ export const DataService = {
       modules = [mod1, mod2, mod3];
 
       const lesson1_1 = await this.createLesson({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         courseId: course.id,
         moduleId: mod1.id,
         title: '1.1 The Raft Consensus Algorithm & Leader Election',
@@ -729,6 +898,9 @@ export const DataService = {
       });
 
       const lesson1_2 = await this.createLesson({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         courseId: course.id,
         moduleId: mod1.id,
         title: '1.2 Log Replication, Commit Indexes, and Byzantine Resistance',
@@ -739,6 +911,9 @@ export const DataService = {
       });
 
       const lesson2_1 = await this.createLesson({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         courseId: course.id,
         moduleId: mod2.id,
         title: '2.1 Vector Indexing with HNSW & Product Quantization',
@@ -749,6 +924,9 @@ export const DataService = {
       });
 
       const lesson3_1 = await this.createLesson({
+        programmeId: programme.id,
+        subjectId: subject.id,
+        semesterId: semester.id,
         courseId: course.id,
         moduleId: mod3.id,
         title: '3.1 Durable Agent Workflows & State Synchronization',

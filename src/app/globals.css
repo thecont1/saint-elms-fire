@@ -277,15 +277,15 @@ body {
     0 0 22px 4px oklch(0.555 0.195 28 / 0.30);
 }
 
-/* Map bg-white → cream in admin mode (covers main header, hero, modals) */
-.admin-theme .bg-white { background-color: oklch(0.945 0.014 75) !important; }
-.admin-theme .bg-white\/90 { background-color: oklch(0.945 0.014 75 / 0.92) !important; }
-.admin-theme .bg-white\/60 { background-color: oklch(0.945 0.014 75 / 0.65) !important; }
-.admin-theme .bg-white\/70 { background-color: oklch(0.945 0.014 75 / 0.75) !important; }
-.admin-theme .bg-white\/95 { background-color: oklch(0.945 0.014 75 / 0.96) !important; }
+/* Map bg-white → off-white in admin mode so cards stand out from the cream page background */
+.admin-theme .bg-white { background-color: oklch(0.968 0.008 75) !important; }
+.admin-theme .bg-white\/90 { background-color: oklch(0.968 0.008 75 / 0.92) !important; }
+.admin-theme .bg-white\/60 { background-color: oklch(0.968 0.008 75 / 0.65) !important; }
+.admin-theme .bg-white\/70 { background-color: oklch(0.968 0.008 75 / 0.75) !important; }
+.admin-theme .bg-white\/95 { background-color: oklch(0.968 0.008 75 / 0.96) !important; }
 
-.admin-theme .hover\:bg-white:hover { background-color: oklch(0.920 0.016 75) !important; }
-.admin-theme .focus\:bg-white:focus { background-color: oklch(0.920 0.016 75) !important; }
+.admin-theme .hover\:bg-white:hover { background-color: oklch(0.955 0.010 75) !important; }
+.admin-theme .focus\:bg-white:focus { background-color: oklch(0.955 0.010 75) !important; }
 
 /* Map bg-slate → warm cream surface */
 .admin-theme .bg-slate-50 { background-color: oklch(0.930 0.012 75) !important; }

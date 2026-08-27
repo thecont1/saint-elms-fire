@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { ingestRelease } from '../../route';
+import { resolveRequestIdentity, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(_req: Request, context: { params: Promise<{ releaseId: string }> }) {
+export async function POST(req: Request, context: { params: Promise<{ releaseId: string }> }) {
   try {
+    const identity = resolveRequestIdentity(req);
+    requireAdmin(identity);
     const { releaseId } = await context.params;
     const release = await DataService.getRelease(releaseId);
     if (!release) return NextResponse.json({ error: 'Release not found' }, { status: 404 });
@@ -26,6 +29,8 @@ export async function POST(_req: Request, context: { params: Promise<{ releaseId
       retryUrl: result.release.overallStatus === 'failed' ? `/api/releases/${releaseId}/retry` : undefined,
     }, { status: result.release.overallStatus === 'failed' ? 502 : 200 });
   } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Release retry failed:', error);
     return NextResponse.json({ error: 'Release retry failed' }, { status: 500 });
   }

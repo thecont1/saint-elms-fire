@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BookOpen, Lock, CheckCircle2, ChevronRight, FileText, Sparkles } from 'lucide-react';
+import { InfoIcon } from '@/components/InfoIcon';
 import type { CourseModule, Lesson } from '@/lib/types';
 
 interface CoursewareViewerProps {
@@ -27,7 +28,7 @@ export function CoursewareViewer({
   return (
     <div className="chart-card overflow-hidden flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-beacon-100 bg-beacon-50/60 flex items-center justify-between">
+      <div className="p-4 border-b border-beacon-100 bg-beacon-50/60 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-white border border-beacon-200 text-beacon-600 flex items-center justify-center">
             <BookOpen className="w-4 h-4" />
@@ -41,8 +42,11 @@ export function CoursewareViewer({
         </div>
 
         {/* Completion annotation */}
-        <div className="chart-annotation px-2.5 py-1 rounded-full bg-white border border-beacon-200 text-beacon-700 font-semibold">
-          {completionPercent}%
+        <div className="flex flex-col items-end gap-1">
+          <InfoIcon text="The Charted Course is your lesson list. Lessons are released incrementally by your instructor. Locked lessons become available as they are unlocked for your voyage." />
+          <div className="chart-annotation px-2.5 py-1 rounded-full bg-white border border-beacon-200 text-beacon-700 font-semibold">
+            {completionPercent}%
+          </div>
         </div>
       </div>
 
@@ -66,6 +70,7 @@ export function CoursewareViewer({
                     Leg {mod.order}
                   </span>
                   <h4 className="text-xs font-bold text-marine-900 truncate">{mod.title}</h4>
+                {mod.description && <p className="text-[10px] text-marine-500 mt-0.5 line-clamp-2">{mod.description}</p>}
                 </div>
 
                 <div className="flex items-center shrink-0">

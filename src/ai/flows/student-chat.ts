@@ -50,7 +50,7 @@ export const ragChat = ai.defineFlow(
     const releasedLessons = await DataService.getReleasedLessonsForStudent(studentId, courseId);
     if (releasedLessons.length === 0) {
       return {
-        answer: "You do not have any released courseware yet. Once your instructor unlocks a lesson, the Socratic Beacon can answer from it.",
+        answer: "You do not have any released courseware yet. Once your instructor unlocks a lesson, Socrates my Guide can answer from it.",
         isGrounded: false,
         groundedSources: [],
         unreleasedTopicsWarning: 'No courseware has been released to you yet.',
@@ -100,7 +100,7 @@ export const ragChat = ai.defineFlow(
     // Generation goes through the model router: Gemini primary, Sarvam
     // fallback on availability errors — chat never waits out a 503 storm.
     const { output, model } = await generateWithFallback({
-      system: `You are the Socratic Beacon. Answer only from the retrieved passages. If the passages do not support an answer, say so. Never infer or reveal unreleased curriculum. Cite lesson titles in the answer.`,
+      system: `You are Socrates my Guide. Answer only from the retrieved passages. If the passages do not support an answer, say so. Never infer or reveal unreleased curriculum. Cite lesson titles in the answer.`,
       prompt: `RETRIEVED RELEASE-GATED PASSAGES:\n${context}\n\nRECENT HISTORY:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\n\nSTUDENT QUESTION: ${question}`,
       schema: GeneratedAnswerSchema,
     });

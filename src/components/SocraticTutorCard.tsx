@@ -71,18 +71,6 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
       {/* The beacon's glow */}
       <div className="absolute -top-20 -right-20 w-56 h-56 bg-beacon-200/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Refresh button */}
-      <div className="relative flex justify-end mb-3">
-        <button
-          onClick={() => fetchActiveSession(true)}
-          disabled={isLoadingSession}
-          className="p-2 text-marine-400 hover:text-beacon-700 rounded-full hover:bg-beacon-50 transition border border-transparent hover:border-beacon-200"
-          title="Request new Socratic challenge"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoadingSession ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
       {isLoadingSession ? (
         <div className="relative p-6 flex flex-col items-center justify-center text-center">
           <div className="w-7 h-7 border-3 border-beacon-500 border-t-transparent rounded-full animate-spin mb-2" />

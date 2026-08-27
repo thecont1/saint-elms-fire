@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firestore';
+import { resolveRequestIdentity, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 
 const COLLECTIONS = [
+  'programmes',
+  'subjects',
+  'semesters',
   'courses',
   'modules',
   'lessons',
@@ -17,8 +21,11 @@ const COLLECTIONS = [
   'incidents',
 ];
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const identity = resolveRequestIdentity(req);
+    requireAdmin(identity);
+
     const results: Record<string, number> = {};
 
     for (const name of COLLECTIONS) {
@@ -40,8 +47,10 @@ export async function POST() {
     }
 
     return NextResponse.json({ message: 'All data flushed.', results });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Flush error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Flush failed' }, { status: 500 });
   }
 }
