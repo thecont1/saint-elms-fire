@@ -32,6 +32,7 @@ import type { LibraryItem, LibraryItemInput } from './library-catalog';
 import type { RecommendedReading } from './reading-recommendation';
 import type { SharedItem, SharedItemInput } from './shared-items';
 import type { PeerChunkRecord, PeerNodeRecord, PeerEdgeRecord } from './peer-acceptance';
+import type { CorpusChunk } from './corpus-assembly';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -781,6 +782,40 @@ export const DataService = {
       transaction.set(ref, updated);
       return updated;
     });
+  },
+
+  // SECOND-BRAIN CORPUS (Phase 6, Track A0)
+  /**
+   * All corpus chunks a student may generate from, for one lesson:
+   * - released lesson chunks (no studentId / origin field), plus
+   * - the student's own accepted library + peer_share chunks.
+   */
+  async getCorpusChunksForLesson(studentId: string, lessonId: string): Promise<CorpusChunk[]> {
+    const [lessonSnap, personalSnap] = await Promise.all([
+      db.collection('courseware_chunks').where('lessonId', '==', lessonId).get(),
+      db.collection('courseware_chunks').where('studentId', '==', studentId).get(),
+    ]);
+    const toCorpusChunk = (doc: import('@google-cloud/firestore').QueryDocumentSnapshot): CorpusChunk => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        origin: data.origin as CorpusChunk['origin'],
+        lessonId: String(data.lessonId || ''),
+        lessonTitle: String(data.lessonTitle || ''),
+        heading: String(data.heading || ''),
+        content: String(data.content || ''),
+        chunkIndex: Number(data.chunkIndex || 0),
+        libraryItemId: data.libraryItemId ? String(data.libraryItemId) : undefined,
+        sharedItemId: data.sharedItemId ? String(data.sharedItemId) : undefined,
+      };
+    };
+    const lessonChunks = lessonSnap.docs
+      .filter(doc => !doc.data().origin) // released lesson content only
+      .map(toCorpusChunk);
+    const personalChunks = personalSnap.docs
+      .filter(doc => ['library', 'peer_share'].includes(String(doc.data().origin || '')))
+      .map(toCorpusChunk);
+    return [...lessonChunks, ...personalChunks];
   },
 
   // PEER ACCEPTANCE (Phase 6, Track B3)
