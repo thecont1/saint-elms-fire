@@ -180,7 +180,7 @@ export function LmsDashboardClient({
       />
 
       {/* 2. HERO — the legend of the fire (toggled by Hide/Show tab) */}
-      <div className="sticky top-16 z-30 bg-paper-grid">
+      <div className="sticky top-16 z-30 bg-transparent">
         <section
           className={`bg-white/90 border-b border-beacon-100 overflow-hidden transition-all duration-500 ease-in-out ${
             heroExpanded ? 'max-h-[260px] opacity-100' : 'max-h-0 opacity-0'
