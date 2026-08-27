@@ -83,6 +83,18 @@ export function pcmToWav(pcm: Buffer, sampleRate = 24_000, channels = 1): Buffer
   return Buffer.concat([header, pcm]);
 }
 
+const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const GEMINI_TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 const GEMINI_VOICES = { HOST: 'Kore', GUEST: 'Puck' } as const;
 
@@ -91,7 +103,7 @@ export const geminiTts: TtsAdapter = {
   async synthesize(segment) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) throw new TtsUnavailableError('GEMINI_API_KEY not configured');
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent`,
       {
         method: 'POST',
@@ -120,30 +132,54 @@ export const geminiTts: TtsAdapter = {
 };
 
 const SARVAM_TTS_URL = 'https://api.sarvam.ai/text-to-speech';
+const SARVAM_TTS_CHAR_LIMIT = 500;
 const SARVAM_VOICES = { HOST: 'anushka', GUEST: 'abhilash' } as const;
+
+function splitTextIntoChunks(text: string, limit: number): string[] {
+  if (text.length <= limit) return [text];
+  const chunks: string[] = [];
+  let start = 0;
+  while (start < text.length) {
+    let end = Math.min(start + limit, text.length);
+    // Prefer to break at a space so words are not split mid-segment.
+    if (end < text.length && text[end] !== ' ' && text[end - 1] !== ' ') {
+      const lastSpace = text.lastIndexOf(' ', end);
+      if (lastSpace > start) end = lastSpace;
+    }
+    chunks.push(text.slice(start, end).trim());
+    start = end;
+    while (text[start] === ' ') start += 1;
+  }
+  return chunks;
+}
 
 export const sarvamTts: TtsAdapter = {
   name: 'sarvam-tts',
   async synthesize(segment) {
     const apiKey = process.env.SARVAM_API_KEY;
     if (!apiKey) throw new TtsUnavailableError('SARVAM_API_KEY not configured');
-    const response = await fetch(SARVAM_TTS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-subscription-key': apiKey },
-      body: JSON.stringify({
-        text: segment.text.slice(0, 1500),
-        target_language_code: 'en-IN',
-        speaker: SARVAM_VOICES[segment.speaker],
-        model: 'bulbul:v2',
-      }),
-    });
-    if (!response.ok) {
-      throw new TtsUnavailableError(`Sarvam TTS responded ${response.status}`);
+    const chunks = splitTextIntoChunks(segment.text, SARVAM_TTS_CHAR_LIMIT);
+    const audioBuffers: Buffer[] = [];
+    for (const text of chunks) {
+      const response = await fetchWithTimeout(SARVAM_TTS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'api-subscription-key': apiKey },
+        body: JSON.stringify({
+          text,
+          target_language_code: 'en-IN',
+          speaker: SARVAM_VOICES[segment.speaker],
+          model: 'bulbul:v2',
+        }),
+      });
+      if (!response.ok) {
+        throw new TtsUnavailableError(`Sarvam TTS responded ${response.status}`);
+      }
+      const json = await response.json() as { audios?: string[] };
+      const audio = json.audios?.[0];
+      if (!audio) throw new TtsUnavailableError('Sarvam TTS returned no audio');
+      audioBuffers.push(Buffer.from(audio, 'base64'));
     }
-    const json = await response.json() as { audios?: string[] };
-    const audio = json.audios?.[0];
-    if (!audio) throw new TtsUnavailableError('Sarvam TTS returned no audio');
-    return Buffer.from(audio, 'base64');
+    return concatenateWavSegments(audioBuffers);
   },
 };
 
