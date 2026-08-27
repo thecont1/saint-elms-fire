@@ -68,6 +68,9 @@ export function ModelStatusLights() {
     sarvamLatency: number | null;
   }>({ geminiUp: false, sarvamUp: false, geminiServing: false, sarvamServing: false, geminiLatency: null, sarvamLatency: null });
 
+  const [selectedGemini, setSelectedGemini] = useState('gemini-3.7-flash');
+  const selectedSarvam = 'sarvam-105b-conversations';
+
   useEffect(() => {
     let cancelled = false;
 
@@ -121,28 +124,48 @@ export function ModelStatusLights() {
 
   return (
     <div className="flex flex-col gap-1.5 mt-0.5">
-      <ModelLight
-        label="gemini-3.7-flash"
-        up={status.geminiUp}
-        serving={status.geminiServing}
-        latencyMs={status.geminiLatency}
-        title={
-          status.geminiUp
-            ? `Primary model · available${status.geminiLatency != null ? ` (${(status.geminiLatency / 1000).toFixed(1)}s)` : ''}${status.geminiServing ? ' · serving requests (flickering)' : ''}`
-            : 'Primary model · unavailable (falling back)'
-        }
-      />
-      <ModelLight
-        label="sarvam-105b"
-        up={status.sarvamUp}
-        serving={status.sarvamServing}
-        latencyMs={status.sarvamLatency}
-        title={
-          status.sarvamUp
-            ? `Fallback model · available${status.sarvamLatency != null ? ` (${(status.sarvamLatency / 1000).toFixed(1)}s)` : ''}${status.sarvamServing ? ' · serving requests (flickering)' : ''}`
-            : 'Fallback model · unavailable'
-        }
-      />
+      {/* Gemini primary model dropdown */}
+      <div className="flex items-center gap-1.5">
+        <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${status.geminiUp ? 'bg-emerald-500' : 'bg-red-400'} ${status.geminiUp && status.geminiServing ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`} />
+        <select
+          value={selectedGemini}
+          onChange={(e) => setSelectedGemini(e.target.value)}
+          className="flex-1 min-w-0 rounded-md border-beacon-200 bg-white px-2 py-1 text-xs text-marine-900 focus:border-beacon-500 focus:outline-none focus:ring-beacon-200"
+          title={status.geminiUp
+            ? `Primary model · available${status.geminiLatency != null ? ` (${(status.geminiLatency / 1000).toFixed(1)}s)` : ''}${status.geminiServing ? ' · serving requests' : ''}`
+            : 'Primary model · unavailable (falling back)'}
+        >
+          <option value="gemini-3.7-flash">Gemini 3.7 Flash (preferred)</option>
+          <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+          <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+        </select>
+        {status.geminiLatency != null && (
+          <span className={`tabular-nums text-[10px] ${status.geminiUp ? 'text-marine-400' : 'text-red-400'}`}>
+            {status.geminiUp ? `${(status.geminiLatency / 1000).toFixed(1)}s` : '—'}
+          </span>
+        )}
+      </div>
+
+      {/* Sarvam fallback model dropdown — single option */}
+      <div className="flex items-center gap-1.5">
+        <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${status.sarvamUp ? 'bg-emerald-500' : 'bg-red-400'} ${status.sarvamUp && status.sarvamServing ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`} />
+        <select
+          value={selectedSarvam}
+          onChange={() => {}}
+          disabled={true}
+          className="flex-1 min-w-0 rounded-md border-beacon-200 bg-white px-2 py-1 text-xs text-marine-900 opacity-70 cursor-not-allowed"
+          title={status.sarvamUp
+            ? `Fallback model · available${status.sarvamLatency != null ? ` (${(status.sarvamLatency / 1000).toFixed(1)}s)` : ''}${status.sarvamServing ? ' · serving requests' : ''}`
+            : 'Fallback model · unavailable'}
+        >
+          <option value="sarvam-105b-conversations">Sarvam 105b (fallback)</option>
+        </select>
+        {status.sarvamLatency != null && (
+          <span className={`tabular-nums text-[10px] ${status.sarvamUp ? 'text-marine-400' : 'text-red-400'}`}>
+            {status.sarvamUp ? `${(status.sarvamLatency / 1000).toFixed(1)}s` : '—'}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
