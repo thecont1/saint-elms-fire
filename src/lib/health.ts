@@ -95,13 +95,13 @@ async function probeFirestore(): Promise<DepStatus> {
 /** Round-trip a trivial generation through the wired Gemini model. */
 async function probeGemini(): Promise<DepStatus> {
   const start = Date.now();
-  let delay = 1000;
-  const maxRetries = 3;
+  let delay = 500;
+  const maxRetries = 1;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const res = await withTimeout(
         ai.generate('Reply with exactly: OK'),
-        30_000,
+        PROBE_TIMEOUT_MS,
         'gemini',
       );
       const text = (res.text || '').trim();
