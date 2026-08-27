@@ -53,7 +53,6 @@ export function LmsDashboardClient({
 
   // UI Selection States
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(initialLessons[0] || null);
-  const [centerTab, setCenterTab] = useState<'graph' | 'multimodal'>('graph');
   const [quizModalLesson, setQuizModalLesson] = useState<Lesson | null>(null);
   const [chatInitialQuery, setChatInitialQuery] = useState('');
 
@@ -62,7 +61,8 @@ export function LmsDashboardClient({
   const [isBooming, setIsBooming] = useState(false);
   const [heroExpanded, setHeroExpanded] = useState(true);
   const [socraticCollapsed, setSocraticCollapsed] = useState(false);
-  const [canvasCollapsed, setCanvasCollapsed] = useState(false);
+  const [constellationCollapsed, setConstellationCollapsed] = useState(false);
+  const [readerCollapsed, setReaderCollapsed] = useState(false);
 
   // Toggle admin theme class on <html>; scroll to top on role switch (not initial mount)
   const isFirstRender = useRef(true);
@@ -279,7 +279,7 @@ export function LmsDashboardClient({
                   selectedLessonId={selectedLesson?.id || null}
                   onSelectLesson={(lesson) => {
                     setSelectedLesson(lesson);
-                    setCenterTab('multimodal');
+                    setReaderCollapsed(false);
                   }}
                   onOpenQuiz={(lesson) => setQuizModalLesson(lesson)}
                 />
@@ -317,84 +317,72 @@ export function LmsDashboardClient({
                 </div>
               </div>
 
-              {/* Center Canvas Header with View Mode Switcher */}
+              {/* The Knowledge Constellation Card */}
               <div className="chart-card overflow-hidden">
                 <button
-                  onClick={() => setCanvasCollapsed(v => !v)}
+                  onClick={() => setConstellationCollapsed(v => !v)}
                   className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
-                      {centerTab === 'graph' ? (
-                        <Network className="w-4 h-4" />
-                      ) : (
-                        <Layers className="w-4 h-4" />
-                      )}
+                      <Network className="w-4 h-4" />
                     </div>
                     <div>
                       <h3 className="font-display text-base font-semibold text-marine-900">
-                        {centerTab === 'graph'
-                          ? 'The Knowledge Constellation'
-                          : 'Multimodal Courseware Reader'}
+                        The Knowledge Constellation
                       </h3>
                       <p className="chart-annotation mt-0.5">
-                        {centerTab === 'graph'
-                          ? 'Fixed stars of your unlocked curriculum'
-                          : `Sighting: ${selectedLesson?.title || 'Selected Lesson'}`}
+                        Fixed stars of your unlocked curriculum
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {centerTab === 'graph' ? (
-                      <InfoIcon text="The Knowledge Constellation is a visual map of concepts extracted from your released lessons. Each star is a concept; lines show how they connect. It grows as more lessons are unlocked." />
-                    ) : (
-                      <InfoIcon text="The Reader shows your lesson in multiple formats — structured notes, a podcast dialogue script, or a video lecture script — all generated from the same source material." />
-                    )}
-                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${canvasCollapsed ? '' : 'rotate-180'}`} />
+                    <InfoIcon text="The Knowledge Constellation is a visual map of concepts extracted from your released lessons. Each star is a concept; lines show how they connect. It grows as more lessons are unlocked." />
+                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${constellationCollapsed ? '' : 'rotate-180'}`} />
                   </div>
                 </button>
-
-                {/* View Mode Toggle */}
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${canvasCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
-                  <div className="p-5 space-y-4">
-                    <div className="flex flex-wrap items-center justify-end gap-3">
-                      <div className="flex gap-1 bg-beacon-50 p-1 rounded-full border border-beacon-100">
-                        <button
-                          onClick={() => setCenterTab('graph')}
-                          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
-                            centerTab === 'graph'
-                              ? 'bg-beacon-600 text-white shadow-sm'
-                              : 'text-marine-500 hover:text-marine-800'
-                          }`}
-                        >
-                          <Network className="w-3.5 h-3.5" />
-                          <span>Constellation</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCenterTab('multimodal')}
-                          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
-                            centerTab === 'multimodal'
-                              ? 'bg-beacon-600 text-white shadow-sm'
-                              : 'text-marine-500 hover:text-marine-800'
-                          }`}
-                        >
-                          <Layers className="w-3.5 h-3.5" />
-                          <span>Reader</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Primary Canvas Body */}
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${constellationCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
+                  <div className="p-5">
                     <div className="min-h-[500px]">
-                      {centerTab === 'graph' ? (
-                        <KnowledgeGraphVisualizer
-                          nodes={graphData.nodes}
-                          edges={graphData.edges}
-                          onSelectConcept={handleConceptSelectFromGraph}
-                          isLoading={isSyncing}
-                        />
-                      ) : selectedLesson ? (
+                      <KnowledgeGraphVisualizer
+                        nodes={graphData.nodes}
+                        edges={graphData.edges}
+                        onSelectConcept={handleConceptSelectFromGraph}
+                        isLoading={isSyncing}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* The Knowledge Reader Card */}
+              <div className="chart-card overflow-hidden">
+                <button
+                  onClick={() => setReaderCollapsed(v => !v)}
+                  className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-base font-semibold text-marine-900">
+                        The Knowledge Reader
+                      </h3>
+                      <p className="chart-annotation mt-0.5">
+                        Sighting: {selectedLesson?.title || 'Selected Lesson'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <InfoIcon text="The Reader shows your lesson in multiple formats — structured notes, a podcast dialogue script, or a video lecture script — all generated from the same source material." />
+                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${readerCollapsed ? '' : 'rotate-180'}`} />
+                  </div>
+                </button>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${readerCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
+                  <div className="p-5">
+                    <div className="min-h-[500px]">
+                      {selectedLesson ? (
                         <MultiFormatViewer
                           lesson={selectedLesson}
                           studentId={studentId}
