@@ -31,6 +31,7 @@ import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
 import type { LibraryItem, LibraryItemInput } from './library-catalog';
 import type { RecommendedReading } from './reading-recommendation';
 import type { SharedItem, SharedItemInput } from './shared-items';
+import type { PeerChunkRecord, PeerNodeRecord, PeerEdgeRecord } from './peer-acceptance';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -469,7 +470,9 @@ export const DataService = {
     const visibleModuleIds = new Set(
       releases.filter(release => !release.targetLessonIds?.length && !release.lessonId).map(release => release.moduleId)
     );
-    const visible = (data: { releaseId?: string; lessonId?: string; moduleId?: string }) =>
+    const visible = (data: { releaseId?: string; lessonId?: string; moduleId?: string; origin?: string }) =>
+      // Peer-accepted material is visible by explicit acceptance, not release.
+      data.origin === 'peer_share' ? true :
       data.releaseId
         ? visibleReleaseIds.has(data.releaseId)
         : Boolean((data.lessonId && visibleLessonIds.has(data.lessonId)) || (data.moduleId && visibleModuleIds.has(data.moduleId)));
@@ -778,6 +781,74 @@ export const DataService = {
       transaction.set(ref, updated);
       return updated;
     });
+  },
+
+  // PEER ACCEPTANCE (Phase 6, Track B3)
+  async recordShareDecision(input: {
+    sharedItemId: string;
+    studentId: string;
+    decision: 'accepted' | 'dismissed';
+  }): Promise<void> {
+    await db.collection('share_decisions').doc(`${input.sharedItemId}__${input.studentId}`).set({
+      ...input,
+      decidedAt: new Date().toISOString(),
+    });
+  },
+
+  async getShareDecision(sharedItemId: string, studentId: string): Promise<'accepted' | 'dismissed' | null> {
+    const doc = await db.collection('share_decisions').doc(`${sharedItemId}__${studentId}`).get();
+    return doc.exists ? (doc.data()!.decision as 'accepted' | 'dismissed') : null;
+  },
+
+  async getShareDecisionsForStudent(studentId: string): Promise<Array<{ sharedItemId: string; decision: 'accepted' | 'dismissed' }>> {
+    const snap = await db.collection('share_decisions').where('studentId', '==', studentId).get();
+    return snap.docs.map(doc => doc.data() as { sharedItemId: string; decision: 'accepted' | 'dismissed' });
+  },
+
+  async writePeerChunks(chunks: PeerChunkRecord[]): Promise<void> {
+    if (chunks.length === 0) return;
+    const createdAt = new Date().toISOString();
+    const batch = db.batch();
+    for (const chunk of chunks) {
+      const { embedding, ...metadata } = chunk;
+      batch.set(db.collection('courseware_chunks').doc(chunk.id), {
+        ...metadata,
+        embeddingModel: 'gemini-embedding-001/768',
+        embedding: FieldValue.vector(embedding),
+        createdAt,
+      });
+    }
+    await batch.commit();
+  },
+
+  async writePeerGraph(nodes: PeerNodeRecord[], edges: PeerEdgeRecord[]): Promise<void> {
+    if (nodes.length === 0 && edges.length === 0) return;
+    const batch = db.batch();
+    for (const node of nodes) batch.set(db.collection('knowledge_nodes').doc(node.id), node);
+    for (const edge of edges) batch.set(db.collection('knowledge_edges').doc(edge.id), edge);
+    await batch.commit();
+  },
+
+  /**
+   * Idempotent undo: remove the acceptor's peer chunks and graph records for
+   * one shared item. Never touches other students' copies.
+   */
+  async removePeerIngestion(sharedItemId: string, studentId: string): Promise<{ chunksRemoved: number; nodesRemoved: number; edgesRemoved: number }> {
+    const [chunksSnap, nodesSnap, edgesSnap] = await Promise.all([
+      db.collection('courseware_chunks').where('sharedItemId', '==', sharedItemId).where('studentId', '==', studentId).get(),
+      db.collection('knowledge_nodes').where('sharedItemId', '==', sharedItemId).where('studentId', '==', studentId).get(),
+      db.collection('knowledge_edges').where('sharedItemId', '==', sharedItemId).where('studentId', '==', studentId).get(),
+    ]);
+    const batch = db.batch();
+    for (const doc of [...chunksSnap.docs, ...nodesSnap.docs, ...edgesSnap.docs]) batch.delete(doc.ref);
+    await batch.commit();
+    return { chunksRemoved: chunksSnap.size, nodesRemoved: nodesSnap.size, edgesRemoved: edgesSnap.size };
+  },
+
+  /** Lesson-id namespace of a student's accepted peer + library chunks, for retrieval scope. */
+  async getPersonalCorpusLessonIds(studentId: string): Promise<string[]> {
+    const snap = await db.collection('courseware_chunks').where('studentId', '==', studentId).get();
+    return [...new Set(snap.docs.map(doc => String(doc.data().lessonId || '')).filter(Boolean))];
   },
 
   // PEER SHARES (Phase 6, Track B2)
