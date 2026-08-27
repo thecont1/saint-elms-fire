@@ -71,27 +71,36 @@ export async function runRecommendReadingStage(input: RecommendStageInput): Prom
 
     await DataService.saveRecommendedReadings(recommendations);
 
-    // Ingest licensed excerpts for matched items (once per item per student).
+    // Ingest licensed excerpts for every recommendation. The same item can
+    // match several nodes; each association keeps its own node/lesson metadata
+    // so later matches never overwrite earlier ones.
     let excerptChunksIngested = 0;
-    const matchedItemIds = [...new Set(recommendations.map((rec) => rec.libraryItemId))];
-    for (const itemId of matchedItemIds) {
-      const item = catalogItems.find((candidate) => candidate.id === itemId)!;
+    const embeddedChunksByItem = new Map<string, Array<{ index: number; heading: string; content: string; embedding: number[] }>>();
+
+    for (const rec of recommendations) {
+      const item = catalogItems.find((candidate) => candidate.id === rec.libraryItemId)!;
       if (!item.excerptAllowed || !item.excerpt) continue;
-      const rec = recommendations.find((candidate) => candidate.libraryItemId === itemId)!;
-      const node = input.nodes.find((candidate) => candidate.id === rec.nodeId)!;
-      const chunks = chunkMarkdown(item.excerpt);
-      const embedded = [];
-      for (const chunk of chunks) {
-        embedded.push({
-          index: chunk.index,
-          heading: chunk.heading,
-          content: chunk.content,
-          embedding: await embedText(`${item.title}\n${chunk.heading}\n${chunk.content}`),
-        });
+
+      let embedded = embeddedChunksByItem.get(item.id);
+      if (!embedded) {
+        const chunks = chunkMarkdown(item.excerpt);
+        embedded = [];
+        for (const chunk of chunks) {
+          embedded.push({
+            index: chunk.index,
+            heading: chunk.heading,
+            content: chunk.content,
+            embedding: await embedText(`${item.title}\n${chunk.heading}\n${chunk.content}`),
+          });
+        }
+        embeddedChunksByItem.set(item.id, embedded);
       }
+
+      const node = input.nodes.find((candidate) => candidate.id === rec.nodeId)!;
       excerptChunksIngested += await DataService.writeLibraryExcerptChunks({
         studentId: input.studentId,
         libraryItemId: item.id,
+        nodeId: rec.nodeId,
         lessonId: node.lessonId,
         courseId: input.courseId,
         moduleId: input.moduleId,
