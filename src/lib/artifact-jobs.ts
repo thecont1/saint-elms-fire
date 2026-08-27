@@ -13,8 +13,22 @@ import { synthesizePodcast } from '../ai/tts';
 import { multiFormatGenerationFlow } from '../ai/flows/multi-format';
 import type { ArtifactErrorCategory } from './artifacts';
 
-async function failBoth(job: JobRecord, category: ArtifactErrorCategory, cause: unknown): Promise<never> {
-  await DataService.markArtifactFailed(job.payload.artifactId, category).catch(() => {});
+/**
+ * Injectable pipeline dependencies so end-to-end tests can run the full
+ * generate → synthesize/render → store → ready flow without cloud services.
+ */
+export interface ArtifactPipelineDeps {
+  getArtifact: typeof DataService.getArtifact;
+  markArtifactReady: typeof DataService.markArtifactReady;
+  markArtifactFailed: typeof DataService.markArtifactFailed;
+  generate(job: JobRecord, formatType: 'structured_notes' | 'podcast_dialogue'): Promise<string>;
+  synthesizePodcast(script: string): Promise<Buffer>;
+  renderPdf(job: JobRecord, markdown: string): Promise<Buffer>;
+  save(storagePath: string, data: Buffer, contentType: string): Promise<{ sizeBytes: number }>;
+}
+
+async function failBoth(deps: ArtifactPipelineDeps, job: JobRecord, category: ArtifactErrorCategory, cause: unknown): Promise<never> {
+  await deps.markArtifactFailed(job.payload.artifactId, category).catch(() => {});
   console.error('artifact_job_failed', {
     artifactId: job.payload.artifactId,
     kind: job.kind,
@@ -24,89 +38,101 @@ async function failBoth(job: JobRecord, category: ArtifactErrorCategory, cause: 
   throw new JobExecutionError(category as JobExecutionError['category'], `Artifact generation failed: ${category}`);
 }
 
-async function generateSourceContent(job: JobRecord, formatType: 'structured_notes' | 'podcast_dialogue'): Promise<string> {
-  const result = await multiFormatGenerationFlow({
-    lessonId: job.payload.lessonId,
-    studentId: job.payload.studentId,
-    formatType,
-    persona: job.payload.persona || undefined,
-    corpusScope: (job.payload.corpusScope as 'lesson' | 'second_brain') || 'second_brain',
-  });
-  if (!result.content) throw new Error('empty generation');
-  return result.content;
-}
-
-export async function handleNotesPdfJob(job: JobRecord): Promise<void> {
-  const artifact = await DataService.getArtifact(job.payload.artifactId);
+export async function handleNotesPdfJob(job: JobRecord, deps: ArtifactPipelineDeps = defaultDeps()): Promise<void> {
+  const artifact = await deps.getArtifact(job.payload.artifactId);
   if (!artifact) throw new JobExecutionError('unknown', 'Artifact record missing');
 
   let markdown: string;
   try {
-    markdown = await generateSourceContent(job, 'structured_notes');
+    markdown = await deps.generate(job, 'structured_notes');
   } catch (error) {
-    await failBoth(job, 'generation_failed', error);
+    await failBoth(deps, job, 'generation_failed', error);
     return;
   }
 
   let pdf: Buffer;
   try {
-    const [lesson, graph] = await Promise.all([
-      DataService.getLesson(job.payload.lessonId),
-      DataService.getStudentKnowledgeGraph(job.payload.studentId),
-    ]);
-    const course = lesson ? await DataService.getCourse(lesson.courseId) : null;
-    const modules = lesson ? await DataService.getModules(lesson.courseId) : [];
-    const module = modules.find((candidate) => candidate.id === lesson?.moduleId);
-    pdf = await renderNotesPdf({
-      markdown,
-      courseTitle: course?.title ?? 'Saint Elms Fire',
-      moduleTitle: module?.title ?? '',
-      lessonTitle: lesson?.title ?? job.payload.lessonId,
-      releasedAt: new Date().toISOString(),
-      concepts: graph.nodes
-        .filter((node) => node.lessonId === job.payload.lessonId)
-        .sort((a, b) => b.importance - a.importance)
-        .map((node) => node.concept),
-    });
+    pdf = await deps.renderPdf(job, markdown);
   } catch (error) {
-    await failBoth(job, 'pdf_render_failed', error);
+    await failBoth(deps, job, 'pdf_render_failed', error);
     return;
   }
 
   try {
-    const { sizeBytes } = await gcsArtifactStorage.save(artifact.storagePath, pdf, artifact.mimeType);
-    await DataService.markArtifactReady(artifact.id, sizeBytes);
+    const { sizeBytes } = await deps.save(artifact.storagePath, pdf, artifact.mimeType);
+    await deps.markArtifactReady(artifact.id, sizeBytes);
   } catch (error) {
-    await failBoth(job, 'storage_write_failed', error);
+    await failBoth(deps, job, 'storage_write_failed', error);
   }
 }
 
-export async function handlePodcastAudioJob(job: JobRecord): Promise<void> {
-  const artifact = await DataService.getArtifact(job.payload.artifactId);
+export async function handlePodcastAudioJob(job: JobRecord, deps: ArtifactPipelineDeps = defaultDeps()): Promise<void> {
+  const artifact = await deps.getArtifact(job.payload.artifactId);
   if (!artifact) throw new JobExecutionError('unknown', 'Artifact record missing');
 
   let script: string;
   try {
-    script = await generateSourceContent(job, 'podcast_dialogue');
+    script = await deps.generate(job, 'podcast_dialogue');
   } catch (error) {
-    await failBoth(job, 'generation_failed', error);
+    await failBoth(deps, job, 'generation_failed', error);
     return;
   }
 
   let audio: Buffer;
   try {
-    audio = await synthesizePodcast(script);
+    audio = await deps.synthesizePodcast(script);
   } catch (error) {
-    await failBoth(job, 'tts_unavailable', error);
+    await failBoth(deps, job, 'tts_unavailable', error);
     return;
   }
 
   try {
-    const { sizeBytes } = await gcsArtifactStorage.save(artifact.storagePath, audio, artifact.mimeType);
-    await DataService.markArtifactReady(artifact.id, sizeBytes);
+    const { sizeBytes } = await deps.save(artifact.storagePath, audio, artifact.mimeType);
+    await deps.markArtifactReady(artifact.id, sizeBytes);
   } catch (error) {
-    await failBoth(job, 'storage_write_failed', error);
+    await failBoth(deps, job, 'storage_write_failed', error);
   }
+}
+
+function defaultDeps(): ArtifactPipelineDeps {
+  return {
+    getArtifact: (id) => DataService.getArtifact(id),
+    markArtifactReady: (id, size) => DataService.markArtifactReady(id, size),
+    markArtifactFailed: (id, category) => DataService.markArtifactFailed(id, category),
+    async generate(job, formatType) {
+      const result = await multiFormatGenerationFlow({
+        lessonId: job.payload.lessonId,
+        studentId: job.payload.studentId,
+        formatType,
+        persona: job.payload.persona || undefined,
+        corpusScope: (job.payload.corpusScope as 'lesson' | 'second_brain') || 'second_brain',
+      });
+      if (!result.content) throw new Error('empty generation');
+      return result.content;
+    },
+    synthesizePodcast: (script) => synthesizePodcast(script),
+    async renderPdf(job, markdown) {
+      const [lesson, graph] = await Promise.all([
+        DataService.getLesson(job.payload.lessonId),
+        DataService.getStudentKnowledgeGraph(job.payload.studentId),
+      ]);
+      const course = lesson ? await DataService.getCourse(lesson.courseId) : null;
+      const modules = lesson ? await DataService.getModules(lesson.courseId) : [];
+      const module = modules.find((candidate) => candidate.id === lesson?.moduleId);
+      return renderNotesPdf({
+        markdown,
+        courseTitle: course?.title ?? 'Saint Elms Fire',
+        moduleTitle: module?.title ?? '',
+        lessonTitle: lesson?.title ?? job.payload.lessonId,
+        releasedAt: new Date().toISOString(),
+        concepts: graph.nodes
+          .filter((node) => node.lessonId === job.payload.lessonId)
+          .sort((a, b) => b.importance - a.importance)
+          .map((node) => node.concept),
+      });
+    },
+    save: (storagePath, data, contentType) => gcsArtifactStorage.save(storagePath, data, contentType),
+  };
 }
 
 let runner: JobRunner | null = null;
