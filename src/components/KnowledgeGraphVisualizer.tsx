@@ -9,6 +9,7 @@ interface KnowledgeGraphVisualizerProps {
   nodes: KnowledgeNode[];
   edges: KnowledgeEdge[];
   onSelectConcept?: (concept: string) => void;
+  onOpenWiki?: (nodeId: string) => void;
   isLoading?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function KnowledgeGraphVisualizer({
   nodes = [],
   edges = [],
   onSelectConcept,
+  onOpenWiki,
   isLoading = false,
 }: KnowledgeGraphVisualizerProps) {
   const [selectedNode, setSelectedNode] = useState<KnowledgeNode | null>(null);
@@ -286,6 +288,18 @@ export function KnowledgeGraphVisualizer({
                     />
                   )}
 
+                  {/* Peer-derived ring: the brain visibly grows from collaboration */}
+                  {node.origin === 'peer_share' && (
+                    <circle
+                      r={radius + 4}
+                      fill="none"
+                      stroke={style.bg}
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                      opacity="0.85"
+                    />
+                  )}
+
                   {/* Main circle */}
                   <circle
                     r={radius}
@@ -358,12 +372,22 @@ export function KnowledgeGraphVisualizer({
                 <BookOpen className="w-3.5 h-3.5 text-beacon-500" />
                 Lesson: {selectedNode.lessonId.slice(0, 8)}...
               </span>
-              <button
-                onClick={() => onSelectConcept && onSelectConcept(selectedNode.concept)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-beacon-50 hover:bg-beacon-100 text-beacon-700 font-bold transition"
-              >
-                Ask the beacon <ArrowRight className="w-3 h-3" />
-              </button>
+              <span className="flex items-center gap-1.5">
+                {onOpenWiki && (
+                  <button
+                    onClick={() => onOpenWiki(selectedNode.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-beacon-200 hover:bg-beacon-50 text-beacon-700 font-bold transition"
+                  >
+                    Wiki page
+                  </button>
+                )}
+                <button
+                  onClick={() => onSelectConcept && onSelectConcept(selectedNode.concept)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-beacon-50 hover:bg-beacon-100 text-beacon-700 font-bold transition"
+                >
+                  Ask the beacon <ArrowRight className="w-3 h-3" />
+                </button>
+              </span>
             </div>
           </div>
         )}
@@ -381,9 +405,11 @@ export function KnowledgeGraphVisualizer({
           ))}
         </div>
         <div className="chart-annotation flex items-center gap-2">
-          <span>Dashed: prerequisite</span>
+          <span>Dashed line: prerequisite</span>
           <span>&bull;</span>
           <span>Solid: relational</span>
+          <span>&bull;</span>
+          <span>Dashed ring: shared by a peer</span>
         </div>
       </div>
     </div>

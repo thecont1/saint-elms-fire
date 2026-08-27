@@ -149,6 +149,10 @@ export interface KnowledgeNode {
   importance: number; // 1 to 5
   masteryLevel?: number; // 0 to 100
   releasedAt: string;
+  /** Phase 6: source origin; absent means released lesson content. */
+  origin?: CorpusOrigin;
+  /** Phase 6: backing shared item for origin 'peer_share'. */
+  sharedItemId?: string;
 }
 
 export interface KnowledgeEdge {

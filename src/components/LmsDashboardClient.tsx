@@ -21,6 +21,7 @@ import { AdminCourseManager } from '@/components/AdminCourseManager';
 import { AdminReleaseManager } from '@/components/AdminReleaseManager';
 import { QuizModal } from '@/components/QuizModal';
 import { InfoIcon } from '@/components/InfoIcon';
+import { WikiPageView } from '@/components/WikiPageView';
 import type { Course, CourseModule, Lesson, ReleaseEvent, KnowledgeNode, KnowledgeEdge, SocraticSession } from '@/lib/types';
 
 interface LmsDashboardClientProps {
@@ -56,6 +57,7 @@ export function LmsDashboardClient({
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [quizModalLesson, setQuizModalLesson] = useState<Lesson | null>(null);
   const [chatInitialQuery, setChatInitialQuery] = useState('');
+  const [wikiNodeId, setWikiNodeId] = useState<string | null>(null);
 
   // Loading & Sync States
   const [isSyncing, setIsSyncing] = useState(false);
@@ -371,6 +373,7 @@ export function LmsDashboardClient({
                         nodes={graphData.nodes}
                         edges={graphData.edges}
                         onSelectConcept={handleConceptSelectFromGraph}
+                        onOpenWiki={setWikiNodeId}
                         isLoading={isSyncing}
                       />
                     </div>
@@ -531,6 +534,15 @@ export function LmsDashboardClient({
           </div>
         </div>
       </footer>
+      {/* Second Brain wiki page (Phase 6, Track B4) */}
+      {wikiNodeId && (
+        <WikiPageView
+          studentId={studentId}
+          nodeId={wikiNodeId}
+          onClose={() => setWikiNodeId(null)}
+          onNavigate={setWikiNodeId}
+        />
+      )}
     </div>
   );
 }
