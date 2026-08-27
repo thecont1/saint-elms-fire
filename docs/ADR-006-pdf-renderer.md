@@ -26,7 +26,7 @@ Two candidates from the plan:
 ## Decision
 
 Use **`@react-pdf/renderer`** with a small internal markdown-block parser
-(`src/lib/pdf-notes.ts`) that maps our generated markdown subset to template
+(`src/lib/pdf-notes.tsx`) that maps our generated markdown subset to template
 components. No Chromium enters the container.
 
 ## Consequences

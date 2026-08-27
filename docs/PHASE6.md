@@ -32,7 +32,7 @@ Phase 6 delivered the two headline innovations end-to-end (see
 
 ### Generating an artifact
 
-```
+```bash
 POST /api/artifacts/generate
   { lessonId, formatType: 'notes_pdf' | 'podcast_audio', persona?, corpusScope? }
 → 202 { artifactId, jobId, status: 'pending' }
