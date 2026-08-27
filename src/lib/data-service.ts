@@ -1,4 +1,5 @@
 import { db, FieldValue } from './firestore';
+import type { RequestIdentity } from './request-identity';
 import type {
   Course,
   CourseModule,
@@ -177,6 +178,29 @@ export const DataService = {
     const snap = await query.get();
     const list = snap.docs.map(doc => sanitizeDoc<Lesson>(doc));
     return list.sort((a, b) => a.order - b.order);
+  },
+
+  /**
+   * Shared courseware read used by both `GET /api/courses/[courseId]` and
+   * `GET /api/lessons`. Admins see all lessons; students only see released
+   * lessons with unreleased markdown content redacted.
+   */
+  async getCoursewareLessons(
+    courseId: string,
+    moduleId: string | undefined,
+    identity: RequestIdentity,
+    targetStudentId?: string | null,
+  ): Promise<Lesson[]> {
+    const allLessons = await this.getLessons(courseId, moduleId);
+    if (identity.role === 'admin' && !targetStudentId) {
+      return allLessons;
+    }
+    const studentId = identity.role === 'admin' && targetStudentId ? targetStudentId : identity.userId;
+    const released = await this.getReleasedLessonsForStudent(studentId, courseId);
+    const releasedIds = new Set(released.map(l => l.id));
+    return allLessons.map(l =>
+      releasedIds.has(l.id) ? l : { ...l, markdownContent: '' }
+    );
   },
 
   async getLesson(id: string): Promise<Lesson | null> {

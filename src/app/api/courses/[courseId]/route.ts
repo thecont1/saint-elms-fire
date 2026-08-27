@@ -14,19 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
     const modules = await DataService.getModules(courseId);
-    const allLessons = await DataService.getLessons(courseId);
-
-    // Students only see released lessons; admins see all
-    let lessons = allLessons;
-    if (identity.role === 'student') {
-      const releasedLessons = await DataService.getReleasedLessonsForStudent(identity.userId, courseId);
-      const releasedIds = new Set(releasedLessons.map(l => l.id));
-      lessons = allLessons.map(l =>
-        releasedIds.has(l.id)
-          ? l
-          : { ...l, markdownContent: '' }
-      );
-    }
+    const lessons = await DataService.getCoursewareLessons(courseId, undefined, identity);
 
     return NextResponse.json({
       course,

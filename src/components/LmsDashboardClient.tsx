@@ -53,7 +53,7 @@ export function LmsDashboardClient({
   const [graphData, setGraphData] = useState<{ nodes: KnowledgeNode[]; edges: KnowledgeEdge[] }>(initialGraph);
 
   // UI Selection States
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(initialLessons[0] || null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [quizModalLesson, setQuizModalLesson] = useState<Lesson | null>(null);
   const [chatInitialQuery, setChatInitialQuery] = useState('');
 
@@ -78,8 +78,16 @@ export function LmsDashboardClient({
     return () => root.classList.remove('admin-theme');
   }, [role]);
 
-  // Compute released lessons
+  // Compute released lessons and keep selectedLesson within release eligibility
   useEffect(() => {
+    if (role === 'admin') {
+      setReleasedLessons(lessons);
+      if (!selectedLesson || !lessons.some((l) => l.id === selectedLesson.id)) {
+        setSelectedLesson(lessons[0] || null);
+      }
+      return;
+    }
+
     const releasedIds = new Set<string>();
     const releasedModIds = new Set<string>();
 
@@ -97,10 +105,12 @@ export function LmsDashboardClient({
     );
     setReleasedLessons(unLocked);
 
-    if (unLocked.length > 0 && (!selectedLesson || !unLocked.some((l) => l.id === selectedLesson.id))) {
+    if (unLocked.length === 0) {
+      setSelectedLesson(null);
+    } else if (!selectedLesson || !unLocked.some((l) => l.id === selectedLesson.id)) {
       setSelectedLesson(unLocked[0]);
     }
-  }, [lessons, releases]);
+  }, [lessons, releases, role]);
 
   const refreshAllData = async () => {
     setIsSyncing(true);
@@ -119,9 +129,7 @@ export function LmsDashboardClient({
         setModules(detailsData.modules || []);
         setLessons(detailsData.lessons || []);
 
-        if (detailsData.lessons && detailsData.lessons.length > 0 && !selectedLesson) {
-          setSelectedLesson(detailsData.lessons[0]);
-        }
+        // selectedLesson is synchronized by the release-eligibility effect after setLessons
       }
 
       const releasesRes = await fetch(`/api/releases?studentId=${studentId}`);
@@ -317,7 +325,7 @@ export function LmsDashboardClient({
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${readerCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
                   <div className="p-5">
                     <div className="min-h-[500px]">
-                      {selectedLesson ? (
+                      {selectedLesson && releasedLessons.some((l) => l.id === selectedLesson.id) ? (
                         <MultiFormatViewer
                           lesson={selectedLesson}
                           studentId={studentId}
@@ -412,7 +420,7 @@ export function LmsDashboardClient({
               </div>
 
               {/* Socrates my Guide */}
-              <div className="chart-card overflow-hidden">
+              <div className="chart-card overflow-visible">
                 <div className="p-4 border-b border-beacon-100 bg-beacon-50/60">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">

@@ -1,22 +1,33 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
-import { resolveRequestIdentity, requireAdmin, authorizationResponse } from '@/lib/request-identity';
+import { resolveRequestIdentity, resolveStudentScope, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const courseId = searchParams.get('courseId');
     const moduleId = searchParams.get('moduleId') || undefined;
+    const targetStudentId = searchParams.get('studentId');
 
     if (!courseId) {
       return NextResponse.json({ error: 'courseId query parameter is required' }, { status: 400 });
     }
 
-    const lessons = await DataService.getLessons(courseId, moduleId);
+    const identity = resolveRequestIdentity(req);
+
+    if (identity.role === 'admin' && !targetStudentId) {
+      requireAdmin(identity);
+    } else {
+      resolveStudentScope(identity, targetStudentId);
+    }
+
+    const lessons = await DataService.getCoursewareLessons(courseId, moduleId, identity, targetStudentId);
     return NextResponse.json({ lessons });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const authResponse = authorizationResponse(error);
+    if (authResponse) return authResponse;
     console.error('Failed to get lessons:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to get lessons' }, { status: 500 });
   }
 }
 

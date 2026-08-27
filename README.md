@@ -16,7 +16,7 @@ Saint Elms Fire takes uploaded markdown lessons and, through a gated release pip
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Next.js 16 App Router                     │
 │  (Student dashboard / Admin dashboard / API routes)         │
@@ -89,7 +89,7 @@ Open `http://localhost:3000/student` or `http://localhost:3000/admin`. The app a
 | `GOOGLE_CLOUD_PROJECT` | For Firestore | GCP project ID |
 | `FIRESTORE_DATABASE_ID` | No | Defaults to `(default)` |
 | `SARVAM_API_KEY` | No | Sarvam fallback model key |
-| `AUTH_MODE` | No | `demo` (default) or `trusted-proxy` |
+| `AUTH_MODE` | No | `demo` (default, local/development only) or `trusted-proxy` (required in production) |
 | `DEMO_USER_ID` | No | Demo identity (default: `student-alex`) |
 | `DEMO_USER_ROLE` | No | Demo role (default: `admin`) |
 | `AUTH_PROXY_SECRET` | Prod | Shared secret for trusted-proxy mode (Secret Manager) |
