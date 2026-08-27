@@ -37,8 +37,9 @@ export function parsePodcastScript(script: string): SpeakerSegment[] {
   const hostAliases = new Set(['host', 'alex']);
   const guestAliases = new Set(['guest', 'sam']);
   for (const rawLine of script.split('\n')) {
-    const line = rawLine.trim();
-    const match = line.match(/^\**\s*([A-Za-z]+)\s*\**\s*[:：]\s*(.+)$/);
+    // Normalize bold speaker labels: "**Alex:**" / "**Alex**:" → "Alex:".
+    const line = rawLine.trim().replace(/^\*\*([^*]+?)\*\*\s*/, '$1 ').replace(/^([A-Za-z]+)\s*:\s+/, '$1: ');
+    const match = line.match(/^([A-Za-z]+)\s*[:：]\s*(.+)$/);
     if (!match) continue;
     const label = match[1].toLowerCase();
     const text = match[2].replace(/\[[^\]]*\]/g, '').trim();
