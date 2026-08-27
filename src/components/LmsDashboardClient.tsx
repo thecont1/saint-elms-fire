@@ -179,9 +179,9 @@ export function LmsDashboardClient({
       />
 
       {/* 2. HERO — the legend of the fire (toggled by Hide/Show tab) */}
-      <div className="sticky top-16 z-30 border-b border-beacon-100 bg-white/90">
+      <div className="sticky top-16 z-30 bg-white/90">
         <section
-          className={`overflow-hidden transition-all duration-500 ease-in-out ${
+          className={`border-b border-beacon-100 overflow-hidden transition-all duration-500 ease-in-out ${
             heroExpanded ? 'max-h-[260px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
@@ -219,7 +219,7 @@ export function LmsDashboardClient({
 
         {/* Hide/Show tab — hangs from the bottom of the hero section */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-end -mt-px">
+          <div className="flex justify-end">
             <button
               onClick={() => setHeroExpanded(v => !v)}
               className="px-2.5 py-0.5 rounded-b-md border border-t-0 border-beacon-100 bg-white/80 text-marine-400 text-[10px] font-medium transition hover:text-beacon-600 hover:border-beacon-200"
