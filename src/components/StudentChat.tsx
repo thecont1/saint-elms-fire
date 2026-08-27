@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ShieldCheck, AlertTriangle, BookOpen, User, HelpCircle, Loader2 } from 'lucide-react';
+import { Send, AlertTriangle, BookOpen, User, HelpCircle, Loader2 } from 'lucide-react';
 import { CoronaMark } from '@/components/Navigation';
 import { InfoIcon } from '@/components/InfoIcon';
 import type { ChatMessage } from '@/lib/types';
@@ -137,32 +137,23 @@ export function StudentChat({
 
   return (
     <div className="chart-card overflow-hidden flex flex-col h-full">
-      {/* Header with Grounding Indicator */}
+      {/* Header */}
       <div className="p-4 border-b border-beacon-100 bg-beacon-50/60">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
-              <CoronaMark className="w-5 h-5" />
+              <User className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-display text-sm font-semibold text-marine-900">
-                Socrates my Guide
+              <h3 className="font-display text-base font-semibold text-marine-900">
+                Socrates my Friend
               </h3>
               <p className="text-xs text-marine-500 leading-snug">
-                Lit by your {releasedLessonCount} unlocked lesson(s)
+                Personal chatbox
               </p>
             </div>
           </div>
-          <InfoIcon text="Socrates my Guide is your AI study companion. It answers questions using only your unlocked lessons as context, so it won't reveal topics from future waypoints." />
-        </div>
-        <div className="flex items-center gap-1.5 mt-2.5">
-          <span className="chart-annotation px-2 py-0.5 rounded-full bg-white text-beacon-700 border border-beacon-200">
-            Release-gated
-          </span>
-          <span className="chart-annotation flex items-center gap-1 text-beacon-700 bg-white px-2 py-0.5 rounded-full border border-beacon-200">
-            <ShieldCheck className="w-3 h-3 text-beacon-500" />
-            Grounded
-          </span>
+          <InfoIcon text="Socrates my Friend is your personal chatbox. Ask Socrates my Guide anything grounded in your unlocked lessons." />
         </div>
       </div>
 

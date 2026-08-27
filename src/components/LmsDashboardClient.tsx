@@ -9,6 +9,7 @@ import {
   Anchor,
   ChevronDown,
   Activity,
+  ShieldCheck,
 } from 'lucide-react';
 import { Navigation, CoronaMark, ModelStatusLights } from '@/components/Navigation';
 import { KnowledgeGraphVisualizer } from '@/components/KnowledgeGraphVisualizer';
@@ -289,73 +290,6 @@ export function LmsDashboardClient({
 
             {/* COLUMN 2: CENTER PRIMARY KNOWLEDGE & SECOND BRAIN CANVAS (6 cols) */}
             <section className="lg:col-span-6 space-y-5">
-              {/* Top: Proactive Socrates my Philosopher Card (Agent-Initiated Challenge) */}
-              <div className="chart-card overflow-hidden">
-                <button
-                  onClick={() => setSocraticCollapsed(v => !v)}
-                  className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
-                      <Compass className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-display text-base font-semibold text-marine-900">
-                        Socrates my Philosopher
-                      </h3>
-                      <p className="chart-annotation mt-0.5">
-                        Proactive inquiry from your curriculum
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <InfoIcon text="Socrates my Philosopher sends you unprompted challenge questions based on your quiz performance. Answer them to strengthen your understanding of weak areas." />
-                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${socraticCollapsed ? '' : 'rotate-180'}`} />
-                  </div>
-                </button>
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${socraticCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
-                  <SocraticTutorCard studentId={studentId} />
-                </div>
-              </div>
-
-              {/* The Knowledge Constellation Card */}
-              <div className="chart-card overflow-hidden">
-                <button
-                  onClick={() => setConstellationCollapsed(v => !v)}
-                  className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
-                      <Network className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-display text-base font-semibold text-marine-900">
-                        The Knowledge Constellation
-                      </h3>
-                      <p className="chart-annotation mt-0.5">
-                        Fixed stars of your unlocked curriculum
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <InfoIcon text="The Knowledge Constellation is a visual map of concepts extracted from your released lessons. Each star is a concept; lines show how they connect. It grows as more lessons are unlocked." />
-                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${constellationCollapsed ? '' : 'rotate-180'}`} />
-                  </div>
-                </button>
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${constellationCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
-                  <div className="p-5">
-                    <div className="min-h-[500px]">
-                      <KnowledgeGraphVisualizer
-                        nodes={graphData.nodes}
-                        edges={graphData.edges}
-                        onSelectConcept={handleConceptSelectFromGraph}
-                        isLoading={isSyncing}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* The Knowledge Reader Card */}
               <div className="chart-card overflow-hidden">
                 <button
@@ -397,16 +331,115 @@ export function LmsDashboardClient({
                   </div>
                 </div>
               </div>
+
+              {/* The Knowledge Constellation Card */}
+              <div className="chart-card overflow-hidden">
+                <button
+                  onClick={() => setConstellationCollapsed(v => !v)}
+                  className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
+                      <Network className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-base font-semibold text-marine-900">
+                        The Knowledge Constellation
+                      </h3>
+                      <p className="chart-annotation mt-0.5">
+                        Fixed stars of your unlocked curriculum
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <InfoIcon text="The Knowledge Constellation is a visual map of concepts extracted from your released lessons. Each star is a concept; lines show how they connect. It grows as more lessons are unlocked." />
+                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${constellationCollapsed ? '' : 'rotate-180'}`} />
+                  </div>
+                </button>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${constellationCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
+                  <div className="p-5">
+                    <div className="min-h-[500px]">
+                      <KnowledgeGraphVisualizer
+                        nodes={graphData.nodes}
+                        edges={graphData.edges}
+                        onSelectConcept={handleConceptSelectFromGraph}
+                        isLoading={isSyncing}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </section>
 
-            {/* COLUMN 3: RIGHT ACADEMIC TUTOR CHAT RAIL (3 cols) */}
-            <aside className="lg:col-span-3 space-y-4 sticky top-20 self-start">
+            {/* COLUMN 3: RIGHT SOCRATIC PANELS (3 cols) */}
+            <aside className="lg:col-span-3 space-y-4">
+              {/* Socrates my Friend — personal chatbox */}
               <div className="h-[760px]">
                 <StudentChat
                   studentId={studentId}
                   releasedLessonCount={releasedLessons.length}
                   initialQuery={chatInitialQuery}
                 />
+              </div>
+
+              {/* Socrates my Philosopher */}
+              <div className="chart-card overflow-hidden">
+                <button
+                  onClick={() => setSocraticCollapsed(v => !v)}
+                  className="w-full flex items-start justify-between p-5 text-left border-b border-beacon-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-beacon-50 border border-beacon-200 text-beacon-600 flex items-center justify-center">
+                      <Compass className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-base font-semibold text-marine-900">
+                        Socrates my Philosopher
+                      </h3>
+                      <p className="chart-annotation mt-0.5">
+                        Proactive inquiry from your curriculum
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <InfoIcon text="Socrates my Philosopher sends you unprompted challenge questions based on your quiz performance. Answer them to strengthen your understanding of weak areas." />
+                    <ChevronDown className={`w-4 h-4 text-marine-500 transition-transform ${socraticCollapsed ? '' : 'rotate-180'}`} />
+                  </div>
+                </button>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${socraticCollapsed ? 'max-h-0' : 'max-h-[2000px]'}`}>
+                  <SocraticTutorCard studentId={studentId} />
+                </div>
+              </div>
+
+              {/* Socrates my Guide */}
+              <div className="chart-card overflow-hidden">
+                <div className="p-4 border-b border-beacon-100 bg-beacon-50/60">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
+                        <CoronaMark className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-display text-base font-semibold text-marine-900">
+                          Socrates my Guide
+                        </h3>
+                        <p className="text-xs text-marine-500 leading-snug">
+                          Lit by your {releasedLessons.length} unlocked lesson(s)
+                        </p>
+                      </div>
+                    </div>
+                    <InfoIcon text="Socrates my Guide is your AI study companion. It answers questions using only your unlocked lessons as context, so it won't reveal topics from future waypoints." />
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-2.5">
+                    <span className="chart-annotation px-2 py-0.5 rounded-full bg-white text-beacon-700 border border-beacon-200">
+                      Release-gated
+                    </span>
+                    <span className="chart-annotation flex items-center gap-1 text-beacon-700 bg-white px-2 py-0.5 rounded-full border border-beacon-200">
+                      <ShieldCheck className="w-3 h-3 text-beacon-500" />
+                      Grounded
+                    </span>
+                  </div>
+                </div>
               </div>
             </aside>
           </div>
