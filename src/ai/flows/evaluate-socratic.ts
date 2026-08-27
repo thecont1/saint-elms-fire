@@ -1,11 +1,14 @@
 import { z } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { ai } from '../genkit';
+import { resolveGeminiModel } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { db } from '../../lib/firestore';
 
 export const EvaluateSocraticInputSchema = z.object({
   sessionId: z.string().describe('ID of the active Socratic session'),
   studentResponse: z.string().describe('Student text response to the question'),
+  model: z.string().optional().default('gemini-3.7-flash'),
 });
 
 export const EvaluateSocraticOutputSchema = z.object({
@@ -22,9 +25,7 @@ export const evaluateSocraticFlow = ai.defineFlow(
     inputSchema: EvaluateSocraticInputSchema,
     outputSchema: EvaluateSocraticOutputSchema,
   },
-  async (input) => {
-    const { sessionId, studentResponse } = input;
-
+  async ({ sessionId, studentResponse, model = 'gemini-3.7-flash' }) => {
     const sessionSnapshot = await db.collection('socratic_sessions').doc(sessionId).get();
     const directDoc = sessionSnapshot.exists ? sessionSnapshot.data() : null;
 
@@ -78,6 +79,7 @@ OUTPUT JSON:
             masteryUpdate: z.string(),
           }),
         },
+        model: googleAI.model(resolveGeminiModel(model) as Parameters<typeof googleAI.model>[0]),
       });
 
       if (response.output) {

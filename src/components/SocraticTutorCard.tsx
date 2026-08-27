@@ -21,6 +21,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<any>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-3.7-flash');
 
   useEffect(() => {
     fetchActiveSession();
@@ -29,7 +30,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
   const fetchActiveSession = async (forceNew = false) => {
     setIsLoadingSession(true);
     try {
-      const res = await fetch(`/api/socratic-tutor?studentId=${studentId}&forceNew=${forceNew}`);
+      const res = await fetch(`/api/socratic-tutor?studentId=${studentId}&forceNew=${forceNew}&model=${selectedModel}`);
       const data = await res.json();
       if (data.activeSession) {
         setSession(data.activeSession);
@@ -53,6 +54,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
         body: JSON.stringify({
           sessionId: session.sessionId,
           studentResponse: studentAnswer.trim(),
+          model: selectedModel,
         }),
       });
       const data = await res.json();
@@ -158,9 +160,20 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
               />
 
               <div className="flex items-center justify-between gap-2">
-                <span className="chart-annotation">
-                  Reasoning engine: Gemini 3.7 Flash
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="chart-annotation">Reasoning engine:</span>
+                  <div className="relative w-[200px]">
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      className="block w-full rounded-md border-beacon-200 bg-white px-3 py-2 text-sm text-marine-900 focus:border-beacon-500 focus:outline-none focus:ring-beacon-200 disabled:opacity-50"
+                    >
+                      <option value="gemini-3.7-flash">Gemini 3.7 Flash (preferred)</option>
+                      <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+                      <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                    </select>
+                  </div>
+                </div>
 
                 <button
                   type="submit"

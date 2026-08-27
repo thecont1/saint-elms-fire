@@ -10,10 +10,12 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const studentId = resolveStudentScope(identity, searchParams.get('studentId'));
     const forceNew = searchParams.get('forceNew') === 'true';
+    const model = searchParams.get('model') || 'gemini-3.7-flash';
 
     const session = await proactiveSocraticTutorFlow({
       studentId,
       forceNew,
+      model,
     });
 
     const recentSessions = await DataService.getRecentSocraticSessions(studentId);
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);
     const body = await req.json();
-    const { sessionId, studentResponse } = body;
+    const { sessionId, studentResponse, model } = body;
 
     if (!sessionId || !studentResponse) {
       return NextResponse.json(
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
     const evaluation = await evaluateSocraticFlow({
       sessionId,
       studentResponse,
+      model,
     });
 
     return NextResponse.json({ evaluation });

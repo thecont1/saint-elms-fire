@@ -1,11 +1,14 @@
 import { z } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { ai } from '../genkit';
+import { resolveGeminiModel } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { selectProactiveTarget } from '../../lib/courseware-rag';
 
 export const ProactiveTutorInputSchema = z.object({
   studentId: z.string().trim().min(1),
   forceNew: z.boolean().optional(),
+  model: z.string().optional().default('gemini-3.7-flash'),
 });
 
 export const SocraticChallengeOutputSchema = z.object({
@@ -30,7 +33,7 @@ export const proactiveTutor = ai.defineFlow(
     inputSchema: ProactiveTutorInputSchema,
     outputSchema: SocraticChallengeOutputSchema,
   },
-  async ({ studentId, forceNew = false }) => {
+  async ({ studentId, forceNew = false, model = 'gemini-3.7-flash' }) => {
     if (!forceNew) {
       const active = await DataService.getActiveSocraticSession(studentId);
       if (active) {
@@ -78,6 +81,7 @@ export const proactiveTutor = ai.defineFlow(
       system: 'You are Socrates my Guide. Ask one question that tests reasoning without revealing the answer. Use only the supplied released lesson.',
       prompt: `TARGET: ${target.concept}\nREASON: ${target.triggerReason}\nRELEASED LESSON: ${target.lessonTitle}\n\n${target.lessonContent}`,
       output: { schema: GeneratedChallengeSchema },
+      model: googleAI.model(resolveGeminiModel(model) as Parameters<typeof googleAI.model>[0]),
     });
     if (!response.output) throw new Error('Gemini returned no Socratic challenge');
     const generated = GeneratedChallengeSchema.parse(response.output);
