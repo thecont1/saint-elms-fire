@@ -19,7 +19,9 @@ export async function GET(req: Request) {
     if (!released) {
       return NextResponse.json({ error: 'Lesson has not been released to this student' }, { status: 403 });
     }
-    const artifacts = await DataService.getArtifactsForLesson(studentId, lessonId);
+    const artifacts = (await DataService.getArtifactsForLesson(studentId, lessonId)).map(
+      ({ storagePath: _storagePath, ...rest }) => rest
+    );
     return NextResponse.json({ artifacts });
   } catch (error: unknown) {
     const authResponse = authorizationResponse(error);

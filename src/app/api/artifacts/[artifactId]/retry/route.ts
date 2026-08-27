@@ -33,9 +33,16 @@ export async function POST(
     }
 
     const retried = await DataService.beginArtifactRetry(artifactId);
+    const payload: Record<string, string> = {
+      artifactId: retried.id,
+      studentId,
+      lessonId: retried.lessonId,
+    };
+    if (retried.persona) payload.persona = retried.persona;
+    if (retried.corpusScope) payload.corpusScope = retried.corpusScope;
     const job = await DataService.createJob({
       kind: retried.formatType,
-      payload: { artifactId: retried.id, studentId, lessonId: retried.lessonId },
+      payload,
     });
     getArtifactJobRunner().kick();
 
