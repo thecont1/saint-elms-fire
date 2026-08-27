@@ -16,6 +16,8 @@
     "@genkit-ai/express": "^1.41.0",
     "@genkit-ai/google-genai": "^1.41.0",
     "@google-cloud/firestore": "^9.0.0",
+    "@google-cloud/storage": "^8.0.1",
+    "@react-pdf/renderer": "^4.8.1",
     "@types/d3-force": "^3.0.10",
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",

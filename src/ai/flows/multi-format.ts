@@ -2,6 +2,7 @@ import { z } from 'genkit';
 import { ai } from '../genkit';
 import { DataService } from '../../lib/data-service';
 import { resolveRegenerationSource } from '../../lib/courseware-rag';
+import { assembleCorpus, type CorpusScope } from '../../lib/corpus-assembly';
 
 export const FormatTypeSchema = z.enum([
   'structured_notes',
@@ -16,6 +17,12 @@ export const RegenerateFormatInputSchema = z.object({
   sourceTitle: z.string().trim().min(1).optional(),
   formatType: FormatTypeSchema,
   persona: z.string().max(200).optional(),
+  /**
+   * Phase 6, Track A0: 'second_brain' (default) grounds generation in the
+   * student's curated corpus (lesson + accepted library/peer material);
+   * 'lesson' restricts to released lesson chunks only.
+   */
+  corpusScope: z.enum(['lesson', 'second_brain']).optional(),
 }).refine((input) => Boolean(input.lessonId || input.markdownContent), {
   message: 'lessonId or markdownContent is required',
 });
@@ -63,6 +70,27 @@ export const regenerateFormat = ai.defineFlow(
       sourceTitle: input.sourceTitle,
     });
 
+    // Phase 6, Track A0: assemble the Second-Brain-grounded corpus. Falls back
+    // to the raw lesson markdown when no chunks are indexed yet (e.g. legacy
+    // releases created before vector ingestion).
+    const scope: CorpusScope = input.corpusScope ?? 'second_brain';
+    let corpusMarkdown = markdown;
+    let sources: Array<{ kind: string; refId: string; label?: string }> = lessonId
+      ? [{ kind: 'lesson', refId: lessonId, label: sourceTitle }]
+      : [];
+    if (lessonId) {
+      const chunks = await DataService.getCorpusChunksForLesson(input.studentId, lessonId);
+      if (chunks.length > 0) {
+        try {
+          const assembled = assembleCorpus({ scope, chunks });
+          corpusMarkdown = assembled.corpusMarkdown;
+          sources = assembled.sources;
+        } catch {
+          // Empty corpus after scope filtering — keep the lesson markdown.
+        }
+      }
+    }
+
     const titlePrefix = input.formatType === 'structured_notes'
       ? 'Structured Study Notes'
       : input.formatType === 'podcast_dialogue'
@@ -72,7 +100,7 @@ export const regenerateFormat = ai.defineFlow(
 
     const response = await ai.generate({
       system: 'You are Saint Elms Fire’s courseware adaptation engine. Preserve source meaning exactly; introduce no external facts.',
-      prompt: `${formatInstructions(input.formatType, input.persona)}\n\nSOURCE MARKDOWN:\n${markdown}`,
+      prompt: `${formatInstructions(input.formatType, input.persona)}\n\nSOURCE MARKDOWN:\n${corpusMarkdown}`,
     });
     const content = response.text.trim();
     if (!content) throw new Error('Gemini returned an empty regenerated format');
@@ -99,6 +127,8 @@ export const regenerateFormat = ai.defineFlow(
       metadata: {
         generatedAt: new Date().toISOString(),
         source: lessonId ? 'released_lesson' : 'raw_markdown',
+        corpusScope: scope,
+        sources,
         persona: input.persona || 'default',
       },
     };

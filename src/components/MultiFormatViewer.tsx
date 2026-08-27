@@ -13,6 +13,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { CoronaMark } from '@/components/Navigation';
+import { ArtifactPanel } from '@/components/ArtifactPanel';
 import type { Lesson, GeneratedFormat } from '@/lib/types';
 
 interface MultiFormatViewerProps {
@@ -237,6 +238,11 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
             </button>
           </div>
         )}
+      </div>
+
+      {/* Phase 6: binary artifact hub (PDF notes, podcast audio) */}
+      <div className="px-5 pb-4">
+        <ArtifactPanel lessonId={lesson.id} studentId={studentId} />
       </div>
 
       {/* Footer Status */}

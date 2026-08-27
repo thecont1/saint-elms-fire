@@ -10,7 +10,8 @@ Saint Elms Fire takes uploaded markdown lessons and, through a gated release pip
 
 - **Vector-indexed RAG chat** — students can only ask questions about lessons that have been released to them; unreleased content is never retrievable
 - **Knowledge graph ("Second Brain")** — concepts and relationships are extracted during ingestion and visualized as an interactive constellation that grows as modules are released
-- **Multimodal generation** — the same lesson can be rendered as structured notes, a podcast dialogue script, or a video lecture script
+- **Multimodal artifacts** — branded PDF notes and two-voice podcast audio (plus quizzes and video scripts), generated asynchronously from the student's own Second Brain corpus with visible source provenance
+- **Collaborative Second Brain** — released lessons seed the graph, catalog-backed recommended readings are asynchronously added as post-release enrichment after finalization, and peers share notes that each student individually accepts (ingested into their own graph, dashed-ring nodes) or dismisses; a per-concept wiki page is the reading surface
 - **Proactive Socratic tutor** — the system fires unprompted challenge questions based on quiz weak spots, then evaluates student responses
 - **All-or-nothing releases** — a module release only becomes visible after every lesson is successfully chunked, embedded, and graph-extracted; failed ingestion never leaks visible-but-unindexed content
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { ingestCoursewareFlow } from '@/ai/flows/ingestion';
 import { IngestionStageError } from '@/lib/second-brain-ingestion';
+import { getArtifactJobRunner } from '@/lib/artifact-jobs';
 import { resolveRequestIdentity, resolveStudentScope, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 import type { IngestionErrorCategory, Lesson, ReleaseEvent } from '@/lib/types';
 
@@ -61,7 +62,23 @@ export async function ingestRelease(release: ReleaseEvent, lessons: Lesson[]) {
     const failedRelease = await DataService.failRelease(release.id, 'unknown');
     return { release: failedRelease, ingestionResults };
   }
-  return { release: completedRelease, ingestionResults };
+  // Phase 6, Track B1: recommended readings are a SOFT post-release stage.
+  // They enrich the released material but must never fail or delay the release.
+  // Persist a durable job so retries survive process restarts and idempotent
+  // ingestion prevents duplicate recommendations on replay.
+  const targetLessonIds = completedRelease.targetLessonIds ?? (completedRelease.lessonId ? [completedRelease.lessonId] : []);
+  const job = await DataService.createJob({
+    kind: 'reading_recommendation',
+    payload: {
+      releaseId: completedRelease.id,
+      studentId: completedRelease.studentId,
+      courseId: completedRelease.courseId,
+      moduleId: completedRelease.moduleId,
+      targetLessonIds: targetLessonIds.join(','),
+    },
+  });
+  getArtifactJobRunner().kick();
+  return { release: completedRelease, ingestionResults, recommendJobId: job.id };
 }
 
 export async function POST(req: Request) {

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { db, FieldValue } from './firestore';
 import type { RequestIdentity } from './request-identity';
 import type {
@@ -20,6 +21,22 @@ import type {
 } from './types';
 import type { IngestionArtifact, StagedVectorRecord, ExtractedGraphNode, ExtractedGraphEdge } from './second-brain-ingestion';
 import { buildPendingRelease, completeRelease, failRelease, isReleaseVisible } from './release-integrity';
+import {
+  buildPendingArtifact,
+  completeArtifact,
+  failArtifact as failArtifactRecord,
+  retryArtifact as retryArtifactRecord,
+  type ArtifactErrorCategory,
+  type GeneratedArtifact,
+} from './artifacts';
+import { ARTIFACTS_PER_DAY, ArtifactQuotaError } from './quotas';
+import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
+import type { LibraryItem, LibraryItemInput } from './library-catalog';
+import type { RecommendedReading } from './reading-recommendation';
+import type { SharedItem, SharedItemInput } from './shared-items';
+import { SHARES_PER_DAY, ShareLimitError } from './shared-items';
+import type { PeerChunkRecord, PeerNodeRecord, PeerEdgeRecord } from './peer-acceptance';
+import type { CorpusChunk } from './corpus-assembly';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -458,7 +475,9 @@ export const DataService = {
     const visibleModuleIds = new Set(
       releases.filter(release => !release.targetLessonIds?.length && !release.lessonId).map(release => release.moduleId)
     );
-    const visible = (data: { releaseId?: string; lessonId?: string; moduleId?: string }) =>
+    const visible = (data: { releaseId?: string; lessonId?: string; moduleId?: string; origin?: string }) =>
+      // Peer-accepted material is visible by explicit acceptance, not release.
+      data.origin === 'peer_share' ? true :
       data.releaseId
         ? visibleReleaseIds.has(data.releaseId)
         : Boolean((data.lessonId && visibleLessonIds.has(data.lessonId)) || (data.moduleId && visibleModuleIds.has(data.moduleId)));
@@ -700,6 +719,516 @@ export const DataService = {
       .sort((a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY))
       .slice(0, limit);
   },
+
+  // GENERATED BINARY ARTIFACTS (Phase 6, Track A)
+  async createArtifactAndJob(input: {
+    studentId: string;
+    lessonId: string;
+    formatType: GeneratedArtifact['formatType'];
+    sinceIso: string;
+    cap?: number;
+    persona?: string;
+    corpusScope?: 'lesson' | 'second_brain';
+    sources?: GeneratedArtifact['sources'];
+  }): Promise<{ artifact: GeneratedArtifact; job: JobRecord }> {
+    const cap = input.cap ?? ARTIFACTS_PER_DAY;
+
+    // Stable request key based on the generation parameters. Using this as the
+    // artifact doc id makes identical concurrent requests collide on the same
+    // document, so the second transaction retries and returns the first's record.
+    const requestKey = createHash('sha256')
+      .update(
+        [
+          input.studentId,
+          input.lessonId,
+          input.formatType,
+          input.persona ?? '',
+          input.corpusScope ?? 'second_brain',
+        ].join(':'),
+      )
+      .digest('hex');
+
+    return db.runTransaction(async (transaction) => {
+      const ref = db.collection('generated_artifacts').doc(requestKey);
+      const existingSnap = await transaction.get(ref);
+
+      if (existingSnap.exists) {
+        const existing = sanitizeDoc<GeneratedArtifact>(existingSnap);
+        // Return any non-failed artifact and its backing job. The retry endpoint
+        // handles explicit regeneration of a failed artifact.
+        if (existing.status !== 'failed' && existing.jobId) {
+          const jobSnap = await transaction.get(db.collection('jobs').doc(existing.jobId));
+          if (jobSnap.exists) {
+            const job = sanitizeDoc<JobRecord>(jobSnap);
+            return { artifact: existing, job };
+          }
+        }
+        // If the existing artifact is active but its job record is missing,
+        // continue and allocate a new job below. A failed artifact with no job
+        // will also be re-created (the client should prefer the retry route).
+      }
+
+      const snap = await transaction.get(
+        db.collection('generated_artifacts').where('studentId', '==', input.studentId)
+      );
+      const generatedToday = snap.docs
+        .map(doc => sanitizeDoc<GeneratedArtifact>(doc))
+        .filter(a => Date.parse(a.createdAt) >= Date.parse(input.sinceIso)).length;
+      if (generatedToday >= cap) {
+        throw new ArtifactQuotaError(`Daily artifact generation limit reached (${cap}/day)`);
+      }
+
+      const requestedAt = new Date().toISOString();
+      const jobRef = db.collection('jobs').doc();
+
+      const artifact = buildPendingArtifact({
+        id: requestKey,
+        studentId: input.studentId,
+        lessonId: input.lessonId,
+        formatType: input.formatType,
+        requestedAt,
+        persona: input.persona,
+        corpusScope: input.corpusScope,
+        sources: input.sources,
+        jobId: jobRef.id,
+      });
+      transaction.set(ref, artifact);
+
+      const payload: Record<string, string> = {
+        artifactId: artifact.id,
+        studentId: input.studentId,
+        lessonId: input.lessonId,
+      };
+      if (input.persona) payload.persona = input.persona.slice(0, 200);
+      if (input.corpusScope) payload.corpusScope = input.corpusScope;
+
+      const job = buildPendingJob({
+        id: jobRef.id,
+        kind: input.formatType,
+        payload,
+        requestedAt,
+      });
+      transaction.set(jobRef, job);
+
+      return { artifact, job };
+    });
+  },
+
+  async getArtifact(id: string): Promise<GeneratedArtifact | null> {
+    const doc = await db.collection('generated_artifacts').doc(id).get();
+    return doc.exists ? sanitizeDoc<GeneratedArtifact>(doc) : null;
+  },
+
+  async getArtifactsForLesson(studentId: string, lessonId: string): Promise<GeneratedArtifact[]> {
+    const snap = await db
+      .collection('generated_artifacts')
+      .where('studentId', '==', studentId)
+      .where('lessonId', '==', lessonId)
+      .get();
+    return snap.docs
+      .map(doc => sanitizeDoc<GeneratedArtifact>(doc))
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  },
+
+  async markArtifactReady(id: string, sizeBytes: number, sources?: GeneratedArtifact['sources']): Promise<GeneratedArtifact> {
+    const ref = db.collection('generated_artifacts').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Artifact not found');
+      const updated = completeArtifact(sanitizeDoc<GeneratedArtifact>(snap), sizeBytes, new Date().toISOString(), sources);
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  async markArtifactFailed(id: string, category: ArtifactErrorCategory): Promise<GeneratedArtifact> {
+    const ref = db.collection('generated_artifacts').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Artifact not found');
+      const updated = failArtifactRecord(sanitizeDoc<GeneratedArtifact>(snap), category);
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  async beginArtifactRetry(id: string): Promise<GeneratedArtifact> {
+    const ref = db.collection('generated_artifacts').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Artifact not found');
+      const updated = retryArtifactRecord(sanitizeDoc<GeneratedArtifact>(snap), new Date().toISOString());
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  async setArtifactJobId(id: string, jobId: string): Promise<void> {
+    await db.collection('generated_artifacts').doc(id).set({ jobId }, { merge: true });
+  },
+
+  /** Observability (Phase 6, Track C3): cheap aggregate counts for artifacts + shares. */
+  async getGenerationMetrics(): Promise<{
+    artifacts: { total: number; pending: number; ready: number; failed: number };
+    shares: { active: number; withdrawn: number };
+  }> {
+    const [artifactsSnap, sharesSnap] = await Promise.all([
+      db.collection('generated_artifacts').get(),
+      db.collection('shared_items').get(),
+    ]);
+    const artifacts = { total: artifactsSnap.size, pending: 0, ready: 0, failed: 0 };
+    for (const doc of artifactsSnap.docs) {
+      const status = doc.data().status as 'pending' | 'ready' | 'failed';
+      if (status in artifacts) artifacts[status] += 1;
+    }
+    const shares = { active: 0, withdrawn: 0 };
+    for (const doc of sharesSnap.docs) {
+      const status = doc.data().status as 'active' | 'withdrawn';
+      if (status in shares) shares[status] += 1;
+    }
+    return { artifacts, shares };
+  },
+
+  // SECOND-BRAIN CORPUS (Phase 6, Track A0)
+  /**
+   * All corpus chunks a student may generate from, for one lesson:
+   * - released lesson chunks (no studentId / origin field), plus
+   * - the student's own accepted library + peer_share chunks.
+   */
+  async getCorpusChunksForLesson(studentId: string, lessonId: string): Promise<CorpusChunk[]> {
+    const [lessonSnap, personalSnap] = await Promise.all([
+      db.collection('courseware_chunks').where('lessonId', '==', lessonId).get(),
+      db.collection('courseware_chunks').where('studentId', '==', studentId).get(),
+    ]);
+    const toCorpusChunk = (doc: import('@google-cloud/firestore').QueryDocumentSnapshot): CorpusChunk => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        origin: data.origin as CorpusChunk['origin'],
+        lessonId: String(data.lessonId || ''),
+        lessonTitle: String(data.lessonTitle || ''),
+        heading: String(data.heading || ''),
+        content: String(data.content || ''),
+        chunkIndex: Number(data.chunkIndex || 0),
+        libraryItemId: data.libraryItemId ? String(data.libraryItemId) : undefined,
+        sharedItemId: data.sharedItemId ? String(data.sharedItemId) : undefined,
+      };
+    };
+    const lessonChunks = lessonSnap.docs
+      .filter(doc => !doc.data().origin) // released lesson content only
+      .map(toCorpusChunk);
+    const personalChunks = personalSnap.docs
+      .filter(doc => ['library', 'peer_share'].includes(String(doc.data().origin || '')))
+      .map(toCorpusChunk);
+    return [...lessonChunks, ...personalChunks];
+  },
+
+  // PEER ACCEPTANCE (Phase 6, Track B3)
+  async recordShareDecision(input: {
+    sharedItemId: string;
+    studentId: string;
+    decision: 'accepted' | 'dismissed';
+  }): Promise<void> {
+    await db.collection('share_decisions').doc(`${input.sharedItemId}__${input.studentId}`).set({
+      ...input,
+      decidedAt: new Date().toISOString(),
+    });
+  },
+
+  async getShareDecision(sharedItemId: string, studentId: string): Promise<'accepted' | 'dismissed' | null> {
+    const doc = await db.collection('share_decisions').doc(`${sharedItemId}__${studentId}`).get();
+    return doc.exists ? (doc.data()!.decision as 'accepted' | 'dismissed') : null;
+  },
+
+  async getShareDecisionsForStudent(studentId: string): Promise<Array<{ sharedItemId: string; decision: 'accepted' | 'dismissed' }>> {
+    const snap = await db.collection('share_decisions').where('studentId', '==', studentId).get();
+    return snap.docs.map(doc => doc.data() as { sharedItemId: string; decision: 'accepted' | 'dismissed' });
+  },
+
+  async writePeerChunks(chunks: PeerChunkRecord[]): Promise<void> {
+    if (chunks.length === 0) return;
+    const createdAt = new Date().toISOString();
+    const batch = db.batch();
+    for (const chunk of chunks) {
+      const { embedding, ...metadata } = chunk;
+      batch.set(db.collection('courseware_chunks').doc(chunk.id), {
+        ...metadata,
+        embeddingModel: 'gemini-embedding-001/768',
+        embedding: FieldValue.vector(embedding),
+        createdAt,
+      });
+    }
+    await batch.commit();
+  },
+
+  async writePeerGraph(nodes: PeerNodeRecord[], edges: PeerEdgeRecord[]): Promise<void> {
+    if (nodes.length === 0 && edges.length === 0) return;
+    const batch = db.batch();
+    for (const node of nodes) batch.set(db.collection('knowledge_nodes').doc(node.id), node);
+    for (const edge of edges) batch.set(db.collection('knowledge_edges').doc(edge.id), edge);
+    await batch.commit();
+  },
+
+  /**
+   * Idempotent undo: remove the acceptor's peer chunks and graph records for
+   * one shared item. Never touches other students' copies.
+   */
+  async removePeerIngestion(sharedItemId: string, studentId: string): Promise<{ chunksRemoved: number; nodesRemoved: number; edgesRemoved: number }> {
+    const [chunksSnap, nodesSnap, edgesSnap] = await Promise.all([
+      db.collection('courseware_chunks').where('sharedItemId', '==', sharedItemId).where('studentId', '==', studentId).get(),
+      db.collection('knowledge_nodes').where('sharedItemId', '==', sharedItemId).where('studentId', '==', studentId).get(),
+      db.collection('knowledge_edges').where('sharedItemId', '==', sharedItemId).where('studentId', '==', studentId).get(),
+    ]);
+    const batch = db.batch();
+    for (const doc of [...chunksSnap.docs, ...nodesSnap.docs, ...edgesSnap.docs]) batch.delete(doc.ref);
+    await batch.commit();
+    return { chunksRemoved: chunksSnap.size, nodesRemoved: nodesSnap.size, edgesRemoved: edgesSnap.size };
+  },
+
+  /** Lesson-id namespace of a student's accepted peer + library chunks, for retrieval scope. */
+  async getPersonalCorpusLessonIds(studentId: string): Promise<string[]> {
+    const snap = await db.collection('courseware_chunks').where('studentId', '==', studentId).get();
+    return [...new Set(snap.docs.map(doc => String(doc.data().lessonId || '')).filter(Boolean))];
+  },
+
+  // PEER SHARES (Phase 6, Track B2)
+  async createSharedItem(input: SharedItemInput & { sharerId: string; cohortId: string }): Promise<SharedItem> {
+    const ref = db.collection('shared_items').doc();
+    const item: SharedItem = {
+      id: ref.id,
+      sharerId: input.sharerId,
+      cohortId: input.cohortId,
+      kind: input.kind,
+      title: input.title,
+      body: input.body,
+      sourceLessonId: input.sourceLessonId,
+      createdAt: new Date().toISOString(),
+      status: 'active',
+    };
+    await ref.set(item);
+    return item;
+  },
+
+  async createSharedItemWithRateLimit(
+    input: SharedItemInput & { sharerId: string; cohortId: string },
+    sinceIso: string,
+    cap = SHARES_PER_DAY,
+  ): Promise<SharedItem> {
+    return db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(
+        db.collection('shared_items').where('sharerId', '==', input.sharerId)
+      );
+      const sharesToday = snap.docs
+        .map(doc => sanitizeDoc<SharedItem>(doc))
+        .filter(item => Date.parse(item.createdAt) >= Date.parse(sinceIso)).length;
+      if (sharesToday >= cap) {
+        throw new ShareLimitError(`Daily share limit reached (${cap}/day)`);
+      }
+      const ref = db.collection('shared_items').doc();
+      const item: SharedItem = {
+        id: ref.id,
+        sharerId: input.sharerId,
+        cohortId: input.cohortId,
+        kind: input.kind,
+        title: input.title,
+        body: input.body,
+        sourceLessonId: input.sourceLessonId,
+        createdAt: new Date().toISOString(),
+        status: 'active',
+      };
+      transaction.set(ref, item);
+      return item;
+    });
+  },
+
+  async getSharedItem(id: string): Promise<SharedItem | null> {
+    const doc = await db.collection('shared_items').doc(id).get();
+    return doc.exists ? sanitizeDoc<SharedItem>(doc) : null;
+  },
+
+  async getActiveSharedItems(cohortId: string): Promise<SharedItem[]> {
+    const snap = await db
+      .collection('shared_items')
+      .where('cohortId', '==', cohortId)
+      .where('status', '==', 'active')
+      .get();
+    return snap.docs
+      .map(doc => sanitizeDoc<SharedItem>(doc))
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  },
+
+  async countSharesSince(sharerId: string, sinceIso: string): Promise<number> {
+    const snap = await db.collection('shared_items').where('sharerId', '==', sharerId).get();
+    return snap.docs
+      .map(doc => sanitizeDoc<SharedItem>(doc))
+      .filter(item => Date.parse(item.createdAt) >= Date.parse(sinceIso)).length;
+  },
+
+  async withdrawSharedItem(id: string, sharerId: string): Promise<SharedItem> {
+    const ref = db.collection('shared_items').doc(id);
+    return db.runTransaction(async transaction => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) throw new Error('Shared item not found');
+      const item = sanitizeDoc<SharedItem>(snap);
+      if (item.sharerId !== sharerId) throw new Error('Only the sharer may withdraw a shared item');
+      const updated: SharedItem = { ...item, status: 'withdrawn' };
+      transaction.set(ref, updated);
+      return updated;
+    });
+  },
+
+  // RECOMMENDED READINGS (Phase 6, Track B1)
+  async saveRecommendedReadings(readings: RecommendedReading[]): Promise<void> {
+    if (readings.length === 0) return;
+    const batch = db.batch();
+    for (const reading of readings) {
+      // Deterministic id (nodeId__libraryItemId) → retries upsert, no duplicates.
+      batch.set(db.collection('recommended_readings').doc(reading.id), reading);
+    }
+    await batch.commit();
+  },
+
+  async getRecommendedReadingsForStudent(studentId: string, nodeIds?: string[]): Promise<RecommendedReading[]> {
+    const snap = await db.collection('recommended_readings').where('studentId', '==', studentId).get();
+    const list = snap.docs.map(doc => sanitizeDoc<RecommendedReading>(doc));
+    if (!nodeIds) return list;
+    const wanted = new Set(nodeIds);
+    return list.filter(reading => wanted.has(reading.nodeId));
+  },
+
+  /**
+   * Ingest licensed library excerpt chunks into a student's vector space,
+   * tagged origin:'library' so they participate in RAG and generation.
+   */
+  async writeLibraryExcerptChunks(input: {
+    studentId: string;
+    libraryItemId: string;
+    nodeId: string;
+    lessonId: string;
+    courseId: string;
+    moduleId: string;
+    itemTitle: string;
+    chunks: Array<{ index: number; heading: string; content: string; embedding: number[] }>;
+  }): Promise<number> {
+    const createdAt = new Date().toISOString();
+    const batch = db.batch();
+    for (const chunk of input.chunks) {
+      const ref = db.collection('courseware_chunks').doc(
+        `lib_${input.studentId}_${input.libraryItemId}_${input.nodeId}_${String(chunk.index).padStart(5, '0')}`
+      );
+      batch.set(ref, {
+        id: ref.id,
+        origin: 'library',
+        studentId: input.studentId,
+        libraryItemId: input.libraryItemId,
+        nodeId: input.nodeId,
+        lessonId: input.lessonId,
+        lessonTitle: input.itemTitle,
+        courseId: input.courseId,
+        moduleId: input.moduleId,
+        chunkIndex: chunk.index,
+        heading: chunk.heading,
+        content: chunk.content,
+        embeddingModel: 'gemini-embedding-001/768',
+        embedding: FieldValue.vector(chunk.embedding),
+        createdAt,
+      });
+    }
+    await batch.commit();
+    return input.chunks.length;
+  },
+
+  // LIBRARY CATALOG (Phase 6, Track B1)
+  async createLibraryItem(input: LibraryItemInput, addedBy: string): Promise<LibraryItem> {
+    const ref = db.collection('library_items').doc();
+    const item: LibraryItem = { id: ref.id, ...input, addedBy, addedAt: new Date().toISOString() };
+    await ref.set(item);
+    return item;
+  },
+
+  async getLibraryItems(): Promise<LibraryItem[]> {
+    const snap = await db.collection('library_items').get();
+    return snap.docs
+      .map(doc => sanitizeDoc<LibraryItem>(doc))
+      .sort((a, b) => Date.parse(b.addedAt) - Date.parse(a.addedAt));
+  },
+
+  async getLibraryItem(id: string): Promise<LibraryItem | null> {
+    const doc = await db.collection('library_items').doc(id).get();
+    return doc.exists ? sanitizeDoc<LibraryItem>(doc) : null;
+  },
+
+  async deleteLibraryItem(id: string): Promise<void> {
+    await db.collection('library_items').doc(id).delete();
+  },
+
+  // ASYNC JOBS (Phase 6, Track C1)
+  async createJob(input: { kind: JobRecord['kind']; payload: Record<string, string> }): Promise<JobRecord> {
+    const ref = db.collection('jobs').doc();
+    const job = buildPendingJob({
+      id: ref.id,
+      kind: input.kind,
+      payload: input.payload,
+      requestedAt: new Date().toISOString(),
+    });
+    await ref.set(job);
+    return job;
+  },
+
+  async getJob(id: string): Promise<JobRecord | null> {
+    const doc = await db.collection('jobs').doc(id).get();
+    return doc.exists ? sanitizeDoc<JobRecord>(doc) : null;
+  },
+
+  /**
+   * Reset a failed job back to pending so the runner can claim and re-execute it.
+   * Recommendations are SOFT-failure by design and their writes are idempotent,
+   * so re-running is safe. Returns null when the job is missing or not failed.
+   */
+  async requeueJob(id: string): Promise<JobRecord | null> {
+    return db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(db.collection('jobs').doc(id));
+      if (!snap.exists) return null;
+      const job = sanitizeDoc<JobRecord>(snap);
+      if (job.status !== 'failed') return null;
+      transaction.update(snap.ref, {
+        status: 'pending',
+        errorCategory: FieldValue.delete(),
+        startedAt: FieldValue.delete(),
+        completedAt: FieldValue.delete(),
+      });
+      return {
+        ...job,
+        status: 'pending',
+        errorCategory: undefined,
+        startedAt: undefined,
+        completedAt: undefined,
+      };
+    });
+  },
+
+  /**
+   * Firestore-backed JobStore. Claiming runs in a transaction so a job can
+   * only transition pending→running once even under concurrent drains.
+   */
+  jobStore: {
+    async claimNextPending(): Promise<JobRecord | null> {
+      return db.runTransaction(async transaction => {
+        const snap = await transaction.get(
+          db.collection('jobs').where('status', '==', 'pending').limit(1)
+        );
+        if (snap.empty) return null;
+        const job = sanitizeDoc<JobRecord>(snap.docs[0]);
+        const claimed: JobRecord = { ...job, status: 'running', startedAt: new Date().toISOString() };
+        transaction.set(snap.docs[0].ref, claimed);
+        return claimed;
+      });
+    },
+    async update(id: string, patch: Partial<JobRecord>): Promise<void> {
+      const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
+      await db.collection('jobs').doc(id).set(clean, { merge: true });
+    },
+  } satisfies JobStore,
 
   // MULTI-FORMAT GENERATION ARTIFACTS
   async saveGeneratedFormat(format: Omit<GeneratedFormat, 'id' | 'createdAt'>): Promise<GeneratedFormat> {
