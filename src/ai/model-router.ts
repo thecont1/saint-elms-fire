@@ -18,19 +18,57 @@
  */
 
 import { ai, GEMINI_FLASH } from './genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { sarvamGenerate, SARVAM_MODEL } from './sarvam';
 // zod-to-json-schema (transitive dep of Genkit) converts both Zod v3 (the
 // version Genkit's `z` re-exports) and Zod v4 schemas into JSON Schema.
 // Zod v3 has no .toJSONSchema() method, so this is the version-agnostic path.
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
+/**
+ * Gemini models the primary dropdown can route to. 3.7 Flash is preferred;
+ * 3.6 and 3.5 are closer fallbacks for when 3.7 is under severe demand.
+ * The canonical Genkit model IDs match the dropdown value directly.
+ */
+export const GEMINI_MODELS = {
+  'gemini-3.7-flash': {
+    label: 'Gemini 3.7 Flash (preferred)',
+    modelId: 'gemini-3.7-flash',
+  },
+  'gemini-3.6-flash': {
+    label: 'Gemini 3.6 Flash',
+    modelId: 'gemini-3.6-flash',
+  },
+  'gemini-3.5-flash': {
+    label: 'Gemini 3.5 Flash',
+    modelId: 'gemini-3.5-flash',
+  },
+} as const;
+
+/** All Gemini model IDs the dropdown exposes. */
+export const ROUTABLE_GEMINI_MODELS = Object.values(GEMINI_MODELS).map((m) => m.modelId);
+
+/**
+ * Resolve a dropdown selection (or model ID) to a canonical Gemini model ID.
+ * Falls back to GEMINI_FLASH when the value is unknown/empty so callers can
+ * safely pass untrusted URL/query params.
+ */
+export function resolveGeminiModel(model: string | undefined | null): string {
+  if (model && (GEMINI_MODELS as Record<string, { modelId: string }>)[model]) {
+    return (GEMINI_MODELS as Record<string, { modelId: string }>)[model].modelId;
+  }
+  return GEMINI_FLASH;
+}
+
 export const ACTIVE_MODELS = {
   generation_primary: GEMINI_FLASH,
+  generation_primary_options: ROUTABLE_GEMINI_MODELS,
   generation_fallback: SARVAM_MODEL,
   embeddings: 'gemini-embedding-001@768',
 } as const;
 
-export type ModelUsed = typeof GEMINI_FLASH | typeof SARVAM_MODEL;
+/** Any provider that can actually serve a generation call (Gemini or Sarvam). */
+export type ModelUsed = typeof GEMINI_FLASH | 'gemini-3.6-flash' | 'gemini-3.5-flash' | typeof SARVAM_MODEL;
 
 /**
  * Lightweight in-process activity tracking for the model status lights.
@@ -40,19 +78,26 @@ export type ModelUsed = typeof GEMINI_FLASH | typeof SARVAM_MODEL;
  * surface is observational, not authoritative.
  */
 const ACTIVITY_WINDOW_MS = 5000;
+
+/** Pre-seed activity tracking for every model the UI dropdown can select. */
 const activity: Record<string, { active: number; lastActivityAt: number }> = {
   [GEMINI_FLASH]: { active: 0, lastActivityAt: 0 },
+  'gemini-3.6-flash': { active: 0, lastActivityAt: 0 },
+  'gemini-3.5-flash': { active: 0, lastActivityAt: 0 },
   [SARVAM_MODEL]: { active: 0, lastActivityAt: 0 },
 };
 
-export function markModelActivityStart(model: ModelUsed): void {
-  const entry = activity[model];
-  if (!entry) return;
+/**
+ * Track activity under an arbitrary model ID. Unknown models are tracked
+ * lazily so the status lights never crash on an unexpected provider.
+ */
+export function markModelActivityStart(model: string): void {
+  const entry = activity[model] ?? (activity[model] = { active: 0, lastActivityAt: 0 });
   entry.active += 1;
   entry.lastActivityAt = Date.now();
 }
 
-export function markModelActivityEnd(model: ModelUsed): void {
+export function markModelActivityEnd(model: string): void {
   const entry = activity[model];
   if (!entry) return;
   entry.active = Math.max(0, entry.active - 1);
@@ -92,6 +137,13 @@ function isAvailabilityError(error: unknown): boolean {
 type GenerateArgs<T> = {
   system?: string;
   prompt: string;
+  /**
+   * Optional Gemini model to route the primary call to (defaults to
+   * GEMINI_FLASH). Accepts either a dropdown value or a full model ID and is
+   * resolved defensively via resolveGeminiModel. The Sarvam fallback is
+   * always used only if the chosen Gemini model is unavailable.
+   */
+  model?: string | undefined | null;
   /**
    * App-level Zod v4 schema. Converted once via its own toJSONSchema() and
    * handed to Genkit as plain JSON Schema — no cross-zod-version coupling.
@@ -179,8 +231,13 @@ function schemaExample(schema: { toJSONSchema?: () => unknown }): Record<string,
 export async function generateWithFallback<T>({
   system,
   prompt,
+  model,
   schema,
 }: GenerateArgs<T>): Promise<RoutedResult<T>> {
+  // Resolve the user-selected Gemini model, defensively falling back to
+  // GEMINI_FLASH for unknown/empty values (e.g. tampered query params).
+  const primaryModel = resolveGeminiModel(model);
+  const primaryModelRef = googleAI.model(primaryModel as Parameters<typeof googleAI.model>[0]);
   let jsonSchema: Record<string, unknown> | undefined;
   try {
     const rawJsonSchema = schema
@@ -199,19 +256,21 @@ export async function generateWithFallback<T>({
   }
 
   try {
-    markModelActivityStart(GEMINI_FLASH);
+    markModelActivityStart(primaryModel);
     const response = schema
       ? await (ai.generate as (args: {
           system?: string;
           prompt: string;
           output: { jsonSchema: unknown };
+          model?: unknown;
         }) => Promise<{ output?: unknown; text?: string }>)({
           system,
           prompt,
           output: { jsonSchema },
+          model: primaryModelRef,
         })
-      : await ai.generate({ system, prompt });
-    markModelActivityEnd(GEMINI_FLASH);
+      : await ai.generate({ system, prompt, model: primaryModelRef });
+    markModelActivityEnd(primaryModel);
     if (schema) {
       // Gemini may return null output when jsonSchema-constrained decoding
       // yields no tool call; fall back rather than failing the request.
@@ -226,16 +285,16 @@ export async function generateWithFallback<T>({
       if (schema.safeParse && !schema.safeParse(response.output).success) {
         throw new Error('UNAVAILABLE: primary model returned schema-invalid output');
       }
-      return { output: schema.parse(response.output), model: GEMINI_FLASH };
+      return { output: schema.parse(response.output), model: primaryModel as ModelUsed };
     }
     const text = (response.text || '').trim();
     if (!text) throw new Error('empty model response');
-    return { text, model: GEMINI_FLASH };
+    return { text, model: primaryModel as ModelUsed };
   } catch (primaryError) {
-    markModelActivityEnd(GEMINI_FLASH);
+    markModelActivityEnd(primaryModel);
     if (!isAvailabilityError(primaryError)) throw primaryError;
     console.warn('gemini_unavailable_falling_back', {
-      model: GEMINI_FLASH,
+      model: primaryModel,
       error: primaryError instanceof Error ? primaryError.message : String(primaryError),
     });
 
