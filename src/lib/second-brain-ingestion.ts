@@ -116,6 +116,11 @@ const PUBLIC_MESSAGES: Record<IngestionErrorCategory, string> = {
   unknown: 'Ingestion failed unexpectedly.',
 };
 
+/**
+ * Convert a string into a URL-safe slug for use in document IDs.
+ * @param value String to slugify.
+ * @returns Normalized lowercase slug with underscores, max 80 characters.
+ */
 function slug(value: string): string {
   return value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || 'item';
 }
@@ -138,6 +143,12 @@ function stableHash(value: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
+/**
+ * Categorize an ingestion error based on the stage and error details.
+ * @param stage Ingestion stage where the error occurred.
+ * @param error Error object to analyze.
+ * @returns Categorized error type for audit logging and retry logic.
+ */
 function categorize(stage: IngestionStage, error: unknown): IngestionErrorCategory {
   const candidate = error as { code?: unknown; status?: unknown; message?: unknown };
   const code = String(candidate?.code ?? candidate?.status ?? '').toLowerCase();
@@ -152,6 +163,14 @@ function categorize(stage: IngestionStage, error: unknown): IngestionErrorCatego
   return 'unknown';
 }
 
+/**
+ * Mark an ingestion step as failed and update the release record.
+ * @param deps Ingestion dependencies for persistence.
+ * @param input Lesson ingestion context.
+ * @param stage The stage that failed.
+ * @param error The error that caused the failure.
+ * @returns Wrapped IngestionStageError for propagation.
+ */
 async function markFailed(
   deps: IngestionDependencies,
   input: LessonIngestionInput,
@@ -169,10 +188,21 @@ async function markFailed(
   return error instanceof IngestionStageError ? error : new IngestionStageError(stage, category, publicMessage);
 }
 
+/**
+ * Extract normalized text from a parsed markdown result.
+ * @param parsed Parsed markdown object or raw string.
+ * @returns Normalized text content.
+ */
 function getParsedText(parsed: ParsedMarkdown | string): string {
   return typeof parsed === 'string' ? parsed : parsed.normalized;
 }
 
+/**
+ * Build a complete knowledge graph with stable IDs from extracted concepts and edges.
+ * @param input Lesson ingestion context.
+ * @param extracted Raw graph extraction from LLM.
+ * @returns Graph with fully qualified node and edge records including deterministic IDs.
+ */
 function buildGraph(input: LessonIngestionInput, extracted: GraphExtraction) {
   const nodeIdByConcept = new Map<string, string>();
   const nodes = extracted.nodes.map((node) => {
@@ -201,6 +231,15 @@ function buildGraph(input: LessonIngestionInput, extracted: GraphExtraction) {
   return { nodes, edges };
 }
 
+/**
+ * Execute the complete lesson ingestion pipeline for Second Brain storage.
+ * Stages: parsing → chunking → embedding → vector_write → graph_write.
+ * Each stage is idempotent and resumable on failure.
+ * @param input Lesson content and metadata to ingest.
+ * @param deps Injected dependencies for parsing, embedding, and persistence.
+ * @returns Summary of ingestion results including chunk and graph counts.
+ * @throws IngestionStageError if any stage fails.
+ */
 export async function runLessonIngestion(input: LessonIngestionInput, deps: IngestionDependencies) {
   const release = await deps.getRelease(input.releaseId);
   const status = (stage: IngestionStage) => release.steps?.find((step) => step.lessonId === input.lessonId && step.stage === stage)?.status;

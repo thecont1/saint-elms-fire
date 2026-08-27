@@ -6,6 +6,12 @@ import { getHealthReport } from '@/lib/health';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * GET /health
+ *
+ * Public liveness and dependency health endpoint for infrastructure probes.
+ * Returns 200 when dependencies are healthy, 503 otherwise.
+ */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const deep = searchParams.get('deep') === 'true';

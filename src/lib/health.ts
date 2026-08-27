@@ -34,6 +34,12 @@ export interface HealthReport {
 type CacheEntry = { expiresAt: number; report: HealthReport };
 let cache: CacheEntry | null = null;
 
+/**
+ * Convert an error into a public-safe probe error message.
+ * Sanitizes error details while preserving actionable categories.
+ * @param error Error object or message from a health probe.
+ * @returns User-friendly error message without sensitive details.
+ */
 function publicProbeError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/timed out/i.test(message)) return 'probe timed out';
@@ -46,7 +52,14 @@ function publicProbeError(error: unknown): string {
   return 'dependency probe failed';
 }
 
-/** Reject if a probe hangs; always clears its timer once the race settles. */
+/**
+ * Wrap a promise with a timeout that rejects if the operation takes too long.
+ * Always clears its timer once the race settles to prevent leaks.
+ * @param p Promise to wrap with timeout.
+ * @param ms Timeout in milliseconds.
+ * @param label Label for error messages.
+ * @returns Promise that rejects if timeout is exceeded.
+ */
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   let handle: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -64,7 +77,11 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   }
 }
 
-/** Round-trip a real write+read+delete against Firestore using a unique doc. */
+/**
+ * Probe Firestore health by performing a round-trip write, read, and delete.
+ * Uses a unique document to avoid contention between concurrent probes.
+ * @returns Status indicating if Firestore is up and responsive, with latency.
+ */
 async function probeFirestore(): Promise<DepStatus> {
   const start = Date.now();
   // Unique per probe so concurrent invocations never contend on one document.
@@ -90,7 +107,10 @@ async function probeFirestore(): Promise<DepStatus> {
   }
 }
 
-/** Round-trip a trivial generation through the wired Gemini model. */
+/**
+ * Probe Gemini model health by performing a trivial generation request.
+ * @returns Status indicating if Gemini is up and responsive, with latency.
+ */
 async function probeGemini(): Promise<DepStatus> {
   const start = Date.now();
   try {
@@ -112,7 +132,11 @@ async function probeGemini(): Promise<DepStatus> {
   }
 }
 
-/** Round-trip a trivial generation through the Sarvam fallback model. */
+/**
+ * Probe Sarvam fallback model health by performing a trivial generation request.
+ * Uses extended timeout due to slower response times of the sarvam-105b model.
+ * @returns Status indicating if Sarvam is up and responsive, with latency.
+ */
 async function probeSarvam(): Promise<DepStatus> {
   const start = Date.now();
   try {

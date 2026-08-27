@@ -22,7 +22,11 @@ import type { IngestionArtifact, StagedVectorRecord, ExtractedGraphNode, Extract
 import { buildPendingRelease, completeRelease, failRelease, isReleaseVisible } from './release-integrity';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
-// Helper to convert Firestore timestamp / plain dates to ISO string
+/**
+ * Convert Firestore document to a typed object, converting timestamps to ISO strings.
+ * @param doc Firestore document snapshot.
+ * @returns Typed object with timestamps converted to ISO string format.
+ */
 function sanitizeDoc<T>(doc: import('@google-cloud/firestore').DocumentSnapshot): T {
   const data = doc.data() || {};
   const res: Record<string, unknown> = { id: doc.id, ...data };
@@ -35,7 +39,15 @@ function sanitizeDoc<T>(doc: import('@google-cloud/firestore').DocumentSnapshot)
   return res as T;
 }
 
-/** Deterministic edge identity: same student+concepts+relationship upserts in place. */
+/**
+ * Generate a deterministic edge identity key for knowledge graph edges.
+ * Same student+concepts+relationship combination produces the same key for upserting.
+ * @param studentId Student identifier.
+ * @param source Source concept or node ID.
+ * @param target Target concept or node ID.
+ * @param relationshipType Type of relationship between nodes.
+ * @returns Normalized edge key for deduplication.
+ */
 function edgeKey(
   studentId: string,
   source: string,

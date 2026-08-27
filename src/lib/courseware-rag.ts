@@ -60,6 +60,12 @@ interface RegenerationLesson {
   markdownContent: string;
 }
 
+/**
+ * Resolve the source material for multi-format regeneration, validating access control.
+ * @param input Configuration with either a lesson ID or direct markdown content.
+ * @returns Resolved lesson ID, title, and markdown content.
+ * @throws Error if lesson is not found, not released, or markdown is missing.
+ */
 export function resolveRegenerationSource(input: {
   lessonId?: string;
   lesson?: RegenerationLesson | null;
@@ -89,6 +95,13 @@ export function resolveRegenerationSource(input: {
   };
 }
 
+/**
+ * Split text into bounded chunks with overlap, respecting natural boundaries.
+ * @param text Text to split.
+ * @param maxChars Maximum characters per chunk.
+ * @param overlapChars Characters to overlap between consecutive chunks.
+ * @returns Array of text chunks.
+ */
 function splitBounded(text: string, maxChars: number, overlapChars: number): string[] {
   const normalized = text.replace(/\r\n?/g, '\n').trim();
   if (!normalized) return [];
@@ -174,6 +187,12 @@ export function chunkMarkdown(markdown: string, options: ChunkOptions = {}): Mar
   return output;
 }
 
+/**
+ * Check if a release is currently active based on status and timestamp.
+ * @param release Release event with status and releasedAt timestamp.
+ * @param now Current date for comparison (defaults to now).
+ * @returns True if the release is marked as released and the timestamp has passed.
+ */
 export function isReleaseActive(
   release: Pick<{ status: 'released' | 'scheduled'; releasedAt: string }, 'status' | 'releasedAt'>,
   now = new Date()
@@ -182,6 +201,13 @@ export function isReleaseActive(
   return release.status === 'released' && Number.isFinite(releasedAt) && releasedAt <= now.getTime();
 }
 
+/**
+ * Filter and rank courseware chunks to only include released lessons, returning top K.
+ * @param chunks Retrieved courseware chunks with similarity distances.
+ * @param releasedLessonIds Set of lesson IDs that have been released to the student.
+ * @param topK Maximum number of chunks to return.
+ * @returns Filtered and sorted chunks, limited to topK results.
+ */
 export function filterReleasedRetrievedChunks(
   chunks: RetrievedCoursewareChunk[],
   releasedLessonIds: ReadonlySet<string>,
@@ -208,6 +234,14 @@ export function filterReleasedRetrievedChunks(
     .slice(0, Math.floor(topK));
 }
 
+/**
+ * Select the best target for proactive Socratic tutoring based on student activity.
+ * Prioritizes: 1) recent weak quiz performance, 2) high-importance knowledge nodes,
+ * 3) newly released lessons.
+ * @param input Student's released lessons, releases, quiz history, and knowledge graph.
+ * @returns Selected target lesson and concept for Socratic dialogue.
+ * @throws Error if no released courseware is available.
+ */
 export function selectProactiveTarget(input: {
   releasedLessons: TargetLesson[];
   activeReleases: TargetRelease[];

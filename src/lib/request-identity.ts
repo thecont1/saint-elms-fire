@@ -16,14 +16,28 @@ export class AuthorizationError extends Error {
   }
 }
 
+/**
+ * Check if the application is running in production mode.
+ * @returns True if NODE_ENV is 'production', false otherwise.
+ */
 function isProduction(): boolean {
   return process.env.NODE_ENV === 'production';
 }
 
+/**
+ * Get the configured authentication mode from environment variables.
+ * @returns The AUTH_MODE value or undefined if not set.
+ */
 function getAuthMode(): string | undefined {
   return process.env.AUTH_MODE;
 }
 
+/**
+ * Perform a timing-safe string comparison to prevent timing attacks.
+ * @param a First string to compare.
+ * @param b Second string to compare.
+ * @returns True if strings are identical, false otherwise.
+ */
 function safeCompare(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);

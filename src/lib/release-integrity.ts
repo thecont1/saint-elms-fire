@@ -25,6 +25,12 @@ export interface BuildPendingReleaseInput {
   requestedAt: string;
 }
 
+/**
+ * Build a new pending release event with initialized ingestion steps.
+ * @param input Release configuration including target lessons and identifiers.
+ * @returns A new ReleaseEvent with pending status and initialized steps.
+ * @throws Error if no target lessons are provided.
+ */
 export function buildPendingRelease(input: BuildPendingReleaseInput): ReleaseEvent {
   const targetLessonIds = [...new Set(input.targetLessonIds.filter(Boolean))];
   if (targetLessonIds.length === 0) throw new Error('At least one target lesson is required');
@@ -49,12 +55,22 @@ export function buildPendingRelease(input: BuildPendingReleaseInput): ReleaseEve
   };
 }
 
+/**
+ * Check if a release event is from the legacy format (pre-ingestion pipeline).
+ * @param release Release event to check.
+ * @returns True if the release is a legacy release without ingestion tracking.
+ */
 export function isLegacyRelease(
   release: Pick<ReleaseEvent, 'status' | 'overallStatus' | 'steps'>
 ): boolean {
   return release.status === 'released' && release.overallStatus === undefined && release.steps === undefined;
 }
 
+/**
+ * Check if all ingestion steps for all target lessons are complete.
+ * @param release Release event with steps and target lessons.
+ * @returns True if every lesson has completed all ingestion stages.
+ */
 export function releaseHasAllStepsComplete(
   release: Pick<ReleaseEvent, 'steps' | 'targetLessonIds'>
 ): boolean {
@@ -70,6 +86,13 @@ export function releaseHasAllStepsComplete(
   );
 }
 
+/**
+ * Mark a release as completed after all ingestion steps succeed.
+ * @param release Release event to finalize.
+ * @param completedAt ISO timestamp of completion.
+ * @returns Updated release event with released status.
+ * @throws Error if not all ingestion steps are complete.
+ */
 export function completeRelease(release: ReleaseEvent, completedAt: string): ReleaseEvent {
   if (!releaseHasAllStepsComplete(release)) {
     throw new Error('Release ingestion is not complete');
@@ -83,6 +106,12 @@ export function completeRelease(release: ReleaseEvent, completedAt: string): Rel
   };
 }
 
+/**
+ * Mark a release as failed with a specific error category.
+ * @param release Release event to mark as failed.
+ * @param category Categorization of the failure cause.
+ * @returns Updated release event with failed status.
+ */
 export function failRelease(
   release: ReleaseEvent,
   category: IngestionErrorCategory,
@@ -95,6 +124,14 @@ export function failRelease(
   };
 }
 
+/**
+ * Determine if a release should be visible to students.
+ * A release is visible if it's released, timestamp has passed, and all steps are complete.
+ * Legacy releases without ingestion tracking are always visible.
+ * @param release Release event to check.
+ * @param now Current date for comparison (defaults to now).
+ * @returns True if the release should be visible to students.
+ */
 export function isReleaseVisible(release: ReleaseEvent, now = new Date()): boolean {
   const releasedAt = Date.parse(release.releasedAt);
   if (!Number.isFinite(releasedAt) || releasedAt > now.getTime()) return false;
@@ -104,6 +141,11 @@ export function isReleaseVisible(release: ReleaseEvent, now = new Date()): boole
     && releaseHasAllStepsComplete(release);
 }
 
+/**
+ * Find the current ingestion step that needs attention.
+ * @param release Release event with ingestion steps.
+ * @returns The first in-progress, failed, or pending step, or undefined if all complete.
+ */
 function currentStep(release: ReleaseEvent): IngestionStepRecord | undefined {
   return release.steps?.find((step) => step.status === 'in_progress')
     ?? release.steps?.find((step) => step.status === 'failed')
@@ -118,6 +160,11 @@ export interface ReleaseDisplayState {
   status?: IngestionStageStatus;
 }
 
+/**
+ * Compute UI display state for a release based on its current status and steps.
+ * @param release Release event to analyze.
+ * @returns Display state with tone, label, and optional details for rendering.
+ */
 export function getReleaseDisplayState(release: ReleaseEvent): ReleaseDisplayState {
   if (isLegacyRelease(release)) return { tone: 'green', label: 'Synced (legacy)' };
   if (release.overallStatus === 'released' && releaseHasAllStepsComplete(release)) {

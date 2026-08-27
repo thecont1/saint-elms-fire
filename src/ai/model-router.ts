@@ -45,6 +45,10 @@ const activity: Record<string, { active: number; lastActivityAt: number }> = {
   [SARVAM_MODEL]: { active: 0, lastActivityAt: 0 },
 };
 
+/**
+ * Mark the start of model activity for UI status indicators.
+ * @param model The model identifier to track.
+ */
 export function markModelActivityStart(model: ModelUsed): void {
   const entry = activity[model];
   if (!entry) return;
@@ -52,6 +56,10 @@ export function markModelActivityStart(model: ModelUsed): void {
   entry.lastActivityAt = Date.now();
 }
 
+/**
+ * Mark the end of model activity for UI status indicators.
+ * @param model The model identifier to track.
+ */
 export function markModelActivityEnd(model: ModelUsed): void {
   const entry = activity[model];
   if (!entry) return;
@@ -59,7 +67,11 @@ export function markModelActivityEnd(model: ModelUsed): void {
   entry.lastActivityAt = Date.now();
 }
 
-/** Which providers have served (or are serving) a call within the window. */
+/**
+ * Get current and recent activity status for all tracked models.
+ * @param now Current timestamp for staleness calculation (defaults to now).
+ * @returns Map of model identifiers to their in-flight and recent activity status.
+ */
 export function getActiveModelActivity(now = Date.now()): {
   [key: string]: { inFlight: boolean; recent: boolean };
 } {
@@ -82,6 +94,11 @@ export interface RoutedResult<T> {
   model: ModelUsed;
 }
 
+/**
+ * Determine if an error is transient and worth retrying on the fallback model.
+ * @param error Error object to analyze.
+ * @returns True if the error indicates temporary unavailability.
+ */
 function isAvailabilityError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /\b(429|500|502|503|504)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded|JSON5: invalid|no schema with key or ref|parse error/i.test(
@@ -139,10 +156,12 @@ export function extractJsonObject(text: string): unknown | null {
 }
 
 /**
- * Build a schema-shaped placeholder object for example anchoring. Mirrors the
- * required keys with valid placeholder values: enums pick their first member,
+ * Build a schema-shaped placeholder object for example anchoring in prompts.
+ * Mirrors the required keys with valid placeholder values: enums pick their first member,
  * numbers use 1, booleans use true, strings use a sentinel. Arrays get one
  * minimal element. This is best-effort — the fallback only needs KEY structure.
+ * @param schema Zod schema with toJSONSchema method.
+ * @returns Example object matching the schema structure.
  */
 function schemaExample(schema: { toJSONSchema?: () => unknown }): Record<string, unknown> {
   const js = (schema.toJSONSchema?.() ?? {}) as Record<string, unknown>;
@@ -175,7 +194,14 @@ function schemaExample(schema: { toJSONSchema?: () => unknown }): Record<string,
   return example;
 }
 
-/** Single entry point for all chat generation in the app. */
+/**
+ * Single entry point for all chat generation with automatic fallback on errors.
+ * Attempts Gemini primary model first, falls back to Sarvam on availability errors.
+ * @param system Optional system prompt.
+ * @param prompt User prompt for generation.
+ * @param schema Optional Zod schema for structured output validation.
+ * @returns Generated result with parsed output or raw text, and the model used.
+ */
 export async function generateWithFallback<T>({
   system,
   prompt,

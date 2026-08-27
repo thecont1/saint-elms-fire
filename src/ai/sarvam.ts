@@ -20,6 +20,10 @@ const SARVAM_BASE_URL = 'https://api.sarvam.ai/v1/chat/completions';
  */
 export const SARVAM_MODEL = 'sarvam-105b-conversations';
 
+/**
+ * Check if Sarvam AI is configured with a valid API key.
+ * @returns True if SARVAM_API_KEY environment variable is set.
+ */
 export function sarvamConfigured(): boolean {
   return Boolean(process.env.SARVAM_API_KEY);
 }
