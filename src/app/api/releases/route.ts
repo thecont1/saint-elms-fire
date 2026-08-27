@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { ingestCoursewareFlow } from '@/ai/flows/ingestion';
-import { runRecommendReadingStage } from '@/ai/flows/recommend-readings';
 import { IngestionStageError } from '@/lib/second-brain-ingestion';
+import { getArtifactJobRunner } from '@/lib/artifact-jobs';
 import { resolveRequestIdentity, resolveStudentScope, requireAdmin, authorizationResponse } from '@/lib/request-identity';
 import type { IngestionErrorCategory, Lesson, ReleaseEvent } from '@/lib/types';
 
@@ -64,24 +64,21 @@ export async function ingestRelease(release: ReleaseEvent, lessons: Lesson[]) {
   }
   // Phase 6, Track B1: recommended readings are a SOFT post-release stage.
   // They enrich the released material but must never fail or delay the release.
-  void runRecommendStageForRelease(completedRelease).catch(error =>
-    console.error('recommend_stage_post_release_error', error instanceof Error ? error.name : 'unknown')
-  );
-  return { release: completedRelease, ingestionResults };
-}
-
-async function runRecommendStageForRelease(release: ReleaseEvent): Promise<void> {
-  const targetLessonIds = new Set(release.targetLessonIds ?? (release.lessonId ? [release.lessonId] : []));
-  const graph = await DataService.getStudentKnowledgeGraph(release.studentId);
-  const nodes = graph.nodes
-    .filter(node => targetLessonIds.has(node.lessonId))
-    .map(node => ({ id: node.id, lessonId: node.lessonId, concept: node.concept, summary: node.summary }));
-  await runRecommendReadingStage({
-    studentId: release.studentId,
-    courseId: release.courseId,
-    moduleId: release.moduleId,
-    nodes,
+  // Persist a durable job so retries survive process restarts and idempotent
+  // ingestion prevents duplicate recommendations on replay.
+  const targetLessonIds = completedRelease.targetLessonIds ?? (completedRelease.lessonId ? [completedRelease.lessonId] : []);
+  const job = await DataService.createJob({
+    kind: 'reading_recommendation',
+    payload: {
+      releaseId: completedRelease.id,
+      studentId: completedRelease.studentId,
+      courseId: completedRelease.courseId,
+      moduleId: completedRelease.moduleId,
+      targetLessonIds: targetLessonIds.join(','),
+    },
   });
+  getArtifactJobRunner().kick();
+  return { release: completedRelease, ingestionResults, recommendJobId: job.id };
 }
 
 export async function POST(req: Request) {
