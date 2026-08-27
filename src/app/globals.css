@@ -67,6 +67,16 @@ body {
   color: var(--color-beacon-950);
 }
 
+/* Full mariner's chart background, matching <body> */
+.bg-paper-grid {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse 60% 34% at 50% -6%, oklch(0.588 0.185 258 / 0.10) 0%, transparent 70%),
+    linear-gradient(to right, oklch(0.514 0.195 261 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.514 0.195 261 / 0.045) 1px, transparent 1px);
+  background-size: 100% 100%, 56px 56px, 56px 56px;
+}
+
 /* Custom crisp scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

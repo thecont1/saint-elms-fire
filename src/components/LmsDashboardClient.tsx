@@ -176,10 +176,11 @@ export function LmsDashboardClient({
         isSyncing={isSyncing}
         onBoom={handleBoom}
         isBooming={isBooming}
+        controlsHidden={!heroExpanded}
       />
 
       {/* 2. HERO — the legend of the fire (toggled by Hide/Show tab) */}
-      <div className="sticky top-16 z-30 bg-paper">
+      <div className="sticky top-16 z-30 bg-paper-grid">
         <section
           className={`bg-white/90 border-b border-beacon-100 overflow-hidden transition-all duration-500 ease-in-out ${
             heroExpanded ? 'max-h-[260px] opacity-100' : 'max-h-0 opacity-0'
@@ -232,7 +233,7 @@ export function LmsDashboardClient({
       </div>
 
       {/* 3. MAIN CONTENT: 3-COLUMN LAYOUT (STUDENT) / 2-COLUMN LAYOUT (ADMIN) */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto pt-2 sm:pt-3 lg:pt-4 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8">
         {/* STUDENT EXPERIENCE: 3 STRUCTURED COLUMNS */}
         {role === 'student' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

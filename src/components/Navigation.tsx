@@ -156,6 +156,8 @@ interface NavigationProps {
   /** Optional: renders a Boom (flush all data) button next to Sync. */
   onBoom?: () => void;
   isBooming?: boolean;
+  /** Optional: hides all header controls (role switcher, sync, boom). */
+  controlsHidden?: boolean;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
@@ -194,6 +196,7 @@ export function Navigation({
   isSyncing = false,
   onBoom,
   isBooming = false,
+  controlsHidden = false,
 }: NavigationProps) {
   const formatDateTime = (d: Date) => {
     const date = d.toLocaleDateString('en-GB', {
@@ -243,56 +246,58 @@ export function Navigation({
           </div>
 
           {/* Role Switcher + Sync */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
-              <button
-                onClick={() => onRoleChange('admin')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  currentRole === 'admin'
-                    ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
-                    : 'text-marine-500 hover:text-marine-800'
-                }`}
-              >
-                <Shield className="w-3.5 h-3.5" />
-                <span>Admin</span>
-              </button>
+          {!controlsHidden && (
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
+                <button
+                  onClick={() => onRoleChange('admin')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                    currentRole === 'admin'
+                      ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
+                      : 'text-marine-500 hover:text-marine-800'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Admin</span>
+                </button>
 
-              <button
-                onClick={() => onRoleChange('student')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  currentRole === 'student'
-                    ? 'bg-beacon-600 text-white shadow-sm'
-                    : 'text-marine-500 hover:text-marine-800'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Student · Alex</span>
-              </button>
+                <button
+                  onClick={() => onRoleChange('student')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                    currentRole === 'student'
+                      ? 'bg-beacon-600 text-white shadow-sm'
+                      : 'text-marine-500 hover:text-marine-800'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Student · Alex</span>
+                </button>
+              </div>
+
+              {onSync && (
+                <button
+                  onClick={onSync}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
+                  title="Refresh Firestore database state"
+                >
+                  <RefreshIcon className="w-3.5 h-3.5" spin={isSyncing} />
+                  <span className="hidden sm:inline">Sync</span>
+                </button>
+              )}
+
+              {onBoom && (
+                <button
+                  onClick={onBoom}
+                  disabled={isBooming}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-red-600 bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
+                  title="Flush all data from Firestore — start from scratch"
+                >
+                  <BoomIcon className={`w-3.5 h-3.5 ${isBooming ? 'animate-pulse' : ''}`} />
+                  <span className="hidden sm:inline">Boom</span>
+                </button>
+              )}
             </div>
-
-            {onSync && (
-              <button
-                onClick={onSync}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-beacon-200 bg-white hover:bg-beacon-50 text-beacon-700 text-xs font-bold transition shadow-sm"
-                title="Refresh Firestore database state"
-              >
-                <RefreshIcon className="w-3.5 h-3.5" spin={isSyncing} />
-                <span className="hidden sm:inline">Sync</span>
-              </button>
-            )}
-
-            {onBoom && (
-              <button
-                onClick={onBoom}
-                disabled={isBooming}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-red-600 bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
-                title="Flush all data from Firestore — start from scratch"
-              >
-                <BoomIcon className={`w-3.5 h-3.5 ${isBooming ? 'animate-pulse' : ''}`} />
-                <span className="hidden sm:inline">Boom</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </header>
