@@ -28,6 +28,7 @@ import {
   type GeneratedArtifact,
 } from './artifacts';
 import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
+import type { LibraryItem, LibraryItemInput } from './library-catalog';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -775,6 +776,30 @@ export const DataService = {
       transaction.set(ref, updated);
       return updated;
     });
+  },
+
+  // LIBRARY CATALOG (Phase 6, Track B1)
+  async createLibraryItem(input: LibraryItemInput, addedBy: string): Promise<LibraryItem> {
+    const ref = db.collection('library_items').doc();
+    const item: LibraryItem = { id: ref.id, ...input, addedBy, addedAt: new Date().toISOString() };
+    await ref.set(item);
+    return item;
+  },
+
+  async getLibraryItems(): Promise<LibraryItem[]> {
+    const snap = await db.collection('library_items').get();
+    return snap.docs
+      .map(doc => sanitizeDoc<LibraryItem>(doc))
+      .sort((a, b) => Date.parse(b.addedAt) - Date.parse(a.addedAt));
+  },
+
+  async getLibraryItem(id: string): Promise<LibraryItem | null> {
+    const doc = await db.collection('library_items').doc(id).get();
+    return doc.exists ? sanitizeDoc<LibraryItem>(doc) : null;
+  },
+
+  async deleteLibraryItem(id: string): Promise<void> {
+    await db.collection('library_items').doc(id).delete();
   },
 
   // ASYNC JOBS (Phase 6, Track C1)
