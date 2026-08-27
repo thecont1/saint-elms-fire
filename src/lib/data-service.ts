@@ -27,6 +27,7 @@ import {
   type ArtifactErrorCategory,
   type GeneratedArtifact,
 } from './artifacts';
+import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
 import type { RetrievedCoursewareChunk } from './courseware-rag';
 
 // Helper to convert Firestore timestamp / plain dates to ISO string
@@ -775,6 +776,47 @@ export const DataService = {
       return updated;
     });
   },
+
+  // ASYNC JOBS (Phase 6, Track C1)
+  async createJob(input: { kind: JobRecord['kind']; payload: Record<string, string> }): Promise<JobRecord> {
+    const ref = db.collection('jobs').doc();
+    const job = buildPendingJob({
+      id: ref.id,
+      kind: input.kind,
+      payload: input.payload,
+      requestedAt: new Date().toISOString(),
+    });
+    await ref.set(job);
+    return job;
+  },
+
+  async getJob(id: string): Promise<JobRecord | null> {
+    const doc = await db.collection('jobs').doc(id).get();
+    return doc.exists ? sanitizeDoc<JobRecord>(doc) : null;
+  },
+
+  /**
+   * Firestore-backed JobStore. Claiming runs in a transaction so a job can
+   * only transition pending→running once even under concurrent drains.
+   */
+  jobStore: {
+    async claimNextPending(): Promise<JobRecord | null> {
+      return db.runTransaction(async transaction => {
+        const snap = await transaction.get(
+          db.collection('jobs').where('status', '==', 'pending').limit(1)
+        );
+        if (snap.empty) return null;
+        const job = sanitizeDoc<JobRecord>(snap.docs[0]);
+        const claimed: JobRecord = { ...job, status: 'running', startedAt: new Date().toISOString() };
+        transaction.set(snap.docs[0].ref, claimed);
+        return claimed;
+      });
+    },
+    async update(id: string, patch: Partial<JobRecord>): Promise<void> {
+      const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
+      await db.collection('jobs').doc(id).set(clean, { merge: true });
+    },
+  } satisfies JobStore,
 
   // MULTI-FORMAT GENERATION ARTIFACTS
   async saveGeneratedFormat(format: Omit<GeneratedFormat, 'id' | 'createdAt'>): Promise<GeneratedFormat> {
