@@ -22,8 +22,8 @@ describe('buildPendingArtifact', () => {
   test('creates a pending artifact with deterministic storage path', () => {
     const artifact = buildPendingArtifact(base);
     expect(artifact.status).toBe('pending');
-    expect(artifact.storagePath).toBe('artifacts/student-alex/lesson-1/art-1.mp3');
-    expect(artifact.mimeType).toBe('audio/mpeg');
+    expect(artifact.storagePath).toBe('artifacts/student-alex/lesson-1/art-1.wav');
+    expect(artifact.mimeType).toBe('audio/wav');
     expect(artifact.createdAt).toBe(base.requestedAt);
   });
 

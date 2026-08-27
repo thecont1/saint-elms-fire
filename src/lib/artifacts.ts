@@ -44,7 +44,7 @@ export interface GeneratedArtifact {
 }
 
 const FORMAT_META: Record<ArtifactFormatType, { ext: string; mimeType: string }> = {
-  podcast_audio: { ext: 'mp3', mimeType: 'audio/mpeg' },
+  podcast_audio: { ext: 'wav', mimeType: 'audio/wav' },
   notes_pdf: { ext: 'pdf', mimeType: 'application/pdf' },
 };
 
