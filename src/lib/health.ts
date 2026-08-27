@@ -64,6 +64,8 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   }
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /** Round-trip a real write+read+delete against Firestore using a unique doc. */
 async function probeFirestore(): Promise<DepStatus> {
   const start = Date.now();
@@ -93,23 +95,39 @@ async function probeFirestore(): Promise<DepStatus> {
 /** Round-trip a trivial generation through the wired Gemini model. */
 async function probeGemini(): Promise<DepStatus> {
   const start = Date.now();
-  try {
-    const res = await withTimeout(
-      ai.generate('Reply with exactly: OK'),
-      30_000,
-      'gemini',
-    );
-    const text = (res.text || '').trim();
-    if (!text) throw new Error('empty model response');
-    return { status: 'up', latencyMs: Date.now() - start };
-  } catch (error: unknown) {
-    console.error('Gemini health probe failed:', error);
-    return {
-      status: 'down',
-      latencyMs: Date.now() - start,
-      error: publicProbeError(error),
-    };
+  let delay = 1000;
+  const maxRetries = 3;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await withTimeout(
+        ai.generate('Reply with exactly: OK'),
+        30_000,
+        'gemini',
+      );
+      const text = (res.text || '').trim();
+      if (!text) throw new Error('empty model response');
+      return { status: 'up', latencyMs: Date.now() - start };
+    } catch (error: unknown) {
+      const is503 = error instanceof Error
+        && (('code' in error && (error as any).code === 503)
+            || ('status' in error && (error as any).status === 'UNAVAILABLE')
+            || error.message.includes('503 Service Unavailable'));
+      if (is503 && attempt < maxRetries) {
+        console.warn(`Gemini health probe attempt ${attempt + 1} failed with 503, retrying in ${delay}ms...`);
+        await sleep(delay);
+        delay *= 2;
+        continue;
+      }
+      console.error('Gemini health probe failed:', error);
+      return {
+        status: 'down',
+        latencyMs: Date.now() - start,
+        error: publicProbeError(error),
+      };
+    }
   }
+  // Should not reach here
+  return { status: 'down', latencyMs: Date.now() - start, error: 'Max retries exceeded' };
 }
 
 /** Round-trip a trivial generation through the Sarvam fallback model. */
