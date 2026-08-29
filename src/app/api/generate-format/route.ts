@@ -69,6 +69,9 @@ export async function POST(req: Request) {
     if (message.includes('Access Denied')) {
       return NextResponse.json({ error: 'Lesson has not been released to this student' }, { status: 403 });
     }
+    if (message.includes('timed out')) {
+      return NextResponse.json({ error: 'Format generation timed out — please retry' }, { status: 504 });
+    }
     return NextResponse.json({ error: 'Format generation failed upstream' }, { status: 502 });
   }
 }

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Copy,
   Layers,
+  AlertTriangle,
 } from 'lucide-react';
 import { CoronaMark } from '@/components/Navigation';
 import { ArtifactPanel } from '@/components/ArtifactPanel';
@@ -23,10 +24,16 @@ interface MultiFormatViewerProps {
 
 type FormatTab = 'raw_markdown' | 'structured_notes' | 'podcast_dialogue' | 'video_lecture_script';
 
+/** Phase 7, Track A5: the sync path must terminate in bounded time on the
+ *  client too; the server enforces its own 75s generation deadline. */
+const CLIENT_GENERATION_DEADLINE_MS = 90_000;
+
 export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps) {
   const [activeTab, setActiveTab] = useState<FormatTab>('raw_markdown');
   const [formats, setFormats] = useState<Record<string, GeneratedFormat>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<string>('Master Lecturer (Feynman style)');
 
@@ -52,10 +59,16 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
 
   const handleGenerate = async (formatType: 'structured_notes' | 'podcast_dialogue' | 'video_lecture_script') => {
     setIsLoading(true);
+    setGenerationError(null);
+    setElapsedSeconds(0);
+    const ticker = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), CLIENT_GENERATION_DEADLINE_MS);
     try {
       const res = await fetch('/api/generate-format', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           lessonId: lesson.id,
           studentId,
@@ -79,8 +92,13 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
         },
       }));
     } catch (err: any) {
-      alert(`Generation failed: ${err.message}`);
+      const message = err?.name === 'AbortError'
+        ? 'Generation timed out — the models may be busy, please retry.'
+        : `Generation failed: ${err.message}`;
+      setGenerationError(message);
     } finally {
+      clearInterval(ticker);
+      clearTimeout(deadline);
       setIsLoading(false);
     }
   };
@@ -159,6 +177,11 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
 
       {/* Content Display Area */}
       <div className="flex-1 p-6 overflow-y-auto max-h-[560px] bg-white">
+        {generationError && (
+          <p className="mb-4 text-xs text-red-600 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" /> {generationError}
+          </p>
+        )}
         {activeTab === 'raw_markdown' ? (
           <div className="prose-light max-w-none text-xs">
             <div className="whitespace-pre-wrap font-sans leading-relaxed text-marine-800">
@@ -227,7 +250,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Kindling the fire...</span>
+                  <span>Kindling the fire… {elapsedSeconds}s</span>
                 </>
               ) : (
                 <>

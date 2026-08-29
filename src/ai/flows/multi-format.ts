@@ -3,6 +3,11 @@ import { ai } from '../genkit';
 import { DataService } from '../../lib/data-service';
 import { resolveRegenerationSource } from '../../lib/courseware-rag';
 import { assembleCorpus, type CorpusScope } from '../../lib/corpus-assembly';
+import { withDeadline } from '../../lib/deadline';
+
+/** Phase 7, Track A1: Gemini capacity blips can black-hole requests for a
+ *  minute or more; generation must terminate in bounded time. */
+export const GENERATION_DEADLINE_MS = 75_000;
 
 export const FormatTypeSchema = z.enum([
   'structured_notes',
@@ -98,10 +103,14 @@ export const regenerateFormat = ai.defineFlow(
         : 'Video Lecture Masterclass';
     const title = `${titlePrefix}: ${sourceTitle}`;
 
-    const response = await ai.generate({
-      system: 'You are Saint Elms Fire’s courseware adaptation engine. Preserve source meaning exactly; introduce no external facts.',
-      prompt: `${formatInstructions(input.formatType, input.persona)}\n\nSOURCE MARKDOWN:\n${corpusMarkdown}`,
-    });
+    const response = await withDeadline(
+      ai.generate({
+        system: 'You are Saint Elms Fire’s courseware adaptation engine. Preserve source meaning exactly; introduce no external facts.',
+        prompt: `${formatInstructions(input.formatType, input.persona)}\n\nSOURCE MARKDOWN:\n${corpusMarkdown}`,
+      }),
+      GENERATION_DEADLINE_MS,
+      'format generation',
+    );
     const content = response.text.trim();
     if (!content) throw new Error('Gemini returned an empty regenerated format');
 

@@ -10,10 +10,16 @@
  *   (service account needs roles/storage.objectAdmin + iam.serviceAccountTokenCreator)
  */
 import { Storage } from '@google-cloud/storage';
+import { withDeadline } from './deadline';
+
+/** Phase 7, Track A1: a hung upload must surface as storage_write_failed,
+ *  not strand the job in running. */
+export const STORAGE_WRITE_DEADLINE_MS = 30_000;
 
 export interface ArtifactStorage {
   save(storagePath: string, data: Buffer, contentType: string): Promise<{ sizeBytes: number }>;
   getSignedUrl(storagePath: string, expiresInMs?: number): Promise<string>;
+  read(storagePath: string): Promise<Buffer>;
   delete(storagePath: string): Promise<void>;
 }
 
@@ -31,7 +37,11 @@ function getStorage(): Storage {
 export const gcsArtifactStorage: ArtifactStorage = {
   async save(storagePath, data, contentType) {
     const file = getStorage().bucket(ARTIFACT_BUCKET).file(storagePath);
-    await file.save(data, { contentType, resumable: false });
+    await withDeadline(
+      file.save(data, { contentType, resumable: false }),
+      STORAGE_WRITE_DEADLINE_MS,
+      'artifact storage write',
+    );
     return { sizeBytes: data.byteLength };
   },
 
@@ -43,6 +53,12 @@ export const gcsArtifactStorage: ArtifactStorage = {
       expires: Date.now() + expiresInMs,
     });
     return url;
+  },
+
+  async read(storagePath) {
+    const file = getStorage().bucket(ARTIFACT_BUCKET).file(storagePath);
+    const [content] = await withDeadline(file.download(), STORAGE_WRITE_DEADLINE_MS, 'artifact storage read');
+    return content;
   },
 
   async delete(storagePath) {
