@@ -47,7 +47,7 @@ The current SVG constellation stays. Do not extract `GraphCanvas` or any
 Cytoscape code before the submission.
 
 Post-submission, run a "Constellation 2.0" spike: adopt Cytoscape + fcose
-directly (MIT/Apache), port the three decoupled libs verbatim
+directly (MIT/Apache), reimplement the behavior of the three decoupled libs
 (`highlightController`, `dynamicLayout`, `egoNetwork`), and rebuild the
 stylesheet around knowledge-node categories with our provenance encodings,
 adding drag/wheel-zoom. Decision gate after the submission.
