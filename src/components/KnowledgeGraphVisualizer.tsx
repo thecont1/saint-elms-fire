@@ -91,6 +91,33 @@ export function KnowledgeGraphVisualizer({
     });
   }, [edges, filteredNodes]);
 
+  // ADR-007 borrow (relex): hub sizing — node radius scales with edge degree.
+  const nodeDegrees = useMemo(() => {
+    const degrees = new Map<string, number>();
+    for (const edge of activeEdges) {
+      for (const concept of [edge.sourceConcept, edge.targetConcept]) {
+        const key = concept.toLowerCase().trim();
+        degrees.set(key, (degrees.get(key) ?? 0) + 1);
+      }
+    }
+    return degrees;
+  }, [activeEdges]);
+
+  // ADR-007 borrow (relex): ego-network highlight — selecting a star fades
+  // everything outside its 1-hop neighborhood.
+  const egoNetwork = useMemo(() => {
+    if (!selectedNode) return null;
+    const selected = selectedNode.concept.toLowerCase().trim();
+    const neighbors = new Set([selected]);
+    for (const edge of activeEdges) {
+      const source = edge.sourceConcept.toLowerCase().trim();
+      const target = edge.targetConcept.toLowerCase().trim();
+      if (source === selected) neighbors.add(target);
+      if (target === selected) neighbors.add(source);
+    }
+    return neighbors;
+  }, [selectedNode, activeEdges]);
+
   const handleNodeClick = (node: KnowledgeNode) => {
     setSelectedNode(node);
     if (onSelectConcept) onSelectConcept(node.concept);
@@ -232,7 +259,11 @@ export function KnowledgeGraphVisualizer({
                   selectedNode.concept.toLowerCase() === edge.targetConcept.toLowerCase());
 
               return (
-                <g key={edge.id || `${edge.sourceConcept}-${edge.targetConcept}`}>
+                <g
+                  key={edge.id || `${edge.sourceConcept}-${edge.targetConcept}`}
+                  opacity={egoNetwork ? (isHighlighted ? 1 : 0.15) : 1}
+                  className="transition-opacity duration-500"
+                >
                   <line
                     x1={src.x}
                     y1={src.y}
@@ -267,14 +298,17 @@ export function KnowledgeGraphVisualizer({
 
               const isSelected = selectedNode?.id === node.id;
               const style = CATEGORY_COLORS[node.category] || CATEGORY_COLORS.concept;
-              const radius = 14 + (node.importance || 3) * 2.5;
+              const degree = nodeDegrees.get(node.concept.toLowerCase().trim()) ?? 0;
+              const radius = 14 + (node.importance || 3) * 2.5 + Math.min(6, degree * 1.5);
+              const inEgo = !egoNetwork || egoNetwork.has(node.concept.toLowerCase().trim());
 
               return (
                 <g
                   key={node.id}
                   transform={`translate(${pos.x}, ${pos.y})`}
                   onClick={() => handleNodeClick(node)}
-                  className="cursor-pointer transition-transform hover:scale-110"
+                  opacity={inEgo ? 1 : 0.15}
+                  className="cursor-pointer transition-transform hover:scale-110 transition-opacity duration-500"
                 >
                   {/* Outer glow ring */}
                   {isSelected && (

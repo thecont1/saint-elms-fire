@@ -256,7 +256,7 @@ export function LmsDashboardClient({
         {role === 'student' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* COLUMN 1: LEFT CURRICULUM & NAVIGATION RAIL (3 cols) */}
-            <aside className="lg:col-span-3 space-y-4 sticky top-20 self-start">
+            <aside className="lg:col-span-3 space-y-4 lg:sticky lg:top-20 self-start">
               {/* Course Overview Widget */}
               {selectedCourse && (
                 <div className="chart-card p-5 space-y-3">
