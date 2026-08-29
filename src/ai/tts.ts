@@ -8,6 +8,7 @@
  * Output: WAV (PCM 24kHz mono from Gemini; Sarvam returns WAV base64).
  * Podcast artifacts are therefore stored as audio/wav `.wav` objects.
  */
+import { withDeadline } from '../lib/deadline';
 
 export interface SpeakerSegment {
   speaker: 'HOST' | 'GUEST';
@@ -133,7 +134,7 @@ export const geminiTts: TtsAdapter = {
 
 const SARVAM_TTS_URL = 'https://api.sarvam.ai/text-to-speech';
 const SARVAM_TTS_CHAR_LIMIT = 500;
-const SARVAM_VOICES = { HOST: 'anushka', GUEST: 'abhilash' } as const;
+const SARVAM_VOICES = { HOST: 'priya', GUEST: 'aditya' } as const;
 
 function splitTextIntoChunks(text: string, limit: number): string[] {
   if (text.length <= limit) return [text];
@@ -168,7 +169,7 @@ export const sarvamTts: TtsAdapter = {
           text,
           target_language_code: 'en-IN',
           speaker: SARVAM_VOICES[segment.speaker],
-          model: 'bulbul:v2',
+          model: 'bulbul:v3',
         }),
       });
       if (!response.ok) {
@@ -183,14 +184,30 @@ export const sarvamTts: TtsAdapter = {
   },
 };
 
+/** Phase 7, Track A1: per-segment caps exist, but a long episode needs an
+ *  overall ceiling so synthesis terminates in bounded time. */
+export const PODCAST_SYNTHESIS_DEADLINE_MS = 120_000;
+
 /**
  * Synthesize a full two-voice podcast from a dialogue script.
  * Gemini primary; on availability failure, the WHOLE script retries on Sarvam
  * (mixing providers mid-episode would produce jarring voice switches).
+ * Bounded by PODCAST_SYNTHESIS_DEADLINE_MS (Phase 7, Track A1).
  */
-export async function synthesizePodcast(
+export function synthesizePodcast(
   script: string,
   adapters: { primary: TtsAdapter; fallback?: TtsAdapter } = { primary: geminiTts, fallback: sarvamTts },
+): Promise<Buffer> {
+  return withDeadline(
+    synthesizePodcastUncapped(script, adapters),
+    PODCAST_SYNTHESIS_DEADLINE_MS,
+    'podcast synthesis',
+  );
+}
+
+async function synthesizePodcastUncapped(
+  script: string,
+  adapters: { primary: TtsAdapter; fallback?: TtsAdapter },
 ): Promise<Buffer> {
   const segments = parsePodcastScript(script);
   if (segments.length === 0) {
@@ -209,11 +226,9 @@ export async function synthesizePodcast(
     return await runWith(adapters.primary);
   } catch (error) {
     if (!adapters.fallback) throw error;
-    console.warn('tts_primary_failed_falling_back', {
-      primary: adapters.primary.name,
-      fallback: adapters.fallback.name,
-      reason: error instanceof Error ? error.name : 'unknown',
-    });
+    console.warn(
+      `tts_primary_failed_falling_back primary=${adapters.primary.name} fallback=${adapters.fallback.name} reason=${error instanceof Error ? error.name : 'unknown'}`,
+    );
     return runWith(adapters.fallback);
   }
 }
