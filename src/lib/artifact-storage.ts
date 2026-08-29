@@ -38,7 +38,25 @@ export const gcsArtifactStorage: ArtifactStorage = {
   async save(storagePath, data, contentType) {
     const file = getStorage().bucket(ARTIFACT_BUCKET).file(storagePath);
     await withDeadline(
-      file.save(data, { contentType, resumable: false }),
+      (signal) => new Promise<void>((resolve, reject) => {
+        const stream = file.createWriteStream({ contentType, resumable: false });
+        const onAbort = () => {
+          stream.destroy(new Error('aborted'));
+          reject(new Error('aborted'));
+        };
+        signal.addEventListener('abort', onAbort);
+        
+        stream.on('error', (err) => {
+          signal.removeEventListener('abort', onAbort);
+          reject(err);
+        });
+        stream.on('finish', () => {
+          signal.removeEventListener('abort', onAbort);
+          resolve();
+        });
+        
+        stream.end(data);
+      }),
       STORAGE_WRITE_DEADLINE_MS,
       'artifact storage write',
     );
@@ -57,7 +75,29 @@ export const gcsArtifactStorage: ArtifactStorage = {
 
   async read(storagePath) {
     const file = getStorage().bucket(ARTIFACT_BUCKET).file(storagePath);
-    const [content] = await withDeadline(file.download(), STORAGE_WRITE_DEADLINE_MS, 'artifact storage read');
+    const content = await withDeadline(
+      (signal) => new Promise<Buffer>((resolve, reject) => {
+        const stream = file.createReadStream();
+        const chunks: Buffer[] = [];
+        const onAbort = () => {
+          stream.destroy(new Error('aborted'));
+          reject(new Error('aborted'));
+        };
+        signal.addEventListener('abort', onAbort);
+        
+        stream.on('error', (err) => {
+          signal.removeEventListener('abort', onAbort);
+          reject(err);
+        });
+        stream.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+        stream.on('end', () => {
+          signal.removeEventListener('abort', onAbort);
+          resolve(Buffer.concat(chunks));
+        });
+      }),
+      STORAGE_WRITE_DEADLINE_MS,
+      'artifact storage read'
+    );
     return content;
   },
 

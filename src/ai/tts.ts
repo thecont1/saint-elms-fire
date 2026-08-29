@@ -17,7 +17,7 @@ export interface SpeakerSegment {
 
 export interface TtsAdapter {
   /** Synthesize one segment; returns raw audio bytes (WAV container). */
-  synthesize(segment: SpeakerSegment): Promise<Buffer>;
+  synthesize(segment: SpeakerSegment, signal?: AbortSignal): Promise<Buffer>;
   readonly name: string;
 }
 
@@ -89,6 +89,11 @@ const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  
+  if (options.signal) {
+    options.signal.addEventListener('abort', () => controller.abort());
+  }
+  
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } finally {
@@ -101,7 +106,7 @@ const GEMINI_VOICES = { HOST: 'Kore', GUEST: 'Puck' } as const;
 
 export const geminiTts: TtsAdapter = {
   name: 'gemini-tts',
-  async synthesize(segment) {
+  async synthesize(segment, signal) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) throw new TtsUnavailableError('GEMINI_API_KEY not configured');
     const response = await fetchWithTimeout(
@@ -109,6 +114,7 @@ export const geminiTts: TtsAdapter = {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: segment.text }] }],
           generationConfig: {
@@ -156,7 +162,7 @@ function splitTextIntoChunks(text: string, limit: number): string[] {
 
 export const sarvamTts: TtsAdapter = {
   name: 'sarvam-tts',
-  async synthesize(segment) {
+  async synthesize(segment, signal) {
     const apiKey = process.env.SARVAM_API_KEY;
     if (!apiKey) throw new TtsUnavailableError('SARVAM_API_KEY not configured');
     const chunks = splitTextIntoChunks(segment.text, SARVAM_TTS_CHAR_LIMIT);
@@ -165,6 +171,7 @@ export const sarvamTts: TtsAdapter = {
       const response = await fetchWithTimeout(SARVAM_TTS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'api-subscription-key': apiKey },
+        signal,
         body: JSON.stringify({
           text,
           target_language_code: 'en-IN',
@@ -199,7 +206,7 @@ export function synthesizePodcast(
   adapters: { primary: TtsAdapter; fallback?: TtsAdapter } = { primary: geminiTts, fallback: sarvamTts },
 ): Promise<Buffer> {
   return withDeadline(
-    synthesizePodcastUncapped(script, adapters),
+    (signal) => synthesizePodcastUncapped(script, adapters, signal),
     PODCAST_SYNTHESIS_DEADLINE_MS,
     'podcast synthesis',
   );
@@ -208,6 +215,7 @@ export function synthesizePodcast(
 async function synthesizePodcastUncapped(
   script: string,
   adapters: { primary: TtsAdapter; fallback?: TtsAdapter },
+  signal?: AbortSignal,
 ): Promise<Buffer> {
   const segments = parsePodcastScript(script);
   if (segments.length === 0) {
@@ -217,7 +225,7 @@ async function synthesizePodcastUncapped(
   const runWith = async (adapter: TtsAdapter): Promise<Buffer> => {
     const parts: Buffer[] = [];
     for (const segment of segments) {
-      parts.push(await adapter.synthesize(segment));
+      parts.push(await adapter.synthesize(segment, signal));
     }
     return concatenateWavSegments(parts);
   };

@@ -24,4 +24,20 @@ describe('withDeadline', () => {
     await expect(withDeadline(slow, 10, 'work')).rejects.toThrow('timed out');
     await new Promise((resolve) => setTimeout(resolve, 50));
   });
+
+  test('aborts passed signal when deadline expires', async () => {
+    let aborted = false;
+    const slowFn = (signal: AbortSignal) => new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => {
+        aborted = true;
+        reject(new Error('aborted from signal'));
+      });
+      setTimeout(() => {
+        if (!aborted) resolve('late');
+      }, 50);
+    });
+    
+    await expect(withDeadline(slowFn, 10, 'cancellable work')).rejects.toThrow('cancellable work timed out after 10ms');
+    expect(aborted).toBe(true);
+  });
 });
