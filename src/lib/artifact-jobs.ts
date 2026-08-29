@@ -8,6 +8,7 @@
 import { DataService } from './data-service';
 import { gcsArtifactStorage } from './artifact-storage';
 import { createJobRunner, JobExecutionError, type JobRecord, type JobRunner } from './job-queue';
+import { sweepStaleWork, type SweepResult, type WatchdogStore } from './job-watchdog';
 import { renderNotesPdf } from './pdf-notes';
 import { synthesizePodcast } from '../ai/tts';
 import { multiFormatGenerationFlow } from '../ai/flows/multi-format';
@@ -30,12 +31,9 @@ export interface ArtifactPipelineDeps {
 
 async function failBoth(deps: ArtifactPipelineDeps, job: JobRecord, category: ArtifactErrorCategory, cause: unknown): Promise<never> {
   await deps.markArtifactFailed(job.payload.artifactId, category).catch(() => {});
-  console.error('artifact_job_failed', {
-    artifactId: job.payload.artifactId,
-    kind: job.kind,
-    category,
-    reason: cause instanceof Error ? cause.name : 'unknown',
-  });
+  console.error(
+    `artifact_job_failed artifactId=${job.payload.artifactId} kind=${job.kind} category=${category} reason=${cause instanceof Error ? cause.name : 'unknown'}`,
+  );
   throw new JobExecutionError(category as JobExecutionError['category'], `Artifact generation failed: ${category}`);
 }
 
@@ -183,4 +181,47 @@ export function getArtifactJobRunner(): JobRunner {
     });
   }
   return runner;
+}
+
+// JOB WATCHDOG wiring (Phase 7, Track A2)
+const SWEEP_THROTTLE_MS = 30_000;
+let lastSweepAt = 0;
+
+/**
+ * Creates a watchdog store backed by Firestore data services.
+ *
+ * @returns The watchdog store used to query and update jobs and artifacts.
+ */
+export function createFirestoreWatchdogStore(): WatchdogStore {
+  return {
+    listRunningJobs: () => DataService.listRunningJobs(),
+    listPendingArtifactsOlderThan: (cutoff) => DataService.listPendingArtifactsOlderThan(cutoff),
+    getJob: (id) => DataService.getJob(id),
+    resetJobToPending: (job) => DataService.resetJobToPending(job),
+    failJob: (job) => DataService.failJobAsLost(job),
+    failArtifact: (id, expectedStatus) => DataService.markArtifactFailed(id, 'job_lost', expectedStatus).then(() => {}),
+  };
+}
+
+/**
+ * Runs the artifact watchdog sweep when the throttle interval has elapsed.
+ *
+ * @param force - Whether to run the sweep regardless of the throttle interval
+ * @returns The sweep result, or `null` when the sweep is throttled
+ */
+export async function runArtifactWatchdogSweep(force = false): Promise<SweepResult | null> {
+  const now = Date.now();
+  if (!force && now - lastSweepAt < SWEEP_THROTTLE_MS) return null;
+  lastSweepAt = now;
+  return sweepStaleWork(createFirestoreWatchdogStore());
+}
+
+/**
+ * Triggers artifact job processing and starts a watchdog sweep.
+ */
+export function kickArtifactJobs(): void {
+  void runArtifactWatchdogSweep().catch((error) => {
+    console.error(`watchdog_sweep_error ${error instanceof Error ? error.message : String(error)}`);
+  });
+  getArtifactJobRunner().kick();
 }

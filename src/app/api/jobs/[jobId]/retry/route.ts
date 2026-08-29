@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
-import { getArtifactJobRunner } from '@/lib/artifact-jobs';
+import { kickArtifactJobs } from '@/lib/artifact-jobs';
 import { resolveRequestIdentity, authorizationResponse } from '@/lib/request-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/jobs/[jobId]/retry
+ * Requeues an authorized failed reading recommendation job for processing.
  *
- * Re-queue a failed reading_recommendation job so the runner can retry the
- * SOFT post-release enrichment. This preserves the completed release and relies
- * on the idempotent writes in the recommendation handler.
+ * @param params - Route parameters containing the job identifier
+ * @returns A response containing the requeued job details
  */
 export async function POST(
   req: Request,
@@ -41,7 +40,7 @@ export async function POST(
       return NextResponse.json({ error: 'Job is no longer in a failed state' }, { status: 409 });
     }
 
-    getArtifactJobRunner().kick();
+    kickArtifactJobs();
     return NextResponse.json({
       requeued: true,
       job: {

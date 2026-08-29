@@ -8,6 +8,7 @@
  * Output: WAV (PCM 24kHz mono from Gemini; Sarvam returns WAV base64).
  * Podcast artifacts are therefore stored as audio/wav `.wav` objects.
  */
+import { withDeadline } from '../lib/deadline';
 
 export interface SpeakerSegment {
   speaker: 'HOST' | 'GUEST';
@@ -16,7 +17,7 @@ export interface SpeakerSegment {
 
 export interface TtsAdapter {
   /** Synthesize one segment; returns raw audio bytes (WAV container). */
-  synthesize(segment: SpeakerSegment): Promise<Buffer>;
+  synthesize(segment: SpeakerSegment, signal?: AbortSignal): Promise<Buffer>;
   readonly name: string;
 }
 
@@ -88,6 +89,11 @@ const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  
+  if (options.signal) {
+    options.signal.addEventListener('abort', () => controller.abort());
+  }
+  
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } finally {
@@ -100,7 +106,7 @@ const GEMINI_VOICES = { HOST: 'Kore', GUEST: 'Puck' } as const;
 
 export const geminiTts: TtsAdapter = {
   name: 'gemini-tts',
-  async synthesize(segment) {
+  async synthesize(segment, signal) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) throw new TtsUnavailableError('GEMINI_API_KEY not configured');
     const response = await fetchWithTimeout(
@@ -108,6 +114,7 @@ export const geminiTts: TtsAdapter = {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: segment.text }] }],
           generationConfig: {
@@ -133,8 +140,14 @@ export const geminiTts: TtsAdapter = {
 
 const SARVAM_TTS_URL = 'https://api.sarvam.ai/text-to-speech';
 const SARVAM_TTS_CHAR_LIMIT = 500;
-const SARVAM_VOICES = { HOST: 'anushka', GUEST: 'abhilash' } as const;
+const SARVAM_VOICES = { HOST: 'priya', GUEST: 'aditya' } as const;
 
+/**
+ * Splits text into trimmed chunks that fit within the specified length.
+ *
+ * @param limit - The maximum preferred length of each chunk
+ * @returns The resulting text chunks
+ */
 function splitTextIntoChunks(text: string, limit: number): string[] {
   if (text.length <= limit) return [text];
   const chunks: string[] = [];
@@ -155,7 +168,7 @@ function splitTextIntoChunks(text: string, limit: number): string[] {
 
 export const sarvamTts: TtsAdapter = {
   name: 'sarvam-tts',
-  async synthesize(segment) {
+  async synthesize(segment, signal) {
     const apiKey = process.env.SARVAM_API_KEY;
     if (!apiKey) throw new TtsUnavailableError('SARVAM_API_KEY not configured');
     const chunks = splitTextIntoChunks(segment.text, SARVAM_TTS_CHAR_LIMIT);
@@ -164,11 +177,12 @@ export const sarvamTts: TtsAdapter = {
       const response = await fetchWithTimeout(SARVAM_TTS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'api-subscription-key': apiKey },
+        signal,
         body: JSON.stringify({
           text,
           target_language_code: 'en-IN',
           speaker: SARVAM_VOICES[segment.speaker],
-          model: 'bulbul:v2',
+          model: 'bulbul:v3',
         }),
       });
       if (!response.ok) {
@@ -183,14 +197,43 @@ export const sarvamTts: TtsAdapter = {
   },
 };
 
+/** Phase 7, Track A1: per-segment caps exist, but a long episode needs an
+ *  overall ceiling so synthesis terminates in bounded time. */
+export const PODCAST_SYNTHESIS_DEADLINE_MS = 120_000;
+
 /**
- * Synthesize a full two-voice podcast from a dialogue script.
- * Gemini primary; on availability failure, the WHOLE script retries on Sarvam
- * (mixing providers mid-episode would produce jarring voice switches).
+ * Synthesizes a complete two-voice podcast from a dialogue script.
+ *
+ * @param script - The dialogue script to synthesize
+ * @param adapters - The primary text-to-speech adapter and optional fallback adapter
+ * @returns The synthesized podcast as WAV audio data
  */
-export async function synthesizePodcast(
+export function synthesizePodcast(
   script: string,
   adapters: { primary: TtsAdapter; fallback?: TtsAdapter } = { primary: geminiTts, fallback: sarvamTts },
+): Promise<Buffer> {
+  return withDeadline(
+    (signal) => synthesizePodcastUncapped(script, adapters, signal),
+    PODCAST_SYNTHESIS_DEADLINE_MS,
+    'podcast synthesis',
+  );
+}
+
+/**
+ * Synthesizes a labeled podcast script into a single WAV buffer.
+ *
+ * If primary synthesis fails and a fallback adapter is available, retries the
+ * complete script with the fallback adapter.
+ *
+ * @param script - The speaker-labeled podcast script
+ * @param adapters - The primary adapter and optional fallback adapter
+ * @returns The synthesized podcast audio as a WAV buffer
+ * @throws TtsUnavailableError If the script contains no speaker-labeled dialogue
+ */
+async function synthesizePodcastUncapped(
+  script: string,
+  adapters: { primary: TtsAdapter; fallback?: TtsAdapter },
+  signal?: AbortSignal,
 ): Promise<Buffer> {
   const segments = parsePodcastScript(script);
   if (segments.length === 0) {
@@ -200,7 +243,7 @@ export async function synthesizePodcast(
   const runWith = async (adapter: TtsAdapter): Promise<Buffer> => {
     const parts: Buffer[] = [];
     for (const segment of segments) {
-      parts.push(await adapter.synthesize(segment));
+      parts.push(await adapter.synthesize(segment, signal));
     }
     return concatenateWavSegments(parts);
   };
@@ -209,11 +252,9 @@ export async function synthesizePodcast(
     return await runWith(adapters.primary);
   } catch (error) {
     if (!adapters.fallback) throw error;
-    console.warn('tts_primary_failed_falling_back', {
-      primary: adapters.primary.name,
-      fallback: adapters.fallback.name,
-      reason: error instanceof Error ? error.name : 'unknown',
-    });
+    console.warn(
+      `tts_primary_failed_falling_back primary=${adapters.primary.name} fallback=${adapters.fallback.name} reason=${error instanceof Error ? error.name : 'unknown'}`,
+    );
     return runWith(adapters.fallback);
   }
 }

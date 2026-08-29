@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { authorizeArtifactAccess, ArtifactAccessError } from '@/lib/artifacts';
+import { gcsArtifactStorage } from '@/lib/artifact-storage';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Retrieves an artifact and its associated job status for an authorized student.
+ * Streams an authorized artifact to the requester.
  *
- * @returns A JSON response containing the artifact without its storage path, or an error response when access fails or the artifact cannot be found.
+ * Returns the artifact inline for audio files and as a downloadable PDF for
+ * other artifact types.
+ *
+ * @returns The artifact response, or an error response when the artifact is
+ * missing, inaccessible, or not ready.
  */
 export async function GET(
   req: Request,
@@ -27,14 +32,20 @@ export async function GET(
     }
     const released = await DataService.isLessonReleasedToStudent(artifact.lessonId, studentId);
     authorizeArtifactAccess({ artifact, requesterStudentId: studentId, lessonReleased: released });
+    if (artifact.status !== 'ready') {
+      return NextResponse.json({ error: `Artifact is not ready (status: ${artifact.status})` }, { status: 409 });
+    }
 
-    // Never serialize storagePath to clients — URLs are minted via /url only.
-    const { storagePath: _storagePath, ...publicArtifact } = artifact;
-    const job = artifact.jobId ? await DataService.getJob(artifact.jobId) : null;
-    return NextResponse.json({
-      artifact: {
-        ...publicArtifact,
-        job: job ? { status: job.status, attempts: job.attempts, errorCategory: job.errorCategory } : undefined,
+    const content = await gcsArtifactStorage.read(artifact.storagePath);
+    const disposition = artifact.mimeType.startsWith('audio/')
+      ? `inline; filename="${artifactId}.wav"`
+      : `attachment; filename="${artifactId}.pdf"`;
+    return new NextResponse(new Uint8Array(content), {
+      headers: {
+        'Content-Type': artifact.mimeType,
+        'Content-Disposition': disposition,
+        'Content-Length': String(content.byteLength),
+        'Cache-Control': 'private, no-store',
       },
     });
   } catch (error: unknown) {
@@ -43,7 +54,7 @@ export async function GET(
     if (error instanceof ArtifactAccessError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    console.error('Failed to get artifact:', error);
-    return NextResponse.json({ error: 'Unable to load artifact' }, { status: 500 });
+    console.error('Failed to stream artifact:', error);
+    return NextResponse.json({ error: 'Unable to stream artifact' }, { status: 500 });
   }
 }

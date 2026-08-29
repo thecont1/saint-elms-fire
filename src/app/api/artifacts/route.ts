@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
+import { runArtifactWatchdogSweep } from '@/lib/artifact-jobs';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** GET /api/artifacts?lessonId= — list the caller's artifacts for a released lesson. */
+/**
+ * Lists the caller’s artifacts for a lesson released to the applicable student.
+ *
+ * @returns A JSON response containing the artifacts and limited status information for associated jobs.
+ */
 export async function GET(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);
@@ -19,9 +24,18 @@ export async function GET(req: Request) {
     if (!released) {
       return NextResponse.json({ error: 'Lesson has not been released to this student' }, { status: 403 });
     }
-    const artifacts = (await DataService.getArtifactsForLesson(studentId, lessonId)).map(
-      ({ storagePath: _storagePath, ...rest }) => rest
+    void runArtifactWatchdogSweep().catch(() => {});
+    const stored = await DataService.getArtifactsForLesson(studentId, lessonId);
+    const jobs = await Promise.all(
+      stored.map((artifact) => (artifact.jobId ? DataService.getJob(artifact.jobId) : Promise.resolve(null)))
     );
+    const artifacts = stored.map(({ storagePath: _storagePath, ...rest }, index) => {
+      const job = jobs[index];
+      return {
+        ...rest,
+        job: job ? { status: job.status, attempts: job.attempts, errorCategory: job.errorCategory } : undefined,
+      };
+    });
     return NextResponse.json({ artifacts });
   } catch (error: unknown) {
     const authResponse = authorizationResponse(error);

@@ -16,6 +16,7 @@ export const ARTIFACT_ERROR_CATEGORIES = [
   'generation_failed',
   'storage_write_failed',
   'quota_exceeded',
+  'job_lost',
   'unknown',
 ] as const;
 export type ArtifactErrorCategory = (typeof ARTIFACT_ERROR_CATEGORIES)[number];

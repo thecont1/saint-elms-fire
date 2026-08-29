@@ -842,12 +842,16 @@ export const DataService = {
     });
   },
 
-  async markArtifactFailed(id: string, category: ArtifactErrorCategory): Promise<GeneratedArtifact> {
+  async markArtifactFailed(id: string, category: ArtifactErrorCategory, expectedStatus?: 'pending' | 'running'): Promise<GeneratedArtifact> {
     const ref = db.collection('generated_artifacts').doc(id);
     return db.runTransaction(async transaction => {
       const snap = await transaction.get(ref);
       if (!snap.exists) throw new Error('Artifact not found');
-      const updated = failArtifactRecord(sanitizeDoc<GeneratedArtifact>(snap), category);
+      const artifact = sanitizeDoc<GeneratedArtifact>(snap);
+      if (expectedStatus && artifact.status !== expectedStatus) {
+        return artifact;
+      }
+      const updated = failArtifactRecord(artifact, category);
       transaction.set(ref, updated);
       return updated;
     });
@@ -1230,6 +1234,50 @@ export const DataService = {
       await db.collection('jobs').doc(id).set(clean, { merge: true });
     },
   } satisfies JobStore,
+
+  // JOB WATCHDOG (Phase 7, Track A2)
+  async listRunningJobs(): Promise<JobRecord[]> {
+    const snap = await db.collection('jobs').where('status', '==', 'running').get();
+    return snap.docs.map((doc) => sanitizeDoc<JobRecord>(doc));
+  },
+
+  async listPendingArtifactsOlderThan(cutoffIso: string): Promise<GeneratedArtifact[]> {
+    const snap = await db.collection('generated_artifacts').where('status', '==', 'pending').get();
+    return snap.docs
+      .map((doc) => sanitizeDoc<GeneratedArtifact>(doc))
+      .filter((artifact) => artifact.createdAt < cutoffIso);
+  },
+
+  async resetJobToPending(job: JobRecord): Promise<void> {
+    const ref = db.collection('jobs').doc(job.id);
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) return;
+      const current = sanitizeDoc<JobRecord>(snap);
+      if (current.status === 'running' && current.attempts === job.attempts && current.startedAt === job.startedAt) {
+        transaction.update(ref, {
+          status: 'pending',
+          startedAt: FieldValue.delete(),
+        });
+      }
+    });
+  },
+
+  async failJobAsLost(job: JobRecord): Promise<void> {
+    const ref = db.collection('jobs').doc(job.id);
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) return;
+      const current = sanitizeDoc<JobRecord>(snap);
+      if (current.status === 'running' && current.attempts === job.attempts && current.startedAt === job.startedAt) {
+        transaction.set(
+          ref,
+          { status: 'failed', errorCategory: 'job_lost', completedAt: new Date().toISOString() },
+          { merge: true },
+        );
+      }
+    });
+  },
 
   // MULTI-FORMAT GENERATION ARTIFACTS
   async saveGeneratedFormat(format: Omit<GeneratedFormat, 'id' | 'createdAt'>): Promise<GeneratedFormat> {

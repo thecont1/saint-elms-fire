@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
-import { getArtifactJobRunner } from '@/lib/artifact-jobs';
+import { kickArtifactJobs } from '@/lib/artifact-jobs';
 import { authorizeArtifactAccess, ArtifactAccessError } from '@/lib/artifacts';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
 
@@ -8,9 +8,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/artifacts/[artifactId]/retry (Phase 6, Track C3)
- * Mirrors the release retry endpoint: only the owner may retry, only failed
- * artifacts are retryable, and retry re-enqueues the same generation job.
+ * Re-enqueues a failed artifact for generation.
+ *
+ * @param req - The incoming request containing the student scope.
+ * @param params - Route parameters containing the artifact ID.
+ * @returns A pending artifact and job identifier, or an error response.
  */
 export async function POST(
   req: Request,
@@ -45,7 +47,7 @@ export async function POST(
       payload,
     });
     await DataService.setArtifactJobId(retried.id, job.id);
-    getArtifactJobRunner().kick();
+    kickArtifactJobs();
 
     return NextResponse.json(
       { artifactId: retried.id, jobId: job.id, status: 'pending' },

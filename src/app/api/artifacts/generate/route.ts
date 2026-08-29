@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
-import { getArtifactJobRunner } from '@/lib/artifact-jobs';
+import { kickArtifactJobs } from '@/lib/artifact-jobs';
 import { ARTIFACT_FORMAT_TYPES, type ArtifactFormatType } from '@/lib/artifacts';
 import { ArtifactQuotaError } from '@/lib/quotas';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
@@ -9,9 +9,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/artifacts/generate — { lessonId, formatType: 'notes_pdf'|'podcast_audio', persona?, corpusScope? }
- * Returns 202 { artifactId, jobId, status: 'pending' }; client polls
- * GET /api/artifacts/{artifactId} and mints a URL when ready.
+ * Initiates artifact generation for a released lesson.
+ *
+ * @returns An HTTP response containing the artifact and job identifiers with a pending status, or an error response for invalid, unauthorized, quota-exceeded, or failed requests.
  */
 export async function POST(req: Request) {
   try {
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       persona: typeof persona === 'string' ? persona.slice(0, 200) : undefined,
       corpusScope: corpusScope === 'lesson' ? 'lesson' : corpusScope === 'second_brain' ? 'second_brain' : undefined,
     });
-    getArtifactJobRunner().kick();
+    kickArtifactJobs();
 
     return NextResponse.json(
       { artifactId: artifact.id, jobId: job.id, status: 'pending' },

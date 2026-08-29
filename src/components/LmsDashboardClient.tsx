@@ -33,6 +33,16 @@ interface LmsDashboardClientProps {
   initialSocraticSession: SocraticSession | null;
 }
 
+/**
+ * Renders the LMS dashboard for student and administrator workflows.
+ *
+ * @param initialCourse - The course to display initially.
+ * @param initialModules - The course modules loaded initially.
+ * @param initialLessons - The course lessons loaded initially.
+ * @param initialReleases - Release events loaded initially.
+ * @param initialGraph - Knowledge graph data loaded initially.
+ * @param initialSocraticSession - Initial Socratic tutoring session data.
+ */
 export function LmsDashboardClient({
   initialCourse,
   initialModules = [],
@@ -256,7 +266,7 @@ export function LmsDashboardClient({
         {role === 'student' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* COLUMN 1: LEFT CURRICULUM & NAVIGATION RAIL (3 cols) */}
-            <aside className="lg:col-span-3 space-y-4 sticky top-20 self-start">
+            <aside className="lg:col-span-3 space-y-4 lg:sticky lg:top-20 self-start">
               {/* Course Overview Widget */}
               {selectedCourse && (
                 <div className="chart-card p-5 space-y-3">
