@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
-import { getArtifactJobRunner } from '@/lib/artifact-jobs';
+import { kickArtifactJobs } from '@/lib/artifact-jobs';
 import { ARTIFACT_FORMAT_TYPES, type ArtifactFormatType } from '@/lib/artifacts';
 import { ArtifactQuotaError } from '@/lib/quotas';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       persona: typeof persona === 'string' ? persona.slice(0, 200) : undefined,
       corpusScope: corpusScope === 'lesson' ? 'lesson' : corpusScope === 'second_brain' ? 'second_brain' : undefined,
     });
-    getArtifactJobRunner().kick();
+    kickArtifactJobs();
 
     return NextResponse.json(
       { artifactId: artifact.id, jobId: job.id, status: 'pending' },

@@ -20,6 +20,7 @@ export type JobErrorCategory =
   | 'pdf_render_failed'
   | 'generation_failed'
   | 'storage_write_failed'
+  | 'job_lost'
   | 'unknown';
 
 export interface JobRecord {
@@ -96,7 +97,7 @@ export function createJobRunner(store: JobStore, handlers: JobHandlers): JobRunn
       } catch (error) {
         // Bounded category only — raw messages must never persist to the record.
         const category = error instanceof JobExecutionError ? error.category : 'unknown';
-        console.error('job_failed', { jobId: job.id, kind: job.kind, category });
+        console.error(`job_failed jobId=${job.id} kind=${job.kind} category=${category}`);
         await store.update(job.id, {
           status: 'failed',
           attempts,

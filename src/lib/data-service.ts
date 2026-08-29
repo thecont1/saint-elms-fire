@@ -1231,6 +1231,33 @@ export const DataService = {
     },
   } satisfies JobStore,
 
+  // JOB WATCHDOG (Phase 7, Track A2)
+  async listRunningJobs(): Promise<JobRecord[]> {
+    const snap = await db.collection('jobs').where('status', '==', 'running').get();
+    return snap.docs.map((doc) => sanitizeDoc<JobRecord>(doc));
+  },
+
+  async listPendingArtifactsOlderThan(cutoffIso: string): Promise<GeneratedArtifact[]> {
+    const snap = await db.collection('generated_artifacts').where('status', '==', 'pending').get();
+    return snap.docs
+      .map((doc) => sanitizeDoc<GeneratedArtifact>(doc))
+      .filter((artifact) => artifact.createdAt < cutoffIso);
+  },
+
+  async resetJobToPending(id: string): Promise<void> {
+    await db.collection('jobs').doc(id).update({
+      status: 'pending',
+      startedAt: FieldValue.delete(),
+    });
+  },
+
+  async failJobAsLost(id: string): Promise<void> {
+    await db.collection('jobs').doc(id).set(
+      { status: 'failed', errorCategory: 'job_lost', completedAt: new Date().toISOString() },
+      { merge: true },
+    );
+  },
+
   // MULTI-FORMAT GENERATION ARTIFACTS
   async saveGeneratedFormat(format: Omit<GeneratedFormat, 'id' | 'createdAt'>): Promise<GeneratedFormat> {
     const ref = db.collection('generated_formats').doc();

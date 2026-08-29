@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
-import { getArtifactJobRunner } from '@/lib/artifact-jobs';
+import { kickArtifactJobs } from '@/lib/artifact-jobs';
 import { authorizeArtifactAccess, ArtifactAccessError } from '@/lib/artifacts';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
 
@@ -45,7 +45,7 @@ export async function POST(
       payload,
     });
     await DataService.setArtifactJobId(retried.id, job.id);
-    getArtifactJobRunner().kick();
+    kickArtifactJobs();
 
     return NextResponse.json(
       { artifactId: retried.id, jobId: job.id, status: 'pending' },

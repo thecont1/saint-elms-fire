@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
-import { getArtifactJobRunner } from '@/lib/artifact-jobs';
+import { kickArtifactJobs } from '@/lib/artifact-jobs';
 import { resolveRequestIdentity, authorizationResponse } from '@/lib/request-identity';
 
 export const runtime = 'nodejs';
@@ -41,7 +41,7 @@ export async function POST(
       return NextResponse.json({ error: 'Job is no longer in a failed state' }, { status: 409 });
     }
 
-    getArtifactJobRunner().kick();
+    kickArtifactJobs();
     return NextResponse.json({
       requeued: true,
       job: {
