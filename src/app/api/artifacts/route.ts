@@ -6,7 +6,11 @@ import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } fr
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** GET /api/artifacts?lessonId= — list the caller's artifacts for a released lesson. */
+/**
+ * Lists the caller’s artifacts for a lesson released to the applicable student.
+ *
+ * @returns A JSON response containing the artifacts and limited status information for associated jobs.
+ */
 export async function GET(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);

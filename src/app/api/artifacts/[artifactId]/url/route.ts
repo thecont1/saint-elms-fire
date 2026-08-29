@@ -7,7 +7,11 @@ import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } fr
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** GET /api/artifacts/[artifactId]/url — mint a 15-minute signed download URL. */
+/**
+ * Generates an authorized download URL for a ready artifact.
+ *
+ * @returns The artifact URL, MIME type, and signed URL expiration time when signing succeeds; otherwise, an owner-scoped stream URL and MIME type.
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ artifactId: string }> },

@@ -33,6 +33,16 @@ interface LmsDashboardClientProps {
   initialSocraticSession: SocraticSession | null;
 }
 
+/**
+ * Renders the LMS dashboard for student and administrator workflows.
+ *
+ * @param initialCourse - The course to display initially.
+ * @param initialModules - The course modules loaded initially.
+ * @param initialLessons - The course lessons loaded initially.
+ * @param initialReleases - Release events loaded initially.
+ * @param initialGraph - Knowledge graph data loaded initially.
+ * @param initialSocraticSession - Initial Socratic tutoring session data.
+ */
 export function LmsDashboardClient({
   initialCourse,
   initialModules = [],

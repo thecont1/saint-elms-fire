@@ -75,6 +75,13 @@ export interface JobRunner {
   kick(): void;
 }
 
+/**
+ * Creates a runner that processes pending jobs using the provided handlers.
+ *
+ * @param store - The job store used to claim and update jobs
+ * @param handlers - The handlers used to execute each supported job kind
+ * @returns A runner with methods for draining pending jobs and triggering background processing
+ */
 export function createJobRunner(store: JobStore, handlers: JobHandlers): JobRunner {
   let draining = false;
   let kickedWhileDraining = false;

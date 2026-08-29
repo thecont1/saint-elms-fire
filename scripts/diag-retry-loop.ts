@@ -7,6 +7,11 @@ const MAX_ATTEMPTS = Number(process.argv[4] ?? 5);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Retrieves the artifact record for the configured student.
+ *
+ * @returns The artifact record, or `null` if the request fails or no artifact is present.
+ */
 async function getArtifact() {
   const res = await fetch(`${BASE}/api/artifacts/${artifactId}?studentId=${studentId}`);
   if (!res.ok) return null;

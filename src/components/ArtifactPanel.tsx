@@ -44,6 +44,12 @@ const LABELS: Record<ArtifactRecord['formatType'], { title: string; icon: React.
   podcast_audio: { title: 'Podcast Audio', icon: <AudioLines className="w-4 h-4" />, action: 'Play episode' },
 };
 
+/**
+ * Displays PDF and podcast artifacts for a lesson, including their generation status and available actions.
+ *
+ * @param lessonId - The lesson whose artifacts are displayed
+ * @param studentId - The student associated with the artifacts
+ */
 export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
   const [artifacts, setArtifacts] = useState<Record<string, ArtifactRecord>>({});
   const [readyArtifacts, setReadyArtifacts] = useState<Record<string, ArtifactRecord>>({});

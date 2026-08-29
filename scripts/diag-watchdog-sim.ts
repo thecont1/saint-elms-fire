@@ -6,6 +6,11 @@ const jobId = `diag-stranded-job-${Date.now()}`;
 const artifactId = `diag-orphaned-artifact-${Date.now()}`;
 const oldIso = new Date(Date.now() - 10 * 60_000).toISOString();
 
+/**
+ * Runs the job watchdog sweep and reports its results.
+ *
+ * @returns Counts of reclaimed jobs, dead-lettered jobs, and orphaned artifacts.
+ */
 async function sweep() {
   const res = await fetch(`${BASE}/api/jobs/sweep`, { method: 'POST' });
   return (await res.json()) as { swept: { reclaimed: number; deadLettered: number; orphanedArtifacts: number } };

@@ -8,10 +8,13 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/artifacts/[artifactId]/stream — owner-only server-side streaming of
- * artifact bytes. Fallback delivery path when V4 signed URLs cannot be minted
- * (user-ADC credentials locally, or a runtime SA without the token-creator
- * role); same authorization as the /url route.
+ * Streams an authorized artifact to the requester.
+ *
+ * Returns the artifact inline for audio files and as a downloadable PDF for
+ * other artifact types.
+ *
+ * @returns The artifact response, or an error response when the artifact is
+ * missing, inaccessible, or not ready.
  */
 export async function GET(
   req: Request,

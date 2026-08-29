@@ -6,6 +6,14 @@ const storage = new Storage();
 const bucket = storage.bucket(bucketName);
 const file = bucket.file('artifacts/__diag_probe__');
 
+/**
+ * Resolves with the operation's result or rejects if it exceeds the specified duration.
+ *
+ * @param p - The operation to monitor
+ * @param ms - The maximum duration in milliseconds
+ * @param label - The label included in the timeout error message
+ * @returns The operation's result
+ */
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
     p,

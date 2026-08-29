@@ -24,6 +24,15 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string
   concept: { bg: '#2563EB', border: '#1D4ED8', text: '#FFFFFF', glow: 'rgba(37, 99, 235, 0.35)', pillBg: '#DBEAFE', pillText: '#1D4ED8' },
 };
 
+/**
+ * Renders an interactive knowledge graph with filtering, search, zoom, and node details.
+ *
+ * @param nodes - Concepts to display in the graph
+ * @param edges - Relationships connecting the displayed concepts
+ * @param onSelectConcept - Callback invoked with a concept when it is selected
+ * @param onOpenWiki - Callback invoked with a node ID when its wiki page is opened
+ * @param isLoading - Whether to display the loading state
+ */
 export function KnowledgeGraphVisualizer({
   nodes = [],
   edges = [],

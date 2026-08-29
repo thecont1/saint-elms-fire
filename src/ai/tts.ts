@@ -142,6 +142,12 @@ const SARVAM_TTS_URL = 'https://api.sarvam.ai/text-to-speech';
 const SARVAM_TTS_CHAR_LIMIT = 500;
 const SARVAM_VOICES = { HOST: 'priya', GUEST: 'aditya' } as const;
 
+/**
+ * Splits text into trimmed chunks that fit within the specified length.
+ *
+ * @param limit - The maximum preferred length of each chunk
+ * @returns The resulting text chunks
+ */
 function splitTextIntoChunks(text: string, limit: number): string[] {
   if (text.length <= limit) return [text];
   const chunks: string[] = [];
@@ -196,10 +202,11 @@ export const sarvamTts: TtsAdapter = {
 export const PODCAST_SYNTHESIS_DEADLINE_MS = 120_000;
 
 /**
- * Synthesize a full two-voice podcast from a dialogue script.
- * Gemini primary; on availability failure, the WHOLE script retries on Sarvam
- * (mixing providers mid-episode would produce jarring voice switches).
- * Bounded by PODCAST_SYNTHESIS_DEADLINE_MS (Phase 7, Track A1).
+ * Synthesizes a complete two-voice podcast from a dialogue script.
+ *
+ * @param script - The dialogue script to synthesize
+ * @param adapters - The primary text-to-speech adapter and optional fallback adapter
+ * @returns The synthesized podcast as WAV audio data
  */
 export function synthesizePodcast(
   script: string,
@@ -212,6 +219,17 @@ export function synthesizePodcast(
   );
 }
 
+/**
+ * Synthesizes a labeled podcast script into a single WAV buffer.
+ *
+ * If primary synthesis fails and a fallback adapter is available, retries the
+ * complete script with the fallback adapter.
+ *
+ * @param script - The speaker-labeled podcast script
+ * @param adapters - The primary adapter and optional fallback adapter
+ * @returns The synthesized podcast audio as a WAV buffer
+ * @throws TtsUnavailableError If the script contains no speaker-labeled dialogue
+ */
 async function synthesizePodcastUncapped(
   script: string,
   adapters: { primary: TtsAdapter; fallback?: TtsAdapter },

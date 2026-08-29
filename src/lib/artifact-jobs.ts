@@ -187,6 +187,11 @@ export function getArtifactJobRunner(): JobRunner {
 const SWEEP_THROTTLE_MS = 30_000;
 let lastSweepAt = 0;
 
+/**
+ * Creates a watchdog store backed by Firestore data services.
+ *
+ * @returns The watchdog store used to query and update jobs and artifacts.
+ */
 export function createFirestoreWatchdogStore(): WatchdogStore {
   return {
     listRunningJobs: () => DataService.listRunningJobs(),
@@ -198,7 +203,12 @@ export function createFirestoreWatchdogStore(): WatchdogStore {
   };
 }
 
-/** Throttled so poll-driven sweeps stay cheap (one pair of queries per 30s). */
+/**
+ * Runs the artifact watchdog sweep when the throttle interval has elapsed.
+ *
+ * @param force - Whether to run the sweep regardless of the throttle interval
+ * @returns The sweep result, or `null` when the sweep is throttled
+ */
 export async function runArtifactWatchdogSweep(force = false): Promise<SweepResult | null> {
   const now = Date.now();
   if (!force && now - lastSweepAt < SWEEP_THROTTLE_MS) return null;
@@ -206,6 +216,9 @@ export async function runArtifactWatchdogSweep(force = false): Promise<SweepResu
   return sweepStaleWork(createFirestoreWatchdogStore());
 }
 
+/**
+ * Triggers artifact job processing and starts a watchdog sweep.
+ */
 export function kickArtifactJobs(): void {
   void runArtifactWatchdogSweep().catch((error) => {
     console.error(`watchdog_sweep_error ${error instanceof Error ? error.message : String(error)}`);

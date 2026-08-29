@@ -1,6 +1,10 @@
 /**
- * Bounded-deadline helper for external calls (Gemini generation, GCS writes,
- * TTS synthesis). Phase 7, Track A1: no generation path may hang unbounded.
+ * Runs work with a maximum completion time.
+ *
+ * @param work - The operation to complete within the deadline
+ * @param ms - The maximum duration in milliseconds
+ * @param label - The label included in the timeout error
+ * @returns The value produced by `work` when it completes before the deadline
  */
 export function withDeadline<T>(
   workOrFn: Promise<T> | ((signal: AbortSignal) => Promise<T>),
