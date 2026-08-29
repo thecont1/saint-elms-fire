@@ -24,8 +24,12 @@ try {
   const body = await res.text();
   console.log(`generateContent -> HTTP ${res.status} in ${elapsed}ms`);
   console.log(body.slice(0, 600));
+  if (!res.ok) {
+    process.exit(1);
+  }
 } catch (error) {
   console.error('generateContent FAILED:', error instanceof Error ? error.message : String(error));
+  process.exit(1);
 } finally {
   clearTimeout(timer);
 }

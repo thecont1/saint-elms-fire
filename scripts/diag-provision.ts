@@ -56,4 +56,7 @@ const res = await fetch(indexUrl, {
 });
 const body = await res.text();
 console.log(`index create -> HTTP ${res.status}: ${body.slice(0, 300)}`);
+if (!res.ok) {
+  process.exit(1);
+}
 process.exit(0);

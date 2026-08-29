@@ -28,7 +28,8 @@ try {
   await withTimeout(file.delete(), 15_000, 'file.delete');
   console.log('file.delete -> ok');
   console.log('GCS PROBE: PASS');
+  process.exit(0);
 } catch (error) {
   console.error('GCS PROBE FAILED:', error instanceof Error ? error.message : String(error));
+  process.exit(1);
 }
-process.exit(0);
