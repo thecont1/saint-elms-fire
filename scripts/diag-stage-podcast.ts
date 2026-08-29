@@ -30,6 +30,15 @@ console.log(`script source=${savedScript ? 'saved generated_format' : 'built-in 
 const audio = await synthesizePodcast(script, { primary: sarvamTts });
 console.log(`synthesized ${audio.byteLength} bytes via ${sarvamTts.name}`);
 
+if (
+  process.env.NODE_ENV !== 'development' ||
+  !process.env.FIRESTORE_EMULATOR_HOST ||
+  process.env.CONFIRM_DIAGNOSTIC !== 'yes'
+) {
+  console.error('Guard failed: must run in development against emulators with CONFIRM_DIAGNOSTIC=yes');
+  process.exit(1);
+}
+
 await gcsArtifactStorage.save(artifact.storagePath, audio, artifact.mimeType);
 await DataService.markArtifactReady(artifactId, audio.byteLength);
 console.log('podcast artifact marked ready');
