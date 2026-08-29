@@ -6,7 +6,11 @@ import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } fr
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** GET /api/artifacts/[artifactId] — status polling for the artifact owner. */
+/**
+ * Retrieves an artifact and its associated job status for an authorized student.
+ *
+ * @returns A JSON response containing the artifact without its storage path, or an error response when access fails or the artifact cannot be found.
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ artifactId: string }> },

@@ -9,9 +9,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/artifacts/generate — { lessonId, formatType: 'notes_pdf'|'podcast_audio', persona?, corpusScope? }
- * Returns 202 { artifactId, jobId, status: 'pending' }; client polls
- * GET /api/artifacts/{artifactId} and mints a URL when ready.
+ * Initiates artifact generation for a released lesson.
+ *
+ * @returns An HTTP response containing the artifact and job identifiers with a pending status, or an error response for invalid, unauthorized, quota-exceeded, or failed requests.
  */
 export async function POST(req: Request) {
   try {

@@ -8,9 +8,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/artifacts/[artifactId]/retry (Phase 6, Track C3)
- * Mirrors the release retry endpoint: only the owner may retry, only failed
- * artifacts are retryable, and retry re-enqueues the same generation job.
+ * Re-enqueues a failed artifact for generation.
+ *
+ * @param req - The incoming request containing the student scope.
+ * @param params - Route parameters containing the artifact ID.
+ * @returns A pending artifact and job identifier, or an error response.
  */
 export async function POST(
   req: Request,

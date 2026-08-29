@@ -33,6 +33,13 @@ export interface SweepResult {
   orphanedArtifacts: number;
 }
 
+/**
+ * Reclaims stale jobs and fails exhausted jobs and orphaned artifacts.
+ *
+ * @param store - Storage operations used to inspect and update jobs and artifacts
+ * @param now - Timestamp used to calculate staleness cutoffs
+ * @returns Counts of reclaimed jobs, dead-lettered jobs, and orphaned artifacts
+ */
 export async function sweepStaleWork(store: WatchdogStore, now = Date.now()): Promise<SweepResult> {
   const result: SweepResult = { reclaimed: 0, deadLettered: 0, orphanedArtifacts: 0 };
 

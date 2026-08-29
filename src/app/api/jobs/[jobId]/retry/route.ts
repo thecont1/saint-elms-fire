@@ -7,11 +7,10 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/jobs/[jobId]/retry
+ * Requeues an authorized failed reading recommendation job for processing.
  *
- * Re-queue a failed reading_recommendation job so the runner can retry the
- * SOFT post-release enrichment. This preserves the completed release and relies
- * on the idempotent writes in the recommendation handler.
+ * @param params - Route parameters containing the job identifier
+ * @returns A response containing the requeued job details
  */
 export async function POST(
   req: Request,

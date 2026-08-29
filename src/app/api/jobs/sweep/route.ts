@@ -5,7 +5,11 @@ import { resolveRequestIdentity, requireAdmin, authorizationResponse } from '@/l
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** POST /api/jobs/sweep — admin/dev forced watchdog sweep + runner kick. */
+/**
+ * Runs an administrator-authorized artifact watchdog sweep and starts pending artifact jobs.
+ *
+ * @returns The watchdog sweep result in a JSON response.
+ */
 export async function POST(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);

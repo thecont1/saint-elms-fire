@@ -27,6 +27,11 @@ export async function GET(req: Request) {
   }
 }
 
+/**
+ * Generates the requested lesson format from lesson data or supplied Markdown content.
+ *
+ * @returns A JSON response containing the generated format or an error status.
+ */
 export async function POST(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);

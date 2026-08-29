@@ -28,6 +28,13 @@ type FormatTab = 'raw_markdown' | 'structured_notes' | 'podcast_dialogue' | 'vid
  *  client too; the server enforces its own 75s generation deadline. */
 const CLIENT_GENERATION_DEADLINE_MS = 90_000;
 
+/**
+ * Displays a lesson with its original markdown and generated alternative formats.
+ *
+ * @param lesson - The lesson content and metadata to display and transform
+ * @param studentId - The student whose generated formats are loaded and saved
+ * @returns The lesson format viewer interface
+ */
 export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps) {
   const [activeTab, setActiveTab] = useState<FormatTab>('raw_markdown');
   const [formats, setFormats] = useState<Record<string, GeneratedFormat>>({});
