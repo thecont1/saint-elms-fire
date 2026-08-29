@@ -117,7 +117,10 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
   }, [lessonId, studentId, schedule]);
 
   const refreshRef = useRef(refresh);
-  refreshRef.current = refresh;
+  
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
 
   useEffect(() => {
     void refresh();

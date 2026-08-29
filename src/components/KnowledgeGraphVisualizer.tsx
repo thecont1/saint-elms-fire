@@ -103,6 +103,13 @@ export function KnowledgeGraphVisualizer({
     return degrees;
   }, [activeEdges]);
 
+  useEffect(() => {
+    if (selectedNode) {
+      const isVisible = filteredNodes.some((n) => n.concept === selectedNode.concept);
+      if (!isVisible) setSelectedNode(null);
+    }
+  }, [filteredNodes, selectedNode]);
+
   // ADR-007 borrow (relex): ego-network highlight — selecting a star fades
   // everything outside its 1-hop neighborhood.
   const egoNetwork = useMemo(() => {
@@ -258,10 +265,14 @@ export function KnowledgeGraphVisualizer({
                 (selectedNode.concept.toLowerCase() === edge.sourceConcept.toLowerCase() ||
                   selectedNode.concept.toLowerCase() === edge.targetConcept.toLowerCase());
 
+              const inEgoNetwork =
+                egoNetwork?.has(edge.sourceConcept.toLowerCase().trim()) &&
+                egoNetwork?.has(edge.targetConcept.toLowerCase().trim());
+
               return (
                 <g
                   key={edge.id || `${edge.sourceConcept}-${edge.targetConcept}`}
-                  opacity={egoNetwork ? (isHighlighted ? 1 : 0.15) : 1}
+                  opacity={egoNetwork ? (inEgoNetwork ? 1 : 0.15) : 1}
                   className="transition-opacity duration-500"
                 >
                   <line
@@ -308,7 +319,7 @@ export function KnowledgeGraphVisualizer({
                   transform={`translate(${pos.x}, ${pos.y})`}
                   onClick={() => handleNodeClick(node)}
                   opacity={inEgo ? 1 : 0.15}
-                  className="cursor-pointer transition-transform hover:scale-110 transition-opacity duration-500"
+                  className="cursor-pointer transition-all hover:scale-110 duration-500"
                 >
                   {/* Outer glow ring */}
                   {isSelected && (
