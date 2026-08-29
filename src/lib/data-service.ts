@@ -842,12 +842,16 @@ export const DataService = {
     });
   },
 
-  async markArtifactFailed(id: string, category: ArtifactErrorCategory): Promise<GeneratedArtifact> {
+  async markArtifactFailed(id: string, category: ArtifactErrorCategory, expectedStatus?: 'pending' | 'running'): Promise<GeneratedArtifact> {
     const ref = db.collection('generated_artifacts').doc(id);
     return db.runTransaction(async transaction => {
       const snap = await transaction.get(ref);
       if (!snap.exists) throw new Error('Artifact not found');
-      const updated = failArtifactRecord(sanitizeDoc<GeneratedArtifact>(snap), category);
+      const artifact = sanitizeDoc<GeneratedArtifact>(snap);
+      if (expectedStatus && artifact.status !== expectedStatus) {
+        return artifact;
+      }
+      const updated = failArtifactRecord(artifact, category);
       transaction.set(ref, updated);
       return updated;
     });
@@ -1244,18 +1248,35 @@ export const DataService = {
       .filter((artifact) => artifact.createdAt < cutoffIso);
   },
 
-  async resetJobToPending(id: string): Promise<void> {
-    await db.collection('jobs').doc(id).update({
-      status: 'pending',
-      startedAt: FieldValue.delete(),
+  async resetJobToPending(job: JobRecord): Promise<void> {
+    const ref = db.collection('jobs').doc(job.id);
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) return;
+      const current = sanitizeDoc<JobRecord>(snap);
+      if (current.status === 'running' && current.attempts === job.attempts && current.startedAt === job.startedAt) {
+        transaction.update(ref, {
+          status: 'pending',
+          startedAt: FieldValue.delete(),
+        });
+      }
     });
   },
 
-  async failJobAsLost(id: string): Promise<void> {
-    await db.collection('jobs').doc(id).set(
-      { status: 'failed', errorCategory: 'job_lost', completedAt: new Date().toISOString() },
-      { merge: true },
-    );
+  async failJobAsLost(job: JobRecord): Promise<void> {
+    const ref = db.collection('jobs').doc(job.id);
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists) return;
+      const current = sanitizeDoc<JobRecord>(snap);
+      if (current.status === 'running' && current.attempts === job.attempts && current.startedAt === job.startedAt) {
+        transaction.set(
+          ref,
+          { status: 'failed', errorCategory: 'job_lost', completedAt: new Date().toISOString() },
+          { merge: true },
+        );
+      }
+    });
   },
 
   // MULTI-FORMAT GENERATION ARTIFACTS

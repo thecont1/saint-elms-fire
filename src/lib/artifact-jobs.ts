@@ -192,9 +192,9 @@ export function createFirestoreWatchdogStore(): WatchdogStore {
     listRunningJobs: () => DataService.listRunningJobs(),
     listPendingArtifactsOlderThan: (cutoff) => DataService.listPendingArtifactsOlderThan(cutoff),
     getJob: (id) => DataService.getJob(id),
-    resetJobToPending: (id) => DataService.resetJobToPending(id),
-    failJob: (id) => DataService.failJobAsLost(id),
-    failArtifact: (id) => DataService.markArtifactFailed(id, 'job_lost').then(() => {}),
+    resetJobToPending: (job) => DataService.resetJobToPending(job),
+    failJob: (job) => DataService.failJobAsLost(job),
+    failArtifact: (id, expectedStatus) => DataService.markArtifactFailed(id, 'job_lost', expectedStatus).then(() => {}),
   };
 }
 

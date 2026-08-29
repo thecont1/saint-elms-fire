@@ -15,18 +15,18 @@ function makeStore(state: { jobs: JobRecord[]; artifacts: GeneratedArtifact[] })
     async getJob(id) {
       return state.jobs.find((j) => j.id === id) ?? null;
     },
-    async resetJobToPending(id) {
-      calls.push(`reset:${id}`);
-      const job = state.jobs.find((j) => j.id === id);
-      if (job) {
-        job.status = 'pending';
-        job.startedAt = undefined;
+    async resetJobToPending(job) {
+      calls.push(`reset:${job.id}`);
+      const j = state.jobs.find((x) => x.id === job.id);
+      if (j) {
+        j.status = 'pending';
+        j.startedAt = undefined;
       }
     },
-    async failJob(id) {
-      calls.push(`failJob:${id}`);
-      const job = state.jobs.find((j) => j.id === id);
-      if (job) job.status = 'failed';
+    async failJob(job) {
+      calls.push(`failJob:${job.id}`);
+      const j = state.jobs.find((x) => x.id === job.id);
+      if (j) j.status = 'failed';
     },
     async failArtifact(id) {
       calls.push(`failArtifact:${id}`);

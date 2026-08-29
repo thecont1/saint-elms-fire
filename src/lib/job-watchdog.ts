@@ -22,9 +22,9 @@ export interface WatchdogStore {
   listRunningJobs(): Promise<JobRecord[]>;
   listPendingArtifactsOlderThan(cutoffIso: string): Promise<GeneratedArtifact[]>;
   getJob(id: string): Promise<JobRecord | null>;
-  resetJobToPending(id: string): Promise<void>;
-  failJob(id: string): Promise<void>;
-  failArtifact(id: string): Promise<void>;
+  resetJobToPending(job: JobRecord): Promise<void>;
+  failJob(job: JobRecord): Promise<void>;
+  failArtifact(id: string, expectedStatus?: 'pending'): Promise<void>;
 }
 
 export interface SweepResult {
@@ -40,11 +40,11 @@ export async function sweepStaleWork(store: WatchdogStore, now = Date.now()): Pr
   for (const job of await store.listRunningJobs()) {
     if (!job.startedAt || job.startedAt >= leaseCutoff) continue;
     if (job.attempts + 1 >= MAX_JOB_ATTEMPTS) {
-      await store.failJob(job.id);
-      if (job.payload.artifactId) await store.failArtifact(job.payload.artifactId);
+      await store.failJob(job);
+      if (job.payload.artifactId) await store.failArtifact(job.payload.artifactId, 'pending');
       result.deadLettered += 1;
     } else {
-      await store.resetJobToPending(job.id);
+      await store.resetJobToPending(job);
       result.reclaimed += 1;
     }
   }
@@ -53,7 +53,7 @@ export async function sweepStaleWork(store: WatchdogStore, now = Date.now()): Pr
   for (const artifact of await store.listPendingArtifactsOlderThan(artifactCutoff)) {
     const job = artifact.jobId ? await store.getJob(artifact.jobId) : null;
     if (job && (job.status === 'pending' || job.status === 'running')) continue;
-    await store.failArtifact(artifact.id);
+    await store.failArtifact(artifact.id, 'pending');
     result.orphanedArtifacts += 1;
   }
 
