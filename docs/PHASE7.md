@@ -205,24 +205,40 @@ Sarvam fallback adapter (C1 safety net). Both stream through the owner-only `/st
 6. Quiz: take one if the models are healthy; otherwise show the honest failure card.
 7. Close on `/health?deep=true` and the Socratic challenge card.
 
-**C3 single-instance guard (pending approval — touches the live deployment):**
+**C3 single-instance guard (applied 2026-08-30):** `--max-instances=1` set on the service.
+Optional for the judging window: `--min-instances=1` (revert after if cost matters).
 
-```bash
-gcloud run services update saint-elms-fire --region=asia-south1 --max-instances=1
-# optional, judging window only:
-gcloud run services update saint-elms-fire --region=asia-south1 --min-instances=1
-```
+**Deployment notes (2026-08-30, revision serving 100%):**
+
+- `gcloud run deploy --source=.` fails in this project: Cloud Build's default compute SA
+  lacks the run-sources bucket permission. Working path: local
+  `docker build --platform linux/amd64` (Cloud Run rejects the arm64 manifest from an
+  Apple-silicon build), push to
+  `asia-south1-docker.pkg.dev/saint-elms-fire/cloud-run-source-deploy/saint-elms-fire`,
+  then `gcloud run deploy --image=…` with the PHASE5 flags.
+- The Secret Manager API was disabled and neither secret existed; both were created
+  (`gemini-api-key` from the local key, `saint-elms-auth-proxy-secret` freshly generated —
+  retrieve via `gcloud secrets versions access latest --secret=saint-elms-auth-proxy-secret`
+  and configure the upstream proxy with it). Runtime SA granted
+  `roles/secretmanager.secretAccessor`.
+- Cloud Run dry run caught a real bug: the stream-fallback URL was built from the
+  container's `localhost:8080` request URL; fixed to use `x-forwarded-proto`/`x-forwarded-host`
+  (`a757637`).
+- Verified through trusted-proxy headers + invoker identity token: deep health `ok`
+  (Gemini up; Sarvam text probe flapped down at check time), artifacts list returns job
+  state, `/url` falls back to the stream route (runtime SA has no token-creator role).
 
 **Submission-window checklist:**
 
-- [ ] Deploy current tree to Cloud Run (pending approval).
-- [ ] Apply C3 max-instances=1.
-- [ ] Re-run the C2 table against the Cloud Run URL (artifacts stream via `/stream` if the
-      runtime SA lacks `iam.serviceAccountTokenCreator`; signed URLs otherwise).
+- [x] Deploy current tree to Cloud Run (2026-08-30, image path; see deployment notes).
+- [x] Apply C3 max-instances=1.
+- [x] Verify against the Cloud Run URL: deep health ok, artifacts list with job state,
+      `/url` → `/stream` delivers the ready podcast WAV through the auth'd route.
 - [ ] Retry live podcast/PDF generation once the Gemini flap subsides; staged artifacts remain
       the fallback.
 - [ ] Record the demo video from the script above.
-- [ ] Revert min-instances after judging if cost matters.
+- [ ] Configure the upstream proxy with the new `saint-elms-auth-proxy-secret` value.
+- [ ] Revert min-instances after judging if it was set.
 
 ### Verification (this phase)
 
