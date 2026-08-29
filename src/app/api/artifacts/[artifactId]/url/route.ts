@@ -39,7 +39,11 @@ export async function GET(
       // User-ADC credentials (dev) and SAs without iam.serviceAccountTokenCreator
       // cannot mint V4 signatures; serve via the owner-only stream route instead.
       console.warn(`signed_url_unavailable falling back to stream artifactId=${artifactId}`);
-      const origin = new URL(req.url).origin;
+      // Behind Cloud Run the container's own req.url is localhost:8080; the
+      // public origin lives in the forwarded headers.
+      const proto = req.headers.get('x-forwarded-proto');
+      const host = req.headers.get('x-forwarded-host');
+      const origin = proto && host ? `${proto}://${host}` : new URL(req.url).origin;
       return NextResponse.json({
         url: `${origin}/api/artifacts/${artifactId}/stream?studentId=${encodeURIComponent(studentId)}`,
         mimeType: artifact.mimeType,
