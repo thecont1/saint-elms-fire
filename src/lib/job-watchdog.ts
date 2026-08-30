@@ -19,12 +19,12 @@ export const ARTIFACT_PENDING_DEADLINE_MS = 6 * 60_000;
 export const WATCHDOG_CATEGORY: JobErrorCategory & ArtifactErrorCategory = 'job_lost';
 
 export interface WatchdogStore {
-  listRunningJobs(): Promise<JobRecord[]>;
+  listActiveJobs(): Promise<JobRecord[]>;
   listPendingArtifactsOlderThan(cutoffIso: string): Promise<GeneratedArtifact[]>;
   getJob(id: string): Promise<JobRecord | null>;
   resetJobToPending(job: JobRecord): Promise<void>;
-  failJob(job: JobRecord): Promise<void>;
-  failArtifact(id: string, expectedStatus?: 'pending'): Promise<void>;
+  failJob(job: JobRecord, category?: JobErrorCategory): Promise<void>;
+  failArtifact(id: string, expectedStatus?: 'pending', category?: ArtifactErrorCategory): Promise<void>;
 }
 
 export interface SweepResult {
@@ -44,15 +44,29 @@ export async function sweepStaleWork(store: WatchdogStore, now = Date.now()): Pr
   const result: SweepResult = { reclaimed: 0, deadLettered: 0, orphanedArtifacts: 0 };
 
   const leaseCutoff = new Date(now - JOB_LEASE_MS).toISOString();
-  for (const job of await store.listRunningJobs()) {
-    if (!job.startedAt || job.startedAt >= leaseCutoff) continue;
-    if (job.attempts + 1 >= MAX_JOB_ATTEMPTS) {
-      await store.failJob(job);
-      if (job.payload.artifactId) await store.failArtifact(job.payload.artifactId, 'pending');
+  for (const job of await store.listActiveJobs()) {
+    const isTimeout =
+      now - Date.parse(job.createdAt) > (job.kind === 'podcast_audio' ? 120_000 : 60_000);
+
+    if (isTimeout) {
+      await store.failJob(job, 'timeout');
+      if (job.payload.artifactId) {
+        await store.failArtifact(job.payload.artifactId, 'pending', 'timeout');
+      }
       result.deadLettered += 1;
-    } else {
-      await store.resetJobToPending(job);
-      result.reclaimed += 1;
+      continue;
+    }
+
+    if (job.status === 'running') {
+      if (!job.startedAt || job.startedAt >= leaseCutoff) continue;
+      if (job.attempts + 1 >= MAX_JOB_ATTEMPTS) {
+        await store.failJob(job);
+        if (job.payload.artifactId) await store.failArtifact(job.payload.artifactId, 'pending');
+        result.deadLettered += 1;
+      } else {
+        await store.resetJobToPending(job);
+        result.reclaimed += 1;
+      }
     }
   }
 

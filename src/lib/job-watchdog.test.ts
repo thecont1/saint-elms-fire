@@ -6,8 +6,8 @@ import type { GeneratedArtifact } from './artifacts';
 function makeStore(state: { jobs: JobRecord[]; artifacts: GeneratedArtifact[] }) {
   const calls: string[] = [];
   const store: WatchdogStore = {
-    async listRunningJobs() {
-      return state.jobs.filter((j) => j.status === 'running');
+    async listActiveJobs() {
+      return state.jobs.filter((j) => j.status === 'running' || j.status === 'pending');
     },
     async listPendingArtifactsOlderThan(cutoffIso) {
       return state.artifacts.filter((a) => a.status === 'pending' && a.createdAt < cutoffIso);
@@ -46,7 +46,7 @@ const job = (over: Partial<JobRecord>): JobRecord => ({
   payload: { artifactId: 'art-1' },
   status: 'running',
   attempts: 1,
-  createdAt: new Date(0).toISOString(),
+  createdAt: new Date().toISOString(),
   ...over,
 });
 
@@ -108,6 +108,19 @@ describe('sweepStaleWork', () => {
     expect(calls).toEqual(['failArtifact:art-1']);
   });
 
+  test('fails a stuck job due to overall timeout', async () => {
+    const now = Date.now();
+    const stuck = job({
+      createdAt: new Date(now - 121_000).toISOString(),
+      startedAt: new Date(now - 121_000).toISOString(),
+      status: 'running',
+      kind: 'podcast_audio',
+    });
+    const { store, calls } = makeStore({ jobs: [stuck], artifacts: [] });
+    const result = await sweepStaleWork(store, now);
+    expect(result).toEqual({ reclaimed: 0, deadLettered: 1, orphanedArtifacts: 0 });
+    expect(calls).toEqual(['failJob:job-1', 'failArtifact:art-1']);
+  });
   test('leaves a pending artifact with a live job alone', async () => {
     const now = Date.now();
     const live = job({ status: 'running', startedAt: new Date(now - 1000).toISOString() });

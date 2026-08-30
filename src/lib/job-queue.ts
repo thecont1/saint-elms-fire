@@ -21,6 +21,7 @@ export type JobErrorCategory =
   | 'generation_failed'
   | 'storage_write_failed'
   | 'job_lost'
+  | 'timeout'
   | 'unknown';
 
 export interface JobRecord {
@@ -123,15 +124,27 @@ export function createJobRunner(store: JobStore, handlers: JobHandlers): JobRunn
       return;
     }
     draining = true;
-    void drainOnce()
-      .catch((error) => console.error('job_drain_error', error instanceof Error ? error.message : String(error)))
-      .finally(() => {
+    const processQueue = async () => {
+      try {
+        await drainOnce();
+      } catch (error) {
+        console.error('job_drain_error', error instanceof Error ? error.message : String(error));
+      } finally {
         draining = false;
         if (kickedWhileDraining) {
           kickedWhileDraining = false;
           kick();
         }
-      });
+      }
+    };
+    
+    // Fix 1 Option B (Cloud Run Target)
+    // Cloud Run containers stay alive for active requests but background work
+    // can be throttled or killed when the HTTP response returns.
+    // Instead of directly running drainOnce synchronously and blocking the 202,
+    // or using next/server unstable_after (which only applies to Vercel/Edge context),
+    // we use a persistent timer-based dispatch.
+    setTimeout(processQueue, 0);
   }
 
   return { drainOnce, kick };

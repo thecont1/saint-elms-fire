@@ -24,6 +24,7 @@ interface ArtifactRecord {
   formatType: 'notes_pdf' | 'podcast_audio';
   status: string;
   createdAt: string;
+  updatedAt?: string;
   error?: string;
   job?: ArtifactJobState;
   sources?: Array<{ kind: string; refId: string; label?: string }>;
@@ -88,7 +89,13 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
       const next = { ...prev };
       for (const artifact of serverArtifacts) {
         const existing = next[artifact.formatType];
-        if (!existing || Date.parse(artifact.createdAt) > Date.parse(existing.createdAt)) {
+        const artifactTime = Date.parse(artifact.updatedAt ?? artifact.createdAt);
+        const existingTime = existing ? Date.parse(existing.updatedAt ?? existing.createdAt) : 0;
+        const shouldReplace =
+          !existing ||
+          artifact.status !== existing.status ||
+          artifactTime > existingTime;
+        if (shouldReplace) {
           next[artifact.formatType] = artifact;
         }
       }
@@ -99,7 +106,13 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
       for (const artifact of serverArtifacts) {
         if (artifact.status !== 'ready') continue;
         const existing = next[artifact.formatType];
-        if (!existing || Date.parse(artifact.createdAt) > Date.parse(existing.createdAt)) {
+        const artifactTime = Date.parse(artifact.updatedAt ?? artifact.createdAt);
+        const existingTime = existing ? Date.parse(existing.updatedAt ?? existing.createdAt) : 0;
+        const shouldReplace =
+          !existing ||
+          artifact.status !== existing.status ||
+          artifactTime > existingTime;
+        if (shouldReplace) {
           next[artifact.formatType] = artifact;
         }
       }
@@ -108,8 +121,10 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
 
     if (serverArtifacts.some((artifact) => artifact.status === 'pending')) {
       if (!pendingSince.current) pendingSince.current = Date.now();
-      if (Date.now() - pendingSince.current > POLL_DEADLINE_MS) {
+      // Client-side safety net (Fix 3)
+      if (Date.now() - pendingSince.current > 45_000) {
         setPollNotice('taking-longer');
+        // Stop aggressive polling, fallback to slow poll or stop
         schedule(POLL_MAX_MS);
       } else {
         pollInterval.current = pollInterval.current === POLL_INITIAL_MS ? 5000 : POLL_MAX_MS;
@@ -118,7 +133,8 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
     } else {
       pendingSince.current = null;
       pollInterval.current = POLL_INITIAL_MS;
-      setPollNotice((current) => (current === 'taking-longer' ? null : current));
+      setPollNotice(null);
+      // Terminal state reached: do not schedule next poll
     }
   }, [lessonId, studentId, schedule]);
 
@@ -211,6 +227,24 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
             className="font-bold text-beacon-700 hover:text-beacon-900 underline underline-offset-2"
           >
             Check status
+          </button>
+          <button
+            onClick={() => {
+              stopWaiting();
+              // Resetting pending states to failed locally so the UI shows the Retry button
+              setArtifacts(prev => {
+                const next = { ...prev };
+                for (const key of Object.keys(next)) {
+                  if (next[key].status === 'pending') {
+                    next[key] = { ...next[key], status: 'failed', error: 'timeout' };
+                  }
+                }
+                return next;
+              });
+            }}
+            className="font-bold text-beacon-700 hover:text-beacon-900 underline underline-offset-2"
+          >
+            Assume failed & Retry
           </button>
         </div>
       )}

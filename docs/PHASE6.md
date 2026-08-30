@@ -43,10 +43,14 @@ Poll `GET /api/artifacts/{artifactId}`; when `status: 'ready'`, mint a
 is never serialized to clients. Binary payloads live in Cloud Storage under
 `artifacts/{studentId}/{lessonId}/{artifactId}.{ext}`.
 
+*(Note: This asynchronous pipeline belongs to the `ArtifactPanel` component. The synchronous text-only generation with the "Kindling the fire..." UI state belongs to `MultiFormatViewer` and `POST /api/generate-format`.)*
+
+- **Polling Contract:** The client evaluates polling updates by examining both `updatedAt` and `status` inequality, guaranteeing that every terminal state transition is rendered even if it occurs immediately after the artifact was created. Once `status` is terminal (`ready` or `failed`), polling stops.
 - **Quota:** 12 artifacts per student per rolling 24h → `429` with a bounded
   message.
+- **Timeout & Dead-letter:** Background tasks run decoupled from the HTTP response. A watchdog aggressively sweeps `pending` and `running` jobs: anything exceeding its deadline (60s notes, 120s podcast) is dead-lettered and marked `failed` with category `timeout`.
 - **Failure:** artifacts fail with a bounded category (`tts_unavailable`,
-  `pdf_render_failed`, …). The text script/notes remain consumable as
+  `pdf_render_failed`, `timeout`, …). The text script/notes remain consumable as
   fallback.
 - **Retry:** `POST /api/artifacts/{artifactId}/retry` — owner-only,
   release-gated, `409` unless the artifact is `failed`. Re-enqueues the same

@@ -31,7 +31,7 @@ import {
   type GeneratedArtifact,
 } from './artifacts';
 import { ARTIFACTS_PER_DAY, ArtifactQuotaError } from './quotas';
-import { buildPendingJob, type JobRecord, type JobStore } from './job-queue';
+import { buildPendingJob, type JobRecord, type JobStore, type JobErrorCategory } from './job-queue';
 import type { LibraryItem, LibraryItemInput } from './library-catalog';
 import type { RecommendedReading } from './reading-recommendation';
 import type { SharedItem, SharedItemInput } from './shared-items';
@@ -1241,6 +1241,11 @@ export const DataService = {
     return snap.docs.map((doc) => sanitizeDoc<JobRecord>(doc));
   },
 
+  async listPendingJobs(): Promise<JobRecord[]> {
+    const snap = await db.collection('jobs').where('status', '==', 'pending').get();
+    return snap.docs.map((doc) => sanitizeDoc<JobRecord>(doc));
+  },
+
   async listPendingArtifactsOlderThan(cutoffIso: string): Promise<GeneratedArtifact[]> {
     const snap = await db.collection('generated_artifacts').where('status', '==', 'pending').get();
     return snap.docs
@@ -1263,16 +1268,16 @@ export const DataService = {
     });
   },
 
-  async failJobAsLost(job: JobRecord): Promise<void> {
+  async failJobAsLost(job: JobRecord, category?: JobErrorCategory): Promise<void> {
     const ref = db.collection('jobs').doc(job.id);
     await db.runTransaction(async (transaction) => {
       const snap = await transaction.get(ref);
       if (!snap.exists) return;
       const current = sanitizeDoc<JobRecord>(snap);
-      if (current.status === 'running' && current.attempts === job.attempts && current.startedAt === job.startedAt) {
+      if ((current.status === 'running' || current.status === 'pending') && current.attempts === job.attempts) {
         transaction.set(
           ref,
-          { status: 'failed', errorCategory: 'job_lost', completedAt: new Date().toISOString() },
+          { status: 'failed', errorCategory: category || 'job_lost', completedAt: new Date().toISOString() },
           { merge: true },
         );
       }

@@ -17,6 +17,7 @@ export const ARTIFACT_ERROR_CATEGORIES = [
   'storage_write_failed',
   'quota_exceeded',
   'job_lost',
+  'timeout',
   'unknown',
 ] as const;
 export type ArtifactErrorCategory = (typeof ARTIFACT_ERROR_CATEGORIES)[number];
@@ -45,6 +46,7 @@ export interface GeneratedArtifact {
   /** Backing job id for this artifact; used for idempotent create and polling. */
   jobId?: string;
   createdAt: string;
+  updatedAt?: string;
   completedAt?: string;
   error?: ArtifactErrorCategory;
 }
@@ -103,11 +105,12 @@ export function buildPendingArtifact(input: {
     status: 'pending',
     storagePath: artifactStoragePath(input.studentId, input.lessonId, input.id, meta.ext),
     mimeType: meta.mimeType,
-    sources: input.sources,
     persona: input.persona,
     corpusScope: input.corpusScope,
+    sources: input.sources,
     jobId: input.jobId,
     createdAt: input.requestedAt,
+    updatedAt: input.requestedAt,
   };
 }
 
@@ -135,7 +138,7 @@ export function completeArtifact(
   completedAt: string,
   sources?: ArtifactSource[],
 ): GeneratedArtifact {
-  return { ...artifact, status: 'ready', sizeBytes, completedAt, sources: sources ?? artifact.sources, error: undefined };
+  return { ...artifact, status: 'ready', sizeBytes, completedAt, updatedAt: completedAt, sources: sources ?? artifact.sources, error: undefined };
 }
 
 /**
@@ -147,7 +150,7 @@ export function retryArtifact(artifact: GeneratedArtifact, retriedAt: string): G
   if (artifact.status !== 'failed') {
     throw new Error('Only failed artifacts can be retried');
   }
-  return { ...artifact, status: 'pending', error: undefined, completedAt: undefined, sizeBytes: undefined, createdAt: retriedAt };
+  return { ...artifact, status: 'pending', error: undefined, completedAt: undefined, sizeBytes: undefined, createdAt: retriedAt, updatedAt: retriedAt };
 }
 
 export function failArtifact(
@@ -157,5 +160,5 @@ export function failArtifact(
   if (!ARTIFACT_ERROR_CATEGORIES.includes(category)) {
     throw new Error('Artifact failure category must be one of the bounded categories');
   }
-  return { ...artifact, status: 'failed', error: category };
+  return { ...artifact, status: 'failed', error: category, updatedAt: new Date().toISOString() };
 }

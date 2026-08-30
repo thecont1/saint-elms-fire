@@ -194,12 +194,16 @@ let lastSweepAt = 0;
  */
 export function createFirestoreWatchdogStore(): WatchdogStore {
   return {
-    listRunningJobs: () => DataService.listRunningJobs(),
+    listActiveJobs: async () => {
+      const running = await DataService.listRunningJobs();
+      const pending = await DataService.listPendingJobs();
+      return [...running, ...pending];
+    },
     listPendingArtifactsOlderThan: (cutoff) => DataService.listPendingArtifactsOlderThan(cutoff),
     getJob: (id) => DataService.getJob(id),
     resetJobToPending: (job) => DataService.resetJobToPending(job),
-    failJob: (job) => DataService.failJobAsLost(job),
-    failArtifact: (id, expectedStatus) => DataService.markArtifactFailed(id, 'job_lost', expectedStatus).then(() => {}),
+    failJob: (job, category) => DataService.failJobAsLost(job, category),
+    failArtifact: (id, expectedStatus, category) => DataService.markArtifactFailed(id, category || 'job_lost', expectedStatus).then(() => {}),
   };
 }
 
