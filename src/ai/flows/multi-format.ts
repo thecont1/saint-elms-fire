@@ -104,10 +104,9 @@ export const regenerateFormat = ai.defineFlow(
     const title = `${titlePrefix}: ${sourceTitle}`;
 
     const response = await withDeadline(
-      (signal) => ai.generate({
+      ai.generate({
         system: 'You are Saint Elms Fire’s courseware adaptation engine. Preserve source meaning exactly; introduce no external facts.',
         prompt: `${formatInstructions(input.formatType, input.persona)}\n\nSOURCE MARKDOWN:\n${corpusMarkdown}`,
-        config: { abortSignal: signal }
       }),
       GENERATION_DEADLINE_MS,
       'format generation',
