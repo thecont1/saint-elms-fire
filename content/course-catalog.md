@@ -5,8 +5,8 @@ institution: Christ University, Bangalore
 batch: 2023–2027
 generatedAt: 2026-08-31
 totalSemesters: 6
-totalCourses: 38
-totalLessons: 281
+totalCourses: 41
+totalLessons: 303
 sourceType: authored-courseware
 ---
 
@@ -23,8 +23,8 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 
 | subjectId | subjectName | Semesters | Courses | Lessons |
 |-----------|-------------|-----------|---------|---------|
-| physics | Physics | 1–6 | 24 | 161 |
-| mathematics | Mathematics | 1–5 | 8 | 69 |
+| physics | Physics | 1–6 | 25 | 171 |
+| mathematics | Mathematics | 1–6 | 10 | 81 |
 | astrophysics | Astrophysics (minor) | 1–4 | 4 | 36 |
 | computational-methods | Computational Methods | 4 | 1 | 9 |
 | university-support | University Support and Student Information | all | 1 | 6 |
@@ -207,6 +207,12 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 4 | mathematics | Abstract Algebra | Rings and Fields | Rings, Subrings and Integral Domains | abstract-algebra-m3-l1 | intermediate | 50 |
 | 4 | mathematics | Abstract Algebra | Rings and Fields | Ideals, Quotient Rings and Homomorphisms | abstract-algebra-m3-l2 | advanced | 55 |
 | 4 | mathematics | Abstract Algebra | Rings and Fields | Fields, Field Extensions and Finite Fields | abstract-algebra-m3-l3 | advanced | 55 |
+| 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Linear Systems, Factorisations and the Condition Number | mathematics-lab-using-python-ii-m1-l1 | intermediate | 50 |
+| 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Eigenvalues by Iteration and by Library — Normal Modes of a Chain | mathematics-lab-using-python-ii-m1-l2 | intermediate | 50 |
+| 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Initial-Value Problems — Euler, Runge–Kutta and the Order of Accuracy | mathematics-lab-using-python-ii-m1-l3 | intermediate | 50 |
+| 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Boundary Value Problems and the Heat Equation — Stability of FTCS | mathematics-lab-using-python-ii-m1-l4 | intermediate | 50 |
+| 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Numerical Integration — Orders, Extrapolation and Improper Integrals | mathematics-lab-using-python-ii-m1-l5 | intermediate | 50 |
+| 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Capstone — A Reproducible Computational Experiment, End to End | mathematics-lab-using-python-ii-m1-l6 | advanced | 55 |
 | 4 | physics | Communication Electronics Lab | Modulation, Filters, and Signal Analysis | Amplitude Modulation and Demodulation | communication-electronics-lab-m1-l1 | intermediate | 55 |
 | 4 | physics | Communication Electronics Lab | Modulation, Filters, and Signal Analysis | Frequency Modulation and the FM Detector | communication-electronics-lab-m1-l2 | intermediate | 55 |
 | 4 | physics | Communication Electronics Lab | Modulation, Filters, and Signal Analysis | Filters — Low-Pass, High-Pass, and Band-Pass | communication-electronics-lab-m1-l3 | intermediate | 50 |
@@ -270,6 +276,18 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 5 | physics | Solid State Physics Lab | Crystal Structure, Conductivity, and Semiconductors | Magnetic Susceptibility and the Curie-Weiss Law | solid-state-physics-lab-m1-l4 | advanced | 50 |
 | 5 | physics | Solid State Physics Lab | Crystal Structure, Conductivity, and Semiconductors | Specific Heat of Solids and the Debye Model | solid-state-physics-lab-m1-l5 | advanced | 50 |
 | 5 | physics | Solid State Physics Lab | Crystal Structure, Conductivity, and Semiconductors | Data Analysis, Report Writing, and the Viva | solid-state-physics-lab-m1-l6 | advanced | 55 |
+| 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | The Singular Value Decomposition — Least Squares, Rank and Compression | mathematics-lab-using-python-iii-m1-l1 | intermediate | 50 |
+| 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Sparse Matrices and the Conjugate Gradient Method | mathematics-lab-using-python-iii-m1-l2 | intermediate | 50 |
+| 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Fourier Transforms — Spectra, Parseval and Filtering with the FFT | mathematics-lab-using-python-iii-m1-l3 | intermediate | 50 |
+| 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Optimisation — Gradient Descent, Newton and Nonlinear Fitting | mathematics-lab-using-python-iii-m1-l4 | intermediate | 50 |
+| 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Visualisation as Measurement — Fields, Diagnostics and Motion | mathematics-lab-using-python-iii-m1-l5 | intermediate | 50 |
+| 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Capstone — An Open Computational Investigation | mathematics-lab-using-python-iii-m1-l6 | advanced | 55 |
+| 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Quantum Eigenvalue Problems by Matrix Diagonalisation | advanced-quantum-mechanics-lab-m1-l1 | intermediate | 50 |
+| 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Bound States of the Finite Well — the Shooting Method | advanced-quantum-mechanics-lab-m1-l2 | intermediate | 50 |
+| 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Wavepacket Propagation — Time Evolution with Crank–Nicolson | advanced-quantum-mechanics-lab-m1-l3 | intermediate | 50 |
+| 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Driven Two-Level Systems — Rabi Oscillations and Resonance | advanced-quantum-mechanics-lab-m1-l4 | intermediate | 50 |
+| 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Scattering from a Barrier — Transmission, Reflection and Resonances | advanced-quantum-mechanics-lab-m1-l5 | intermediate | 50 |
+| 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Capstone — A Validated Quantum Simulation from Specification to Report | advanced-quantum-mechanics-lab-m1-l6 | advanced | 55 |
 | 6 | physics | Atomic and Molecular Physics | Hydrogen and Multi-Electron Atoms | Hydrogen Atom — Quantum Numbers and Orbitals | atomic-and-molecular-physics-m1-l1 | foundation | 55 |
 | 6 | physics | Atomic and Molecular Physics | Hydrogen and Multi-Electron Atoms | Spin, Fine Structure and the Zeeman Effect | atomic-and-molecular-physics-m1-l2 | intermediate | 55 |
 | 6 | physics | Atomic and Molecular Physics | Atomic Structure and Spectra | Atomic Spectra and Selection Rules | atomic-and-molecular-physics-m1-l3 | intermediate | 55 |
@@ -287,6 +305,10 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 6 | physics | Atomic and Molecular Physics Lab | Atomic Spectroscopy, Lasers, and Molecular Physics | Uncertainty, Advanced Data Analysis, and the Viva | atomic-and-molecular-physics-lab-m1-l6 | advanced | 55 |
 | 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Sensor Calibration and the Error Budget | electronic-instrumentation-lab-m1-l1 | intermediate | 50 |
 | 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Wheatstone Bridge and Strain Gauge Measurement | electronic-instrumentation-lab-m1-l2 | intermediate | 50 |
+| 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Operational Amplifier Circuits and Instrumentation Amplifiers | electronic-instrumentation-lab-m1-l3 | intermediate | 50 |
+| 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Active Filter Design and Frequency Response Measurement | electronic-instrumentation-lab-m1-l4 | intermediate | 50 |
+| 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Analog-to-Digital Conversion and Data Acquisition | electronic-instrumentation-lab-m1-l5 | intermediate | 50 |
+| 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Capstone — Complete Measurement Chain with Integrated Error Budget | electronic-instrumentation-lab-m1-l6 | advanced | 55 |
 | 6 | physics | Nuclear Physics | Nuclear Properties and Models | Nuclear Size, Mass and Binding Energy | nuclear-physics-m1-l1 | foundation | 50 |
 | 6 | physics | Nuclear Physics | Nuclear Properties and Models | Liquid Drop Model and Semi-empirical Mass Formula | nuclear-physics-m1-l2 | intermediate | 55 |
 | 6 | physics | Nuclear Physics | Nuclear Properties and Models | Shell Model and Magic Numbers | nuclear-physics-m1-l3 | advanced | 55 |

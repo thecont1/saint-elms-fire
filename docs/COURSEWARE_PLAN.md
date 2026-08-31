@@ -119,12 +119,14 @@ Catalog regenerated to 281 lessons / 38 courses and both manifest rows flipped t
 
 ### 3.4 WP-C: Remaining physics labs (22 lessons, completeness)
 
+**Status (2026-08-31): DONE — 22/22 lessons authored, committed on `content/wp-fdg`, manifest rows flipped to `released` with `contentPath` (releasedRows 37 → 41, manifestVersion 2026-08-31.4), catalog regenerated and `--check` clean (303 lessons / 41 courses).**
+
 | # | Lab | Sem | Lessons | Status | Notes |
 |---|-----|-----|---------|--------|-------|
-| 1 | Electronic Instrumentation Lab | 6 Option B | 6 | 2/6 done | L3–L6 deferred: sensor calibration, bridge circuits, amplification, filtering, ADC, error budgets. |
-| 2 | Advanced Quantum Mechanics Lab | 6 Option C | 6 | 0/6 | Laser spectroscopy, Mossbauer, NMR, EPR, entanglement, capstone. |
-| 3 | Mathematics Lab using Python II | 4 | 6 | 0/6 | Linear algebra, ODE/PDE numerical, integration, visualization, reproducibility. |
-| 4 | Mathematics Lab using Python III | 5/6 | 6 | 0/6 | Advanced numerical linear algebra, transforms, optimisation, visualisation, capstone. |
+| 1 | Electronic Instrumentation Lab | 6 Option B | 6 | 6/6 done | L3–L6 authored: sensor calibration, bridge circuits, amplification, filtering, ADC, error budgets. |
+| 2 | Advanced Quantum Mechanics Lab | 6 Option C | 6 | 6/6 done | Authored per the manifest notes (authoritative): eigenvalue problems, numerical quantum mechanics, driven dynamics, scattering, interpretation, capstone — not the instrument list originally sketched here. |
+| 3 | Mathematics Lab using Python II | 4 | 6 | 6/6 done | Linear algebra, ODE/PDE numerical, integration, visualization, reproducibility. |
+| 4 | Mathematics Lab using Python III | 5/6 | 6 | 6/6 done | Advanced numerical linear algebra, transforms, optimisation, visualisation, capstone. |
 
 ---
 
@@ -207,7 +209,7 @@ Each lesson file:
 - [x] WP-G: catalog + status + release-verified import — done except flap-gated release re-verification
 - [x] WP-F: university-support corpus (6 lessons) → run `ingest-friend-corpus.ts` (corpus pre-existed on `main`)
 - [x] WP-D: Astrophysics III + IV (18 lessons)
-- [ ] WP-C leftovers (22 lessons)
+- [x] WP-C leftovers (22 lessons) — 4 lab courses complete; manifest flipped to released; catalog at 303 lessons / 41 courses
 - [ ] WP-E math breadth (time-boxed)
 - [ ] Open PR per work package; merge when verified
 - [ ] Never touch `src/` in this branch
