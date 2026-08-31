@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { studentChatFlow } from '@/ai/flows/student-chat';
+import { guideChatFlow } from '@/ai/flows/guide-chat';
+import { friendChatFlow } from '@/ai/flows/friend-chat';
+import { philosopherChatFlow } from '@/ai/flows/philosopher-chat';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
 import { DataService } from '@/lib/data-service';
 
@@ -18,7 +20,11 @@ export async function POST(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);
     const body = await req.json();
-    const { question, courseId, history = [], topK } = body;
+    const { question, courseId, history = [], topK, persona } = body;
+    
+    if (!persona || !['guide', 'philosopher', 'friend'].includes(persona)) {
+      return NextResponse.json({ error: 'persona is required and must be one of: guide, philosopher, friend' }, { status: 400 });
+    }
 
     const studentId = resolveStudentScope(identity, body.studentId);
 
@@ -30,22 +36,45 @@ export async function POST(req: Request) {
 
     // Persist the student's question before generating the response.
     await DataService.saveChatMessage(studentId, {
+      persona,
       sender: 'student',
       content: question,
       timestamp: now,
       isGrounded: false,
     });
 
-    const result = await studentChatFlow({
-      studentId,
-      question,
-      courseId,
-      history,
-      topK,
-    });
+    let result;
+    if (persona === 'guide') {
+      result = await guideChatFlow({
+        studentId,
+        question,
+        courseId,
+        history,
+        topK,
+      });
+    } else if (persona === 'friend') {
+      result = await friendChatFlow({
+        studentId,
+        question,
+        history,
+        topK,
+      });
+    } else if (persona === 'philosopher') {
+      result = await philosopherChatFlow({
+        studentId,
+        question,
+        courseId,
+        history,
+        topK,
+      });
+    } else {
+      // placeholders for now
+      result = { answer: 'Not implemented', isGrounded: false, groundedSources: [] };
+    }
 
     // Persist the tutor's response.
     await DataService.saveChatMessage(studentId, {
+      persona,
       sender: 'tutor',
       content: result.answer,
       timestamp: new Date().toISOString(),

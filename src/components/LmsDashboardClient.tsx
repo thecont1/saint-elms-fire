@@ -439,7 +439,7 @@ export function LmsDashboardClient({
                 </div>
               </div>
 
-              {/* Socrates my Guide */}
+              {/* Chat Interface */}
               <div className="chart-card overflow-visible">
                 <div className="p-4 border-b border-beacon-100 bg-beacon-50/60">
                   <div className="flex items-start justify-between gap-3">
@@ -449,18 +449,18 @@ export function LmsDashboardClient({
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-display text-base font-semibold text-marine-900">
-                          Socrates my Guide
+                          Socratic Companions
                         </h3>
                         <p className="text-xs text-marine-500 leading-snug">
-                          Lit by your {releasedLessons.length} unlocked lesson(s)
+                          Your guides through the curriculum and beyond
                         </p>
                       </div>
                     </div>
-                    <InfoIcon text="Socrates my Guide is your AI study companion. It answers questions using only your unlocked lessons as context, so it won't reveal topics from future waypoints." />
+                    <InfoIcon text="Choose your persona: Guide for strictly course-bound concepts, Philosopher to connect to the broader world, or Friend for operations and logistics." />
                   </div>
                   <div className="flex items-center gap-1.5 mt-2.5">
                     <span className="chart-annotation px-2 py-0.5 rounded-full bg-white text-beacon-700 border border-beacon-200">
-                      Release-gated
+                      Multi-Persona
                     </span>
                     <span className="chart-annotation flex items-center gap-1 text-beacon-700 bg-white px-2 py-0.5 rounded-full border border-beacon-200">
                       <ShieldCheck className="w-3 h-3 text-beacon-500" />
@@ -535,7 +535,7 @@ export function LmsDashboardClient({
 
             <p className="text-[11px] text-marine-500 max-w-md leading-relaxed text-center">
               Trust the light, not the thunder. Reasoned knowledge, drip-fed with
-              courage, mapped as a constellation, and guarded by Socrates my Guide.
+              courage, mapped as a constellation, and guarded by Socrates.
             </p>
 
             <div className="chart-annotation flex items-center gap-4">

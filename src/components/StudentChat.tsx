@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, AlertTriangle, BookOpen, User, HelpCircle, Loader2 } from 'lucide-react';
+import { Send, AlertTriangle, BookOpen, User, HelpCircle, Loader2, Compass, Heart, Users } from 'lucide-react';
 import { CoronaMark } from '@/components/Navigation';
 import { InfoIcon } from '@/components/InfoIcon';
 import type { ChatMessage } from '@/lib/types';
@@ -12,47 +13,95 @@ interface StudentChatProps {
   initialQuery?: string;
 }
 
-function welcomeMessage(releasedLessonCount: number): ChatMessage {
-  return {
-    id: 'welcome',
-    sender: 'tutor',
-    content: `Welcome aboard! I am Socrates my Guide — your guide through these waters.\n\nI am grounded strictly in the **${releasedLessonCount} lesson(s)** unlocked on your chart so far. Ask me about system mechanics, consensus invariants, or conceptual proofs — and trust the light.`,
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    isGrounded: true,
-  };
-}
+type Persona = 'guide' | 'philosopher' | 'friend';
+
+const PERSONAS: Record<Persona, { title: string, subtitle: string, icon: React.FC<any>, samples: string[], welcome: string }> = {
+  guide: {
+    title: 'Socrates my Guide',
+    subtitle: 'ask within your charted course',
+    icon: BookOpen,
+    samples: ['Explain the key concepts of the latest module.', 'What does the reading say about this topic?'],
+    welcome: 'Welcome aboard! I am Socrates my Guide. I am grounded strictly in your unlocked lessons. Ask me about concepts and course mechanics.',
+  },
+  philosopher: {
+    title: 'Socrates my Philosopher',
+    subtitle: 'push beyond it',
+    icon: Compass,
+    samples: ['How does this connect to real-world systems?', 'What is the broader impact of this theory?'],
+    welcome: 'I am Socrates my Philosopher. I push you to explore beyond the syllabus. Where shall we wander today?',
+  },
+  friend: {
+    title: 'Socrates my Friend',
+    subtitle: 'everything around the course',
+    icon: Heart,
+    samples: ['When are office hours?', 'Where can I find the library?'],
+    welcome: "I am your course-ops buddy! I help with university support, timetables, and policies.",
+  }
+};
 
 export function StudentChat({
   studentId,
   releasedLessonCount,
   initialQuery = '',
 }: StudentChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [persona, setPersona] = useState<Persona>('guide');
+  const [messagesByPersona, setMessagesByPersona] = useState<Record<Persona, ChatMessage[]>>({
+    guide: [],
+    philosopher: [],
+    friend: []
+  });
+  
   const [input, setInput] = useState(initialQuery);
   const [isLoading, setIsLoading] = useState(false);
   const [unreleasedWarning, setUnreleasedWarning] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load persisted chat history on mount.
+  const messages = messagesByPersona[persona];
+
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const fetchHistory = async (p: Persona) => {
       try {
-        const res = await fetch(`/api/chat/history?studentId=${studentId}`, { cache: 'no-store' });
+        const res = await fetch(`/api/chat/history?studentId=${studentId}&persona=${p}`, { cache: 'no-store' });
         const data = await res.json();
         if (cancelled) return;
         const history: ChatMessage[] = data.messages ?? [];
         if (history.length > 0) {
-          setMessages(history);
+          setMessagesByPersona(prev => ({ ...prev, [p]: history }));
         } else {
-          setMessages([welcomeMessage(releasedLessonCount)]);
+          setMessagesByPersona(prev => ({ 
+            ...prev, 
+            [p]: [{
+              id: 'welcome',
+              sender: 'tutor',
+              content: PERSONAS[p].welcome,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+              isGrounded: true,
+            }] 
+          }));
         }
       } catch {
-        if (!cancelled) setMessages([welcomeMessage(releasedLessonCount)]);
+        if (!cancelled) {
+          setMessagesByPersona(prev => ({ 
+            ...prev, 
+            [p]: [{
+              id: 'welcome',
+              sender: 'tutor',
+              content: PERSONAS[p].welcome,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+              isGrounded: true,
+            }] 
+          }));
+        }
       }
-    })();
+    };
+    
+    fetchHistory('guide');
+    fetchHistory('philosopher');
+    fetchHistory('friend');
+    
     return () => { cancelled = true; };
-  }, [studentId]);
+  }, [studentId, releasedLessonCount]);
 
   useEffect(() => {
     if (initialQuery) {
@@ -61,239 +110,204 @@ export function StudentChat({
   }, [initialQuery]);
 
   useEffect(() => {
-    setMessages((prev) => {
-      if (prev.length === 1 && prev[0].id === 'welcome') {
-        return [welcomeMessage(releasedLessonCount)];
-      }
-      return prev;
-    });
-  }, [releasedLessonCount]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [messages, isLoading]);
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-  const handleSend = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const query = input.trim();
-    if (!query || isLoading) return;
-
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
       sender: 'student',
-      content: query,
+      persona,
+      content: input,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       isGrounded: false,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    setMessagesByPersona(prev => ({ ...prev, [persona]: [...prev[persona], userMessage] }));
     setInput('');
     setIsLoading(true);
     setUnreleasedWarning(null);
 
-    try {
-      const history = messages
-        .filter((m) => m.id !== 'welcome')
-        .map((m) => ({
-          role: (m.sender === 'student' ? 'student' : 'tutor') as 'student' | 'tutor',
-          content: m.content,
-        }));
+    const historyForModel = messages
+      .filter((m) => m.sender !== 'system')
+      .map((m) => ({ role: m.sender === 'student' ? 'user' : 'model', content: m.content }));
 
+    try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentId,
-          question: query,
-          history,
+          persona,
+          question: userMessage.content,
+          history: historyForModel,
+          topK: 6,
         }),
       });
 
+      if (!res.ok) throw new Error('Generation failed');
+
       const data = await res.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
+      
       if (data.unreleasedTopicsWarning) {
         setUnreleasedWarning(data.unreleasedTopicsWarning);
       }
 
-      const tutorMsg: ChatMessage = {
-        id: `tutor-${Date.now()}`,
+      const tutorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
         sender: 'tutor',
+        persona,
         content: data.answer,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         isGrounded: data.isGrounded,
         groundedSources: data.groundedSources,
       };
 
-      setMessages((prev) => [...prev, tutorMsg]);
-    } catch (err: any) {
-      const errorMsg: ChatMessage = {
-        id: `err-${Date.now()}`,
+      setMessagesByPersona(prev => ({ ...prev, [persona]: [...prev[persona], tutorMessage] }));
+    } catch (err) {
+      console.error(err);
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
         sender: 'system',
-        content: `Error: ${err.message}. Please verify Gemini API key settings.`,
+        persona,
+        content: 'Lost contact with the model routing layer. The request could not be fulfilled.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         isGrounded: false,
       };
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessagesByPersona(prev => ({ ...prev, [persona]: [...prev[persona], errorMessage] }));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const samplePrompts = [
-    'How does Raft leader election prevent split-brain?',
-    'What is the difference between CFT and BFT?',
-    'Explain HNSW layers and skip connections',
-    'How do durable workflows handle checkpointing?',
-  ];
-
   return (
-    <div className="chart-card overflow-hidden flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-beacon-100 bg-beacon-50/60">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-beacon-600 text-white flex items-center justify-center corona-glow shrink-0">
-              <User className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="font-display text-base font-semibold text-marine-900">
-                Socrates my Friend
-              </h3>
-              <p className="text-xs text-marine-500 leading-snug">
-                Personal chatbox
-              </p>
-            </div>
-          </div>
-          <InfoIcon text="Socrates my Friend is your personal chatbox. Ask Socrates my Guide anything grounded in your unlocked lessons." />
+    <div className="flex flex-col h-full bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+      <div className="p-4 bg-slate-50 border-b border-slate-200 shrink-0">
+        <div className="flex flex-wrap gap-2 justify-center mb-4">
+          {(Object.keys(PERSONAS) as Persona[]).map((p) => {
+            const P = PERSONAS[p];
+            const Icon = P.icon;
+            const isActive = persona === p;
+            return (
+              <button
+                key={p}
+                onClick={() => setPersona(p)}
+                className={`flex items-center px-4 py-2 rounded-full border ${isActive ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'} transition-colors`}
+              >
+                <Icon className="w-4 h-4 mr-2" />
+                <div className="text-left">
+                  <div className="text-sm font-semibold">{P.title}</div>
+                  <div className={`text-xs ${isActive ? 'text-indigo-200' : 'text-slate-500'}`}>{P.subtitle}</div>
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* Unreleased Warning Banner if triggered */}
-      {unreleasedWarning && (
-        <div className="bg-beacon-100/70 border-b border-beacon-200 px-4 py-2.5 flex items-center gap-2 text-xs text-beacon-900 animate-in fade-in">
-          <AlertTriangle className="w-4 h-4 text-beacon-600 shrink-0" />
-          <span className="font-medium">{unreleasedWarning}</span>
-        </div>
-      )}
-
-      {/* Messages Scroll Area */}
-      <div className="flex-1 p-5 overflow-y-auto space-y-4 min-h-[320px] bg-chart/60">
-        {messages.length === 0 && (
-          <div className="flex items-center justify-center h-full text-beacon-700 text-xs font-medium gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-beacon-500" />
-            <span>Loading conversation history...</span>
-          </div>
-        )}
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${
-              msg.sender === 'student' ? 'items-end' : 'items-start'
-            }`}
-          >
-            <div className="flex items-center gap-1.5 mb-1 px-1">
-              {msg.sender === 'student' ? (
-                <>
-                  <span className="text-xs font-bold text-beacon-700">Alex (You)</span>
-                  <User className="w-3.5 h-3.5 text-beacon-500" />
-                </>
-              ) : msg.sender === 'tutor' ? (
-                <>
-                  <CoronaMark className="w-3.5 h-3.5 text-beacon-500" />
-                </>
-              ) : (
-                <span className="text-xs font-bold text-rose-600">System</span>
-              )}
-              <span className="text-[10px] text-marine-400 font-mono" suppressHydrationWarning>{msg.timestamp}</span>
-            </div>
-
-            <div
-              className={`p-4 rounded-2xl text-xs leading-relaxed max-w-[88%] ${
-                msg.sender === 'student'
-                  ? 'bg-beacon-600 text-white rounded-tr-none shadow-sm'
-                  : msg.sender === 'tutor'
-                  ? 'bg-white border border-beacon-100 text-marine-800 rounded-tl-none shadow-sm font-medium'
-                  : 'bg-rose-50 border border-rose-200 text-rose-800'
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-slate-50">
+        {messages.map((msg, index) => (
+          <div key={msg.id || index} className={`flex ${msg.sender === 'student' ? 'justify-end' : 'justify-start'}`}>
+            {msg.sender === 'tutor' && (
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center mr-3 mt-1 shadow-sm">
+                <CoronaMark className="w-5 h-5 text-slate-600" />
+              </div>
+            )}
+            {msg.sender === 'system' && (
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3 mt-1 shadow-sm">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+            )}
+            
+            <div className={`max-w-[85%] rounded-2xl p-4 ${
+                msg.sender === 'student' 
+                  ? 'bg-indigo-600 text-white rounded-tr-none shadow-md' 
+                  : msg.sender === 'system'
+                    ? 'bg-red-50 text-red-900 border border-red-200'
+                    : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none shadow-sm'
               }`}
             >
-              <div className="whitespace-pre-wrap">{msg.content}</div>
-
-              {/* Source Citations */}
-              {msg.groundedSources && msg.groundedSources.length > 0 && (
-                <div className="mt-3 pt-2.5 border-t border-beacon-50 space-y-1.5">
-                  <span className="chart-annotation block">
-                    Sighted in courseware:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {msg.groundedSources.map((src, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-beacon-50 border border-beacon-200 text-[10px] text-beacon-900 font-semibold"
-                      >
-                        <BookOpen className="w-3 h-3 text-beacon-500" />
-                        {src.lessonTitle || src.concept}
-                      </span>
-                    ))}
+              <div className="whitespace-pre-wrap leading-relaxed text-[15px]">{msg.content}</div>
+              
+              {msg.sender === 'tutor' && msg.isGrounded && (
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <div className="flex items-center text-xs font-medium text-emerald-600 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                    GROUNDED IN
                   </div>
+                  <ul className="space-y-1">
+                    {msg.groundedSources?.map((src, i) => (
+                      <li key={i} className="text-xs text-slate-500 flex items-start">
+                        <span className="mr-1.5 opacity-60">•</span>
+                        <span className="line-clamp-1">{src.lessonTitle || src.concept}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
+            
+            {msg.sender === 'student' && (
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center ml-3 mt-1 shadow-sm">
+                <User className="w-5 h-5 text-indigo-600" />
+              </div>
+            )}
           </div>
         ))}
-
         {isLoading && (
-          <div className="flex items-center gap-2 text-beacon-700 text-xs p-2 font-medium">
-            <Loader2 className="w-4 h-4 animate-spin text-beacon-500" />
-            <span>Trimming the sails — consulting your unlocked curriculum...</span>
+          <div className="flex justify-start">
+             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center mr-3 mt-1 shadow-sm">
+              <CoronaMark className="w-5 h-5 text-slate-600 animate-pulse" />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 rounded-tl-none shadow-sm flex items-center">
+              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+            </div>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      {/* Suggested prompts */}
-      {messages.length <= 2 && (
-        <div className="px-4 py-2.5 border-t border-beacon-100 bg-beacon-50/50">
-          <p className="chart-annotation mb-1.5 flex items-center gap-1">
-            <HelpCircle className="w-3.5 h-3.5 text-beacon-500" /> Chart a line of inquiry:
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {samplePrompts.map((p, i) => (
+      <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+        {messages.length === 1 && (
+          <div className="flex flex-wrap gap-2 mb-4 justify-center">
+            {PERSONAS[persona].samples.map((sample, i) => (
               <button
                 key={i}
-                onClick={() => setInput(p)}
-                className="text-xs px-3 py-1 rounded-full bg-white border border-beacon-200 text-marine-600 hover:text-beacon-700 hover:border-beacon-400 transition text-left font-medium"
+                onClick={() => setInput(sample)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors"
               >
-                {p}
+                {sample}
               </button>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Chat Input Form */}
-      <form onSubmit={handleSend} className="p-3.5 border-t border-beacon-100 bg-white flex items-center gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask Socrates my Guide about your unlocked courseware..."
-          disabled={isLoading}
-          className="flex-1 bg-chart border border-beacon-100 focus:border-beacon-500 focus:bg-white rounded-full px-4 py-2.5 text-xs text-marine-900 placeholder-marine-400 focus:outline-none focus:ring-2 focus:ring-beacon-200 disabled:opacity-50 transition"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || isLoading}
-          className="w-10 h-10 rounded-full bg-beacon-600 hover:bg-beacon-500 text-white flex items-center justify-center transition disabled:opacity-40 shadow-sm shrink-0"
-          title="Send"
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </form>
+        )}
+        {unreleasedWarning && (
+          <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded flex items-center text-xs text-amber-800">
+            <InfoIcon className="w-4 h-4 mr-2 shrink-0 text-amber-600" />
+            <span>{unreleasedWarning}</span>
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="relative flex items-center">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={isLoading}
+            placeholder={`Ask ${PERSONAS[persona].title}...`}
+            className="w-full pl-5 pr-14 py-3.5 bg-slate-50 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 disabled:opacity-50 transition-shadow text-[15px]"
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className="absolute right-2 p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors shadow-sm"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

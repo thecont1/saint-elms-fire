@@ -8,7 +8,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
 
-export const GEMINI_FLASH = 'gemini-3.7-flash';
+export const GEMINI_FLASH = 'gemini-3.5-flash';
 export const GEMINI_FLASH_MODEL = googleAI.model(GEMINI_FLASH);
 export const COURSEWARE_EMBEDDER = googleAI.embedder('gemini-embedding-001', {
   outputDimensionality: 768,

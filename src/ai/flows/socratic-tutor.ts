@@ -78,7 +78,7 @@ export const proactiveTutor = ai.defineFlow(
     });
 
     const response = await ai.generate({
-      system: 'You are Socrates my Guide. Ask one question that tests reasoning without revealing the answer. Use only the supplied released lesson.',
+      system: 'You are Socrates my Philosopher. You push students to explore beyond the syllabus. Ask one thought-provoking question that builds on the target concept and connects to the broader world. Ask one Socratic question.',
       prompt: `TARGET: ${target.concept}\nREASON: ${target.triggerReason}\nRELEASED LESSON: ${target.lessonTitle}\n\n${target.lessonContent}`,
       output: { schema: GeneratedChallengeSchema },
       model: googleAI.model(resolveGeminiModel(model) as Parameters<typeof googleAI.model>[0]),

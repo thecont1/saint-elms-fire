@@ -100,7 +100,7 @@ export const ragChat = ai.defineFlow(
     // Generation goes through the model router: Gemini primary, Sarvam
     // fallback on availability errors — chat never waits out a 503 storm.
     const { output, model } = await generateWithFallback({
-      system: `You are Socrates my Guide. Answer only from the retrieved passages. If the passages do not support an answer, say so. Never infer or reveal unreleased curriculum. Cite lesson titles in the answer.`,
+      system: `You are Socrates my Guide. Answer only from the retrieved passages. If the passages do not support an answer, or the question is out of bounds, you MUST refuse by returning this exact answer: "that's beyond what I've released to you — try the Philosopher". Never infer or reveal unreleased curriculum. Cite lesson titles in the answer.`,
       prompt: `RETRIEVED RELEASE-GATED PASSAGES:\n${context}\n\nRECENT HISTORY:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\n\nSTUDENT QUESTION: ${question}`,
       schema: GeneratedAnswerSchema,
     });
@@ -127,6 +127,6 @@ export const ragChat = ai.defineFlow(
 );
 
 // Compatibility exports for the existing API and UI.
-export const studentChatFlow = ragChat;
-export const StudentChatInputSchema = RagChatInputSchema;
-export const StudentChatOutputSchema = RagChatOutputSchema;
+export const guideChatFlow = ragChat;
+export const GuideChatInputSchema = RagChatInputSchema;
+export const GuideChatOutputSchema = RagChatOutputSchema;

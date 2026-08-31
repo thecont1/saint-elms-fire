@@ -1376,13 +1376,12 @@ export const DataService = {
     return record;
   },
 
-  async getChatHistory(studentId: string, limit = 100): Promise<ChatMessage[]> {
-    const snap = await db
-      .collection('chat_messages')
-      .where('studentId', '==', studentId)
-      .orderBy('createdAt', 'desc')
-      .limit(limit)
-      .get();
+  async getChatHistory(studentId: string, limit = 100, persona?: 'guide' | 'philosopher' | 'friend'): Promise<ChatMessage[]> {
+    let query = db.collection('chat_messages').where('studentId', '==', studentId);
+    if (persona) {
+      query = query.where('persona', '==', persona);
+    }
+    const snap = await query.orderBy('createdAt', 'desc').limit(limit).get();
     const list = snap.docs.map(doc => sanitizeDoc<ChatMessage>(doc));
     return list.reverse();
   },

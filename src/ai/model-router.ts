@@ -32,7 +32,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
  */
 export const GEMINI_MODELS = {
   'gemini-3.7-flash': {
-    label: 'Gemini 3.7 Flash (preferred)',
+    label: 'Gemini 3.7 Flash',
     modelId: 'gemini-3.7-flash',
   },
   'gemini-3.6-flash': {
@@ -40,24 +40,18 @@ export const GEMINI_MODELS = {
     modelId: 'gemini-3.6-flash',
   },
   'gemini-3.5-flash': {
-    label: 'Gemini 3.5 Flash',
+    label: 'Gemini 3.5 Flash (preferred)',
     modelId: 'gemini-3.5-flash',
   },
 } as const;
 
-/** All Gemini model IDs the dropdown exposes. */
 export const ROUTABLE_GEMINI_MODELS = Object.values(GEMINI_MODELS).map((m) => m.modelId);
 
-/**
- * Resolve a dropdown selection (or model ID) to a canonical Gemini model ID.
- * Falls back to GEMINI_FLASH when the value is unknown/empty so callers can
- * safely pass untrusted URL/query params.
- */
 export function resolveGeminiModel(model: string | undefined | null): string {
   if (model && (GEMINI_MODELS as Record<string, { modelId: string }>)[model]) {
     return (GEMINI_MODELS as Record<string, { modelId: string }>)[model].modelId;
   }
-  return GEMINI_FLASH;
+  return 'gemini-3.5-flash';
 }
 
 export const ACTIVE_MODELS = {
@@ -137,17 +131,9 @@ function isAvailabilityError(error: unknown): boolean {
 type GenerateArgs<T> = {
   system?: string;
   prompt: string;
-  /**
-   * Optional Gemini model to route the primary call to (defaults to
-   * GEMINI_FLASH). Accepts either a dropdown value or a full model ID and is
-   * resolved defensively via resolveGeminiModel. The Sarvam fallback is
-   * always used only if the chosen Gemini model is unavailable.
-   */
   model?: string | undefined | null;
-  /**
-   * App-level Zod v4 schema. Converted once via its own toJSONSchema() and
-   * handed to Genkit as plain JSON Schema — no cross-zod-version coupling.
-   */
+  config?: any;
+  tools?: any[];
   schema?: {
     parse: (data: unknown) => T;
     safeParse?: (data: unknown) => { success: boolean };
@@ -232,6 +218,8 @@ export async function generateWithFallback<T>({
   system,
   prompt,
   model,
+  config,
+  tools,
   schema,
 }: GenerateArgs<T>): Promise<RoutedResult<T>> {
   // Resolve the user-selected Gemini model, defensively falling back to
@@ -258,18 +246,15 @@ export async function generateWithFallback<T>({
   try {
     markModelActivityStart(primaryModel);
     const response = schema
-      ? await (ai.generate as (args: {
-          system?: string;
-          prompt: string;
-          output: { jsonSchema: unknown };
-          model?: unknown;
-        }) => Promise<{ output?: unknown; text?: string }>)({
+      ? await (ai.generate as any)({
           system,
           prompt,
           output: { jsonSchema },
           model: primaryModelRef,
+          config,
+          tools,
         })
-      : await ai.generate({ system, prompt, model: primaryModelRef });
+      : await ai.generate({ system, prompt, model: primaryModelRef, config, tools } as any);
     markModelActivityEnd(primaryModel);
     if (schema) {
       // Gemini may return null output when jsonSchema-constrained decoding

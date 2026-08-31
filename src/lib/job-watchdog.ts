@@ -21,7 +21,7 @@ export const MAX_JOB_ATTEMPTS = 3;
  *  work — the artifacts list endpoint sweeps on every UI poll, so an
  *  under-sized ceiling fails legitimate jobs while users watch. */
 export const JOB_TIMEOUT_MS: Record<JobKind, number> = {
-  podcast_audio: 4 * 60_000,
+  podcast_audio: process.env.WATCHDOG_PODCAST_CEILING_S ? parseInt(process.env.WATCHDOG_PODCAST_CEILING_S, 10) * 1000 : 4 * 60_000,
   notes_pdf: 2 * 60_000,
   reading_recommendation: 2 * 60_000,
 };

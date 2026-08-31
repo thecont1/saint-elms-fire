@@ -247,6 +247,7 @@ export interface SocraticSession {
 export interface ChatMessage {
   id: string;
   sender: 'student' | 'tutor' | 'system';
+  persona?: 'guide' | 'philosopher' | 'friend';
   content: string;
   timestamp: string;
   groundedSources?: Array<{

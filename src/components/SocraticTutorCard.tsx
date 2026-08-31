@@ -77,7 +77,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
         <div className="relative p-6 flex flex-col items-center justify-center text-center">
           <div className="w-7 h-7 border-3 border-beacon-500 border-t-transparent rounded-full animate-spin mb-2" />
           <span className="text-xs text-beacon-700 font-semibold">
-            The beacon is kindling an inquiry from your curriculum...
+            Socrates my Philosopher is kindling an inquiry...
           </span>
         </div>
       ) : session ? (
@@ -112,7 +112,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-beacon-800">
                   <CheckCircle2 className="w-4 h-4 text-beacon-600" />
-                  Course verified by the beacon
+                  Reasoning verified by Socrates my Philosopher
                 </span>
                 <span className="chart-annotation px-3 py-1 rounded-full bg-white text-beacon-700 border border-beacon-200 font-semibold">
                   Comprehension {evaluation.understandingScore}/10
@@ -198,7 +198,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
         </div>
       ) : (
         <div className="relative p-4 text-center text-xs text-marine-500 font-medium">
-          No active inquiry on the horizon. Complete a quiz or unlock a module to light the beacon.
+          No active inquiry on the horizon. Complete a quiz or unlock a module to summon the Philosopher.
         </div>
       )}
     </div>

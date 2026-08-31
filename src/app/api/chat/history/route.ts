@@ -16,8 +16,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const studentId = resolveStudentScope(identity, searchParams.get('studentId'));
     const limit = Math.min(200, Math.max(1, Number(searchParams.get('limit')) || 100));
+    const persona = searchParams.get('persona') as 'guide' | 'philosopher' | 'friend' | null;
 
-    const messages = await DataService.getChatHistory(studentId, limit);
+    const messages = await DataService.getChatHistory(studentId, limit, persona ?? undefined);
     return NextResponse.json({ messages });
   } catch (error: unknown) {
     const authResponse = authorizationResponse(error);
