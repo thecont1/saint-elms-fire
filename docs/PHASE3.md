@@ -18,6 +18,18 @@ Phase 3 packages Saint Elms Fire for Cloud Run, binds Gemini through Secret Mana
 
 Cloud Run injects `PORT`; the Dockerfile defaults it to `8080`, binds Next to `0.0.0.0`, and includes a container healthcheck against `/health/live`. The healthcheck deliberately does not call Gemini or Firestore: depleted credits or a dependency outage should make `/health` report degraded, not restart a responsive container in a loop.
 
+## Runtime contract (Phase 8)
+
+Artifact generation runs in-process: `POST /api/artifacts/generate` returns 202 and a timer-dispatched worker (`src/lib/job-queue.ts`) finishes the job after the HTTP response has been sent. Two Cloud Run defaults silently break this, so every production deploy must set:
+
+| Flag | Value | Why |
+| --- | --- | --- |
+| `--min-instances=1` | `1` | Decouples container lifecycle from request traffic. Scale-to-zero would terminate the container between requests, destroying the in-memory queue dispatcher and any in-flight job. |
+| `--no-cpu-throttling` | (disable throttling) | Cloud Run throttles CPU whenever no request is in flight. Without this flag the event loop starves the moment the 202 response returns and **background jobs hang in `pending` until the watchdog fails them**. |
+| `--max-instances=1` | `1` | The job queue is an in-process singleton. More than one instance creates split-brain background workers (duplicate kicks, racing sweeps). Multi-instance requires migrating to Cloud Tasks / Pub-Sub first (Phase 8 non-goal). |
+
+> **Warning:** omitting `--no-cpu-throttling` causes background artifact jobs to hang after the HTTP response, even with `--min-instances=1` — the container stays alive but its CPU is frozen. The two flags must be set together, and `--max-instances=1` keeps the queue single-writer. This is encoded in `scripts/deploy-cloud-run.sh`, which refuses to deploy a production service without `AUTH_MODE=trusted-proxy`, pre-flight-checks the proxy secret in Secret Manager, and verifies the contract on the live revision after deploy. Verification harness: `scripts/smoke-test-production.ts` (see `docs/PHASE8_VERIFICATION.md`); operations runbook: `docs/PHASE8_OPS.md`.
+
 ## One-time project setup
 
 Run these as a project owner or an account allowed to manage APIs, IAM, service accounts, and secrets:
@@ -83,9 +95,16 @@ gcloud firestore indexes composite list \
   --database='(default)'
 ```
 
-## Deploy from source
+## Deploy
 
-Cloud Run uses the checked-in Dockerfile when deploying from source:
+The canonical deploy path is `scripts/deploy-cloud-run.sh`, which enforces the runtime contract above, binds `AUTH_PROXY_SECRET` from Secret Manager, and verifies the live revision afterwards:
+
+```bash
+ENVIRONMENT=production AUTH_MODE=trusted-proxy scripts/deploy-cloud-run.sh           # deploy
+ENVIRONMENT=production AUTH_MODE=trusted-proxy scripts/deploy-cloud-run.sh --dry-run # echo only
+```
+
+`gcloud run deploy --source=.` does NOT work in this project (Cloud Build's default compute SA lacks the run-sources bucket permission); the script uses the verified local-image path instead (`docker build --platform linux/amd64` → Artifact Registry → `gcloud run deploy --image=…`). For reference, the equivalent manual command — which MUST include the Phase 8 runtime flags — is:
 
 ```bash
 PROJECT_ID=saint-elms-fire
@@ -96,12 +115,15 @@ RUNTIME_SA=saint-elms-fire-app@${PROJECT_ID}.iam.gserviceaccount.com
 gcloud run deploy "$SERVICE" \
   --project="$PROJECT_ID" \
   --region="$REGION" \
-  --source=. \
+  --image="${REGION}-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/${SERVICE}:TAG" \
   --service-account="$RUNTIME_SA" \
-  --update-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
-  --update-secrets='GEMINI_API_KEY=gemini-api-key:N' \
   --port=8080 \
-  --no-allow-unauthenticated
+  --no-allow-unauthenticated \
+  --min-instances=1 \
+  --max-instances=1 \
+  --no-cpu-throttling \
+  --update-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID},AUTH_MODE=trusted-proxy" \
+  --update-secrets='GEMINI_API_KEY=gemini-api-key:N,AUTH_PROXY_SECRET=saint-elms-auth-proxy-secret:N'
 ```
 
 `--update-env-vars` and `--update-secrets` are non-destructive: repeatable deployments preserve any existing env vars and secret bindings (for example a future `AUTH_MODE` / `AUTH_PROXY_SECRET` pair). Pin numeric Secret Manager versions (e.g. `gemini-api-key:3`) instead of `latest` so rollbacks are deterministic; bump the version deliberately when rotating.

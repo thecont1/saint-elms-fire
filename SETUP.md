@@ -59,8 +59,22 @@ For deployment, attach
 `saint-elms-fire-app@saint-elms-fire.iam.gserviceaccount.com`
 (role: Cloud Datastore User) rather than shipping a JSON key.
 
-The complete Cloud Run and Secret Manager procedure is in
-[`docs/PHASE3.md`](docs/PHASE3.md).
+## Deploying to Cloud Run
+
+Use the contract-enforcing script:
+
+```bash
+ENVIRONMENT=production AUTH_MODE=trusted-proxy scripts/deploy-cloud-run.sh
+```
+
+Runtime contract (do not omit): `--min-instances=1 --max-instances=1 --no-cpu-throttling`.
+Artifact generation runs in-process after the 202 response; without
+`--no-cpu-throttling` Cloud Run freezes the container's CPU between requests
+and **background artifact jobs hang in `pending` until the watchdog fails
+them**, and without `--min-instances=1` the container scales to zero and loses
+the in-memory queue. The full procedure is in [`docs/PHASE3.md`](docs/PHASE3.md);
+operations (secret rotation, rollback, cost) in
+[`docs/PHASE8_OPS.md`](docs/PHASE8_OPS.md).
 
 ## Firestore security rules
 
