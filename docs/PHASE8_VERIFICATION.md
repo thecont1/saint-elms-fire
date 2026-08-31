@@ -59,9 +59,10 @@ wiring runs live on this revision. A dedicated fresh cross-ceiling probe
 (release a new lesson → generate podcast → sleep past 120s → fire the admin
 sweep + the artifacts-list poll → confirm the job survives to `ready`) was
 attempted at ~07:37 but was blocked when Gemini flapped down at the
-release/ingestion step. To re-run it in a healthy window, use
-`bun run scripts/golden-path-test.ts` (a fresh podcast legitimately crosses
-120s and now survives) alongside a manual `POST /api/jobs/sweep`.
+release/ingestion step; **this end-to-end probe remains unverified**. To re-run
+it in a healthy window, use `bun run scripts/golden-path-test.ts` (a fresh
+podcast legitimately crosses 120s and now survives) alongside a manual
+`POST /api/jobs/sweep`.
 
 ## Run
 
