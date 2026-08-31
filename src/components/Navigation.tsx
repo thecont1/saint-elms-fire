@@ -51,7 +51,7 @@ function ModelLight({ label, up, serving, latencyMs, title }: ModelLightProps) {
       />
       <span className="capitalize">{label.replace(/-/g, ' ')}</span>
       {latencyMs != null && (
-        <span className={`tabular-nums ${up ? 'text-marine-400' : 'text-red-400'}`}>
+        <span className={`tabular-nums ${up ? 'text-marine-600' : 'text-red-400'}`}>
           {up ? `${(latencyMs / 1000).toFixed(1)}s` : '—'}
         </span>
       )}
@@ -144,6 +144,7 @@ export function ModelStatusLights() {
       <div className="flex items-center gap-1.5">
         <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${status.geminiUp ? 'bg-emerald-500' : 'bg-red-400'} ${status.geminiUp && status.geminiServing ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`} />
         <select
+          aria-label="Primary model"
           value={selectedGemini}
           onChange={(e) => setSelectedGemini(e.target.value)}
           className="flex-1 min-w-0 rounded-md border-beacon-200 bg-white px-2 py-1 text-xs text-marine-900 focus:border-beacon-500 focus:outline-none focus:ring-beacon-200"
@@ -156,7 +157,7 @@ export function ModelStatusLights() {
           <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
         </select>
         {status.geminiLatency != null && (
-          <span className={`tabular-nums text-[10px] ${status.geminiUp ? 'text-marine-400' : 'text-red-400'}`}>
+          <span className={`tabular-nums text-[10px] ${status.geminiUp ? 'text-marine-600' : 'text-red-400'}`}>
             {status.geminiUp ? `${(status.geminiLatency / 1000).toFixed(1)}s` : '—'}
           </span>
         )}
@@ -166,6 +167,7 @@ export function ModelStatusLights() {
       <div className="flex items-center gap-1.5">
         <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${status.sarvamUp ? 'bg-emerald-500' : 'bg-red-400'} ${status.sarvamUp && status.sarvamServing ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`} />
         <select
+          aria-label="Fallback model"
           value={selectedSarvam}
           onChange={() => {}}
           disabled={true}
@@ -177,7 +179,7 @@ export function ModelStatusLights() {
           <option value="sarvam-105b-conversations">Sarvam 105b (fallback)</option>
         </select>
         {status.sarvamLatency != null && (
-          <span className={`tabular-nums text-[10px] ${status.sarvamUp ? 'text-marine-400' : 'text-red-400'}`}>
+          <span className={`tabular-nums text-[10px] ${status.sarvamUp ? 'text-marine-600' : 'text-red-400'}`}>
             {status.sarvamUp ? `${(status.sarvamLatency / 1000).toFixed(1)}s` : '—'}
           </span>
         )}
@@ -282,7 +284,7 @@ export function Navigation({
                 Saint Elms Fire
               </span>
               <span
-                className="hidden sm:inline font-mono text-[10px] text-marine-500 leading-none"
+                className="hidden sm:inline font-mono text-[10px] text-marine-700 leading-none"
                 suppressHydrationWarning
               >
                 {currentDateTime}

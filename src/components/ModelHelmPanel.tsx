@@ -142,7 +142,7 @@ export function ModelHelmPanel() {
           <div>
             <p className="chart-annotation text-beacon-700">Runtime control plane</p>
             <h2 id="model-helm-title" className="font-display text-xl font-semibold text-marine-900">Model Helm</h2>
-            <p className="mt-1 text-xs text-marine-500">30s read-through cache · 120s breaker cool-down · two bounded retries</p>
+            <p className="mt-1 text-xs text-marine-700">30s read-through cache · 120s breaker cool-down · two bounded retries</p>
           </div>
           <button onClick={save} disabled={saving} className="min-h-11 rounded-full bg-beacon-600 px-4 text-xs font-bold text-white disabled:opacity-50">
             {saving ? <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> : <Save className="mr-2 inline h-4 w-4" />}Save routing
@@ -159,7 +159,7 @@ export function ModelHelmPanel() {
           <ModelField label="Chat override (optional)" value={config.overrides.chat ?? ''} onChange={(value) => patchOverride('chat', value)} />
           <ModelField label="Embedding override (optional)" value={config.overrides.embed ?? ''} onChange={(value) => patchOverride('embed', value)} />
           <ModelField label="TTS override (optional)" value={config.overrides.tts ?? ''} onChange={(value) => patchOverride('tts', value)} />
-          <div className="self-end text-[11px] text-marine-500">Updated {new Date(config.updatedAt).toLocaleString()} by {config.updatedBy}</div>
+          <div className="self-end text-[11px] text-marine-700">Updated {new Date(config.updatedAt).toLocaleString()} by {config.updatedBy}</div>
         </div>
 
         <div>
@@ -172,7 +172,7 @@ export function ModelHelmPanel() {
                 <li key={model} className="flex min-h-11 items-center gap-2 rounded-lg border border-beacon-100 px-3 text-xs">
                   <span className={`h-2.5 w-2.5 rounded-full ${result?.ok ? 'bg-emerald-500' : result && !result.ok ? 'bg-rose-500' : breaker?.state === 'open' ? 'bg-rose-500' : breaker?.state === 'half-open' ? 'bg-amber-500' : 'bg-slate-300'}`} aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate font-mono">{model}</span>
-                  <span className="text-marine-500">{breaker?.state ?? 'closed'}{result?.latencyMs != null ? ` · ${result.latencyMs}ms` : ''}</span>
+                  <span className="text-marine-700">{breaker?.state ?? 'closed'}{result?.latencyMs != null ? ` · ${result.latencyMs}ms` : ''}</span>
                   <button onClick={() => testFire(model)} disabled={testing === model} aria-label={`Test ${model}`} className="min-h-11 min-w-11 rounded-full border border-beacon-200 p-2 text-beacon-700">
                     {testing === model ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                   </button>
@@ -187,7 +187,7 @@ export function ModelHelmPanel() {
         <h3 className="mb-2 flex items-center gap-2 text-xs font-bold text-marine-800"><Activity className="h-4 w-4 text-beacon-600" /> Recent requests</h3>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] text-left text-xs">
-            <thead className="text-marine-500"><tr><th className="py-2">Time</th><th>Model</th><th>Role</th><th>Attempts</th><th>Latency</th><th>Status</th></tr></thead>
+            <thead className="text-marine-700"><tr><th className="py-2">Time</th><th>Model</th><th>Role</th><th>Attempts</th><th>Latency</th><th>Status</th></tr></thead>
             <tbody>
               {requests.map((request) => (
                 <tr key={request.id} className="border-t border-beacon-100">
@@ -196,7 +196,7 @@ export function ModelHelmPanel() {
                   <td>{request.status === 'served' ? <span className="text-emerald-700"><CheckCircle2 className="mr-1 inline h-3.5 w-3.5" />served</span> : <span title={request.error} className="text-rose-700"><AlertCircle className="mr-1 inline h-3.5 w-3.5" />failed</span>}</td>
                 </tr>
               ))}
-              {requests.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-marine-500">No routed requests in this process yet.</td></tr>}
+              {requests.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-marine-700">No routed requests in this process yet.</td></tr>}
             </tbody>
           </table>
         </div>

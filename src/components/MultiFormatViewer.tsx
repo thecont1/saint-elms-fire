@@ -154,7 +154,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-marine-400" />
+                  <Copy className="w-3.5 h-3.5 text-marine-600" />
                   <span>Copy script / notes</span>
                 </>
               )}
@@ -171,7 +171,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${
                 activeTab === tab.id
                   ? 'bg-beacon-600 text-white shadow-sm'
-                  : 'text-marine-500 hover:text-marine-900 hover:bg-beacon-50'
+                  : 'text-marine-700 hover:text-marine-900 hover:bg-beacon-50'
               }`}
             >
               {tab.icon}
@@ -199,7 +199,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
           </div>
         ) : currentFormat ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2 pb-3 border-b border-beacon-100 text-xs text-marine-500 flex-wrap">
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-beacon-100 text-xs text-marine-700 flex-wrap">
               <span className="font-bold text-beacon-800">{currentFormat.title}</span>
               <div className="flex items-center gap-2">
                 <ServedByChip servedBy={currentFormat.servedBy} />
@@ -225,7 +225,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
               {activeTab === 'video_lecture_script' && 'The lecture hall is dark'}
             </h4>
 
-            <p className="text-xs text-marine-500 max-w-md mb-6 leading-relaxed">
+            <p className="text-xs text-marine-700 max-w-md mb-6 leading-relaxed">
               {activeTab === 'structured_notes' &&
                 'Generate an executive summary, concept hierarchy, diagram blueprints, and review checklists grounded strictly in this lesson.'}
               {activeTab === 'podcast_dialogue' &&
@@ -239,6 +239,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
               <div className="mb-4 flex items-center gap-2 text-xs">
                 <span className="chart-annotation">Lecturer persona:</span>
                 <select
+                  aria-label="Lecturer persona"
                   value={selectedPersona}
                   onChange={(e) => setSelectedPersona(e.target.value)}
                   className="bg-white border border-beacon-200 rounded-full text-xs text-marine-800 px-3 py-1.5 focus:outline-none focus:border-beacon-500 font-medium"

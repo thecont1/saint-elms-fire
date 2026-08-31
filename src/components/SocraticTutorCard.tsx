@@ -77,7 +77,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
         <div className="relative p-6 flex flex-col items-center justify-center text-center">
           <div className="w-7 h-7 border-3 border-beacon-500 border-t-transparent rounded-full animate-spin mb-2" />
           <span className="text-xs text-beacon-700 font-semibold">
-            Socrates my Philosopher is kindling an inquiry...
+            Socratest my Philosopher is kindling an inquiry...
           </span>
         </div>
       ) : session ? (
@@ -112,7 +112,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="flex items-center gap-1.5 text-xs font-bold text-beacon-800">
                   <CheckCircle2 className="w-4 h-4 text-beacon-600" />
-                  Reasoning verified by Socrates my Philosopher
+                  Reasoning verified by Socratest my Philosopher
                 </span>
                 <span className="chart-annotation px-3 py-1 rounded-full bg-white text-beacon-700 border border-beacon-200 font-semibold">
                   Comprehension {evaluation.understandingScore}/10
@@ -164,6 +164,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
                   <span className="chart-annotation">Reasoning engine:</span>
                   <div className="relative w-[200px]">
                     <select
+                      aria-label="Reasoning engine"
                       value={selectedModel}
                       onChange={(e) => setSelectedModel(e.target.value)}
                       className="block w-full rounded-md border-beacon-200 bg-white px-3 py-2 text-sm text-marine-900 focus:border-beacon-500 focus:outline-none focus:ring-beacon-200 disabled:opacity-50"
@@ -197,7 +198,7 @@ export function SocraticTutorCard({ studentId }: SocraticTutorCardProps) {
           )}
         </div>
       ) : (
-        <div className="relative p-4 text-center text-xs text-marine-500 font-medium">
+        <div className="relative p-4 text-center text-xs text-marine-700 font-medium">
           No active inquiry on the horizon. Complete a quiz or unlock a module to summon the Philosopher.
         </div>
       )}

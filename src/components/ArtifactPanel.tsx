@@ -210,7 +210,7 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
         </p>
       )}
       {pollNotice === 'connection' && (
-        <p className="text-xs text-marine-500 flex items-center gap-1.5">
+        <p className="text-xs text-marine-700 flex items-center gap-1.5">
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Waiting on the server — still trying…
         </p>
       )}
@@ -220,7 +220,7 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
           <span>Taking longer than expected — the watchdog will settle this job.</span>
           <button
             onClick={stopWaiting}
-            className="font-bold text-marine-500 hover:text-marine-800 underline underline-offset-2"
+            className="font-bold text-marine-700 hover:text-marine-800 underline underline-offset-2"
           >
             Stop waiting
           </button>
@@ -278,7 +278,7 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
                 )}
               </div>
               {artifact?.status === 'ready' && artifact.sources && artifact.sources.length > 0 && (
-                <p className="text-[10px] text-marine-500 leading-snug">
+                <p className="text-[10px] text-marine-700 leading-snug">
                   Built from: {artifact.sources.map((s) => s.label ?? s.refId).join(', ')}
                 </p>
               )}

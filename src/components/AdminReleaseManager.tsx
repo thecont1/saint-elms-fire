@@ -34,7 +34,7 @@ export function AdminReleaseManager({
 }: AdminReleaseManagerProps) {
   const [selectedModuleId, setSelectedModuleId] = useState<string>(modules[0]?.id || '');
   const [selectedLessonId, setSelectedLessonId] = useState<string>('all-in-module');
-  const [targetStudent, setTargetStudent] = useState<string>('student-alex');
+  const [targetStudent, setTargetStudent] = useState<string>('student-ananya');
   const [isReleasing, setIsReleasing] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [lastReleaseResult, setLastReleaseResult] = useState<any>(null);
@@ -118,11 +118,14 @@ export function AdminReleaseManager({
                 Target Student / Cohort
               </label>
               <select
+                aria-label="Target student or cohort"
                 value={targetStudent}
                 onChange={(e) => setTargetStudent(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"
               >
-                <option value="student-alex">Alex (Student #101)</option>
+                <option value="student-ananya">Ananya (Sem I ongoing)</option>
+                <option value="student-brinda">Brinda (end Sem III)</option>
+                <option value="student-chetna">Chetna (break before Sem VI)</option>
                 <option value="cohort-all">All Cohort Learners (Global Drip)</option>
               </select>
             </div>
@@ -133,6 +136,7 @@ export function AdminReleaseManager({
                 Select Module to Unlock
               </label>
               <select
+                aria-label="Select module to unlock"
                 value={selectedModuleId}
                 onChange={(e) => {
                   setSelectedModuleId(e.target.value);
@@ -154,6 +158,7 @@ export function AdminReleaseManager({
                 Release Granularity
               </label>
               <select
+                aria-label="Release granularity"
                 value={selectedLessonId}
                 onChange={(e) => setSelectedLessonId(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 focus:border-beacon-500 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none"

@@ -1,16 +1,27 @@
 'use client';
 
-import React from 'react';
-import { BookOpen, Lock, CheckCircle2, ChevronRight, FileText, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { BookOpen, Lock, CheckCircle2, ChevronRight, ChevronDown, FileText, Sparkles, Compass, Layers } from 'lucide-react';
 import { InfoIcon } from '@/components/InfoIcon';
-import type { CourseModule, Lesson } from '@/lib/types';
+import type { CourseModule, Lesson, ProgrammeOutline, ProgrammeOutlineLesson } from '@/lib/types';
 
 interface CoursewareViewerProps {
   modules: CourseModule[];
   lessons: Lesson[];
   releasedLessons: Lesson[];
+  /** Full programme outline (all semesters/courses/modules/lessons). When
+   * provided, the viewer renders the entire programme tree with locked
+   * content visible but non-interactive. */
+  programmeOutline?: ProgrammeOutline;
+  /** Course-agnostic set of released lesson IDs (from all releases). */
+  releasedLessonIds?: Set<string>;
+  /** Course-agnostic set of released module IDs (module-level releases). */
+  releasedModuleIds?: Set<string>;
   selectedLessonId: string | null;
   onSelectLesson: (lesson: Lesson) => void;
+  /** Called when a lesson is selected from the programme outline (may be
+   * in a different course than the currently loaded one). */
+  onSelectProgrammeLesson?: (lesson: ProgrammeOutlineLesson) => void;
   onOpenQuiz?: (lesson: Lesson) => void;
 }
 
@@ -18,13 +29,35 @@ export function CoursewareViewer({
   modules = [],
   lessons = [],
   releasedLessons = [],
+  programmeOutline,
+  releasedLessonIds,
+  releasedModuleIds,
   selectedLessonId,
   onSelectLesson,
+  onSelectProgrammeLesson,
   onOpenQuiz,
 }: CoursewareViewerProps) {
-  const releasedLessonIds = new Set(releasedLessons.map((l) => l.id));
+  const releasedLessonIdSet = releasedLessonIds ?? new Set(releasedLessons.map((l) => l.id));
+  const releasedModuleIdSet = releasedModuleIds ?? new Set<string>();
   const completionPercent = Math.round((releasedLessons.length / Math.max(1, lessons.length)) * 100);
 
+  // If we have a programme outline with semesters, render the full tree.
+  if (programmeOutline && programmeOutline.semesters.length > 0) {
+    return (
+      <ProgrammeTree
+        outline={programmeOutline}
+        releasedLessonIds={releasedLessonIdSet}
+        releasedModuleIds={releasedModuleIdSet}
+        selectedLessonId={selectedLessonId}
+        onSelectProgrammeLesson={onSelectProgrammeLesson}
+        onSelectLesson={onSelectLesson}
+        currentLessons={lessons}
+        onOpenQuiz={onOpenQuiz}
+      />
+    );
+  }
+
+  // Legacy single-course view
   return (
     <div className="chart-card overflow-hidden flex flex-col h-full">
       {/* Header */}
@@ -54,7 +87,7 @@ export function CoursewareViewer({
       <div className="flex-1 p-3.5 overflow-y-auto space-y-3">
         {modules.map((mod) => {
           const modLessons = lessons.filter((l) => l.moduleId === mod.id);
-          const releasedInMod = modLessons.filter((l) => releasedLessonIds.has(l.id));
+          const releasedInMod = modLessons.filter((l) => releasedLessonIdSet.has(l.id));
           const isModFullyUnlocked = modLessons.length > 0 && releasedInMod.length === modLessons.length;
           const isModPartiallyUnlocked = releasedInMod.length > 0 && !isModFullyUnlocked;
 
@@ -70,7 +103,7 @@ export function CoursewareViewer({
                     Leg {mod.order}
                   </span>
                   <h4 className="text-xs font-bold text-marine-900 truncate">{mod.title}</h4>
-                {mod.description && <p className="text-[10px] text-marine-500 mt-0.5 line-clamp-2">{mod.description}</p>}
+                {mod.description && <p className="text-[10px] text-marine-700 mt-0.5 line-clamp-2">{mod.description}</p>}
                 </div>
 
                 <div className="flex items-center shrink-0">
@@ -83,7 +116,7 @@ export function CoursewareViewer({
                       <Sparkles className="w-3 h-3 text-beacon-500" /> Sailing
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 chart-annotation text-marine-400 bg-beacon-50 px-2 py-1 rounded-full border border-beacon-100">
+                    <span className="flex items-center gap-1 chart-annotation text-marine-700 bg-beacon-50 px-2 py-1 rounded-full border border-beacon-100">
                       <Lock className="w-3 h-3" /> Fogbound
                     </span>
                   )}
@@ -93,7 +126,7 @@ export function CoursewareViewer({
               {/* Lessons within Module */}
               <div className="divide-y divide-beacon-50">
                 {modLessons.map((lesson) => {
-                  const isReleased = releasedLessonIds.has(lesson.id);
+                  const isReleased = releasedLessonIdSet.has(lesson.id) || releasedModuleIdSet.has(lesson.moduleId);
                   const isSelected = selectedLessonId === lesson.id;
 
                   return (
@@ -104,17 +137,17 @@ export function CoursewareViewer({
                       }}
                       className={`p-3 flex items-center justify-between text-xs transition ${
                         !isReleased
-                          ? 'opacity-45 cursor-not-allowed'
+                          ? 'cursor-not-allowed'
                           : isSelected
                           ? 'bg-beacon-50 text-beacon-900 font-semibold border-l-2 border-beacon-600 cursor-pointer'
-                          : 'hover:bg-beacon-50/60 text-marine-700 cursor-pointer'
+                          : 'hover:bg-beacon-50/60 text-marine-900 cursor-pointer'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-2">
                         {isReleased ? (
                           <FileText className="w-4 h-4 text-beacon-500 shrink-0" />
                         ) : (
-                          <Lock className="w-4 h-4 text-marine-400 shrink-0" />
+                          <Lock className="w-4 h-4 text-marine-600 shrink-0" />
                         )}
                         <span className="truncate">{lesson.title}</span>
                       </div>
@@ -145,6 +178,361 @@ export function CoursewareViewer({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ── Full Programme Tree ─────────────────────────────────────────────────
+
+interface ProgrammeTreeProps {
+  outline: ProgrammeOutline;
+  releasedLessonIds: Set<string>;
+  releasedModuleIds: Set<string>;
+  selectedLessonId: string | null;
+  onSelectProgrammeLesson?: (lesson: ProgrammeOutlineLesson) => void;
+  onSelectLesson: (lesson: Lesson) => void;
+  currentLessons: Lesson[];
+  onOpenQuiz?: (lesson: Lesson) => void;
+}
+
+function ProgrammeTree({
+  outline,
+  releasedLessonIds,
+  releasedModuleIds,
+  selectedLessonId,
+  onSelectProgrammeLesson,
+  onSelectLesson,
+  currentLessons,
+  onOpenQuiz,
+}: ProgrammeTreeProps) {
+  // Count total and released lessons across the entire programme
+  let totalLessons = 0;
+  let releasedCount = 0;
+  for (const sem of outline.semesters) {
+    for (const c of sem.courses) {
+      for (const mod of c.modules) {
+        totalLessons += mod.lessons.length;
+        for (const l of mod.lessons) {
+          if (releasedLessonIds.has(l.id) || releasedModuleIds.has(l.moduleId)) releasedCount++;
+        }
+      }
+    }
+  }
+  for (const c of outline.orphanCourses) {
+    for (const mod of c.modules) {
+      totalLessons += mod.lessons.length;
+      for (const l of mod.lessons) {
+        if (releasedLessonIds.has(l.id) || releasedModuleIds.has(l.moduleId)) releasedCount++;
+      }
+    }
+  }
+
+  const programmePercent = Math.round((releasedCount / Math.max(1, totalLessons)) * 100);
+
+  return (
+    <div className="chart-card overflow-hidden flex flex-col h-full">
+      {/* Header — programme-wide view */}
+      <div className="p-4 border-b border-beacon-100 bg-beacon-50/60 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-white border border-beacon-200 text-beacon-600 flex items-center justify-center">
+            <Compass className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="font-display text-sm font-semibold text-marine-900">The Charted Voyage</h3>
+            <p className="chart-annotation mt-0.5">
+              {releasedCount} of {totalLessons} waypoints across the programme
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end gap-1">
+          <InfoIcon text="The Charted Voyage shows your entire programme from Semester I onward. Future courses and lessons are visible so you can see what's ahead, but only unlocked lessons can be opened, read, or quizzed." />
+          <div className="chart-annotation px-2.5 py-1 rounded-full bg-white border border-beacon-200 text-beacon-700 font-semibold">
+            {programmePercent}%
+          </div>
+        </div>
+      </div>
+
+      {/* Programme Tree */}
+      <div className="flex-1 p-3.5 overflow-y-auto space-y-3">
+        {outline.semesters.map((sem) => (
+          <SemesterGroup
+            key={sem.id}
+            semester={sem}
+            releasedLessonIds={releasedLessonIds}
+            releasedModuleIds={releasedModuleIds}
+            selectedLessonId={selectedLessonId}
+            onSelectProgrammeLesson={onSelectProgrammeLesson}
+            onSelectLesson={onSelectLesson}
+            currentLessons={currentLessons}
+            onOpenQuiz={onOpenQuiz}
+          />
+        ))}
+
+        {outline.orphanCourses.length > 0 && (
+          <SemesterGroup
+            semester={{
+              id: 'orphan',
+              title: 'Unplaced Courses',
+              semesterNumber: 0,
+              order: 999,
+              synthesized: true,
+              courses: outline.orphanCourses,
+            }}
+            releasedLessonIds={releasedLessonIds}
+            releasedModuleIds={releasedModuleIds}
+            selectedLessonId={selectedLessonId}
+            onSelectProgrammeLesson={onSelectProgrammeLesson}
+            onSelectLesson={onSelectLesson}
+            currentLessons={currentLessons}
+            onOpenQuiz={onOpenQuiz}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface SemesterGroupProps {
+  semester: ProgrammeOutline['semesters'][number];
+  releasedLessonIds: Set<string>;
+  releasedModuleIds: Set<string>;
+  selectedLessonId: string | null;
+  onSelectProgrammeLesson?: (lesson: ProgrammeOutlineLesson) => void;
+  onSelectLesson: (lesson: Lesson) => void;
+  currentLessons: Lesson[];
+  onOpenQuiz?: (lesson: Lesson) => void;
+}
+
+function SemesterGroup({
+  semester,
+  releasedLessonIds,
+  releasedModuleIds,
+  selectedLessonId,
+  onSelectProgrammeLesson,
+  onSelectLesson,
+  currentLessons,
+  onOpenQuiz,
+}: SemesterGroupProps) {
+  const [expanded, setExpanded] = useState(true);
+
+  // Count released lessons in this semester
+  let semTotal = 0;
+  let semReleased = 0;
+  for (const c of semester.courses) {
+    for (const mod of c.modules) {
+      semTotal += mod.lessons.length;
+      for (const l of mod.lessons) {
+        if (releasedLessonIds.has(l.id) || releasedModuleIds.has(l.moduleId)) semReleased++;
+      }
+    }
+  }
+  const semFullyLocked = semReleased === 0 && semTotal > 0;
+
+  return (
+    <div className="rounded-xl border border-beacon-200 bg-white overflow-hidden">
+      {/* Semester Header */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full p-3 bg-beacon-50/70 border-b border-beacon-100 flex items-center justify-between gap-2 text-left hover:bg-beacon-50 transition"
+        aria-expanded={expanded}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <ChevronDown className={`w-4 h-4 text-beacon-600 shrink-0 transition-transform ${expanded ? '' : '-rotate-90'}`} />
+          <div className="min-w-0">
+            <h4 className="text-xs font-bold text-marine-900 truncate">
+              {semester.title}
+            </h4>
+            <p className="chart-annotation text-beacon-600 mt-0.5">
+              {semReleased}/{semTotal} waypoints
+              {semester.synthesized && ' · draft'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center shrink-0">
+          {semFullyLocked ? (
+            <span className="flex items-center gap-1 chart-annotation text-marine-700 bg-beacon-50 px-2 py-1 rounded-full border border-beacon-100">
+              <Lock className="w-3 h-3" /> Ahead
+            </span>
+          ) : semReleased === semTotal && semTotal > 0 ? (
+            <span className="flex items-center gap-1 chart-annotation text-beacon-700 bg-white px-2 py-1 rounded-full border border-beacon-200">
+              <CheckCircle2 className="w-3 h-3 text-beacon-500" /> Charted
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 chart-annotation text-beacon-600 bg-white px-2 py-1 rounded-full border border-beacon-200">
+              <Sparkles className="w-3 h-3 text-beacon-500" /> Sailing
+            </span>
+          )}
+        </div>
+      </button>
+
+      {/* Courses within Semester */}
+      {expanded && (
+        <div className="p-2 space-y-2">
+          {semester.courses.map(({ course, modules }) => (
+            <CourseGroup
+              key={course.id}
+              courseTitle={course.title}
+              courseCode={course.code}
+              modules={modules}
+              releasedLessonIds={releasedLessonIds}
+              releasedModuleIds={releasedModuleIds}
+              selectedLessonId={selectedLessonId}
+              onSelectProgrammeLesson={onSelectProgrammeLesson}
+              onSelectLesson={onSelectLesson}
+              currentLessons={currentLessons}
+              onOpenQuiz={onOpenQuiz}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CourseGroupProps {
+  courseTitle: string;
+  courseCode?: string;
+  modules: ProgrammeOutline['semesters'][number]['courses'][number]['modules'];
+  releasedLessonIds: Set<string>;
+  releasedModuleIds: Set<string>;
+  selectedLessonId: string | null;
+  onSelectProgrammeLesson?: (lesson: ProgrammeOutlineLesson) => void;
+  onSelectLesson: (lesson: Lesson) => void;
+  currentLessons: Lesson[];
+  onOpenQuiz?: (lesson: Lesson) => void;
+}
+
+function CourseGroup({
+  courseTitle,
+  courseCode,
+  modules,
+  releasedLessonIds,
+  releasedModuleIds,
+  selectedLessonId,
+  onSelectProgrammeLesson,
+  onSelectLesson,
+  currentLessons,
+  onOpenQuiz,
+}: CourseGroupProps) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <div className="rounded-lg border border-beacon-100 bg-beacon-50/30 overflow-hidden">
+      {/* Course Header */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-beacon-50/60 transition"
+        aria-expanded={expanded}
+      >
+        <ChevronDown className={`w-3.5 h-3.5 text-beacon-500 shrink-0 transition-transform ${expanded ? '' : '-rotate-90'}`} />
+        <Layers className="w-3.5 h-3.5 text-beacon-500 shrink-0" />
+        <div className="min-w-0">
+          {courseCode && <span className="chart-annotation text-beacon-600 mr-1.5">{courseCode}</span>}
+          <span className="text-[11px] font-bold text-marine-900 truncate">{courseTitle}</span>
+        </div>
+      </button>
+
+      {/* Modules within Course */}
+      {expanded && (
+        <div className="divide-y divide-beacon-50">
+          {modules.map((mod) => {
+            const modLessons = mod.lessons;
+            const releasedInMod = modLessons.filter(
+              (l) => releasedLessonIds.has(l.id) || releasedModuleIds.has(l.moduleId)
+            );
+            const isModFullyUnlocked = modLessons.length > 0 && releasedInMod.length === modLessons.length;
+            const isModPartiallyUnlocked = releasedInMod.length > 0 && !isModFullyUnlocked;
+
+            return (
+              <div key={mod.id}>
+                {/* Module sub-header */}
+                <div className="px-3 py-1.5 bg-white/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="chart-annotation text-beacon-700">Leg {mod.order}</span>
+                    <span className="text-[10px] font-semibold text-marine-900 ml-1.5 truncate">{mod.title}</span>
+                  </div>
+                  <div className="flex items-center shrink-0">
+                    {isModFullyUnlocked ? (
+                      <CheckCircle2 className="w-3 h-3 text-beacon-500" />
+                    ) : isModPartiallyUnlocked ? (
+                      <Sparkles className="w-3 h-3 text-beacon-500" />
+                    ) : (
+                      <Lock className="w-3 h-3 text-marine-500" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Lessons */}
+                {modLessons.map((lesson) => {
+                  const isReleased = releasedLessonIds.has(lesson.id) || releasedModuleIds.has(lesson.moduleId);
+                  const isSelected = selectedLessonId === lesson.id;
+                  const fullLesson = currentLessons.find((l) => l.id === lesson.id);
+
+                  const handleClick = () => {
+                    if (!isReleased) return;
+                    if (fullLesson) {
+                      onSelectLesson(fullLesson);
+                    } else if (onSelectProgrammeLesson) {
+                      onSelectProgrammeLesson(lesson);
+                    }
+                  };
+
+                  const handleQuiz = (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    if (!isReleased || !onOpenQuiz) return;
+                    if (fullLesson) {
+                      onOpenQuiz(fullLesson);
+                    } else if (onSelectProgrammeLesson) {
+                      // Load the lesson first, then open quiz after course loads
+                      onSelectProgrammeLesson(lesson);
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={lesson.id}
+                      onClick={handleClick}
+                      className={`px-3 py-2 flex items-center justify-between text-xs transition ${
+                        !isReleased
+                          ? 'cursor-not-allowed'
+                          : isSelected
+                          ? 'bg-beacon-50 text-beacon-900 font-semibold border-l-2 border-beacon-600 cursor-pointer'
+                          : 'hover:bg-beacon-50/60 text-marine-900 cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-2">
+                        {isReleased ? (
+                          <FileText className="w-3.5 h-3.5 text-beacon-500 shrink-0" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5 text-marine-600 shrink-0" />
+                        )}
+                        <span className="truncate">{lesson.title}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isReleased && onOpenQuiz && (
+                          <button
+                            onClick={handleQuiz}
+                            className="px-2 py-0.5 rounded-full bg-white hover:bg-beacon-50 text-[10px] text-beacon-700 font-bold border border-beacon-200 transition"
+                          >
+                            Quiz
+                          </button>
+                        )}
+                        {isReleased ? (
+                          <ChevronRight className="w-3.5 h-3.5 text-beacon-300" />
+                        ) : (
+                          <span className="chart-annotation">Locked</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -84,7 +84,7 @@ export function WikiPageView({
             <BookOpen className="w-4 h-4 text-beacon-600" />
             {page ? page.concept : 'Loading concept…'}
           </h3>
-          <button onClick={onClose} className="p-1.5 rounded-md text-marine-400 hover:text-marine-800" aria-label="Close">
+          <button onClick={onClose} className="p-1.5 rounded-md text-marine-600 hover:text-marine-800" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -138,7 +138,7 @@ export function WikiPageView({
                   {page.recommendedReadings.map((reading) => (
                     <li key={reading.libraryItemId} className="text-xs bg-beacon-50/60 border border-beacon-100 rounded-lg p-2.5">
                       <span className="font-semibold text-marine-800">{reading.item?.title ?? 'Available in library'}</span>
-                      <p className="text-marine-500 mt-0.5">{reading.rationale}</p>
+                      <p className="text-marine-700 mt-0.5">{reading.rationale}</p>
                     </li>
                   ))}
                 </ul>
@@ -154,7 +154,7 @@ export function WikiPageView({
                   {page.peerMaterial.map((item) => (
                     <li key={item.id}>
                       <span className="font-semibold text-marine-800">{item.title}</span>{' '}
-                      <span className="text-marine-400">— shared by {item.sharerId}</span>
+                      <span className="text-marine-600">— shared by {item.sharerId}</span>
                     </li>
                   ))}
                 </ul>
@@ -172,7 +172,7 @@ export function WikiPageView({
                       {link.direction === 'outgoing' ? (
                         <ArrowUpRight className="w-3 h-3 text-beacon-500 shrink-0" />
                       ) : (
-                        <ArrowDownLeft className="w-3 h-3 text-marine-400 shrink-0" />
+                        <ArrowDownLeft className="w-3 h-3 text-marine-600 shrink-0" />
                       )}
                       <button
                         onClick={() => onNavigate?.(link.nodeId)}
@@ -181,7 +181,7 @@ export function WikiPageView({
                       >
                         {link.concept}
                       </button>
-                      <span className="text-marine-400">({link.relationshipType})</span>
+                      <span className="text-marine-600">({link.relationshipType})</span>
                     </li>
                   ))}
                 </ul>

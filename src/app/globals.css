@@ -67,6 +67,19 @@ body {
   color: var(--color-beacon-950);
 }
 
+/* WCAG 2.3.1 / 2.2.2 — motion is decorative, never required: the corona
+   breathe, fast flicker, and smooth scrolls all stand down on request.
+   (Flash audit: flicker-fast peaks at 2 flashes/sec, under the 3/sec
+   threshold; this guard removes even that.) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Custom crisp scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -95,13 +108,14 @@ body {
     0 8px 24px -16px oklch(0.514 0.195 261 / 0.14);
 }
 
-/* Small-caps mono annotation, like latitude notes in a chart margin */
+/* Small-caps mono annotation, like latitude notes in a chart margin.
+   Uses marine-900 for WCAG 1.4.3 contrast on white (small text). */
 .chart-annotation {
   font-family: var(--font-mono);
   font-size: 0.625rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-marine-500);
+  color: var(--color-marine-900);
 }
 
 /* Dashed course line — the plotted route across a nautical chart */
@@ -260,7 +274,7 @@ body {
 }
 
 .admin-theme .chart-annotation {
-  color: var(--color-marine-500);
+  color: var(--color-marine-900);
 }
 
 .admin-theme .course-line {

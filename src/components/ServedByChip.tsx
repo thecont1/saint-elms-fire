@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import type { ServedBy } from '@/ai/model-routing';
 

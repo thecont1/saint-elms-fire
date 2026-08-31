@@ -4,7 +4,7 @@ import { loadDashboardPageData } from '@/lib/dashboard-page-data';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const { seeded, identity, demoSession } = await loadDashboardPageData();
+  const { seeded, programmeOutline, identity, demoSession } = await loadDashboardPageData();
   return (
     <LmsDashboardClient
       initialCourse={seeded.course}
@@ -12,7 +12,7 @@ export default async function HomePage() {
       initialLessons={seeded.lessons}
       initialReleases={seeded.releases}
       initialGraph={seeded.graph}
-      initialSocraticSession={seeded.activeSocraticSession}
+      programmeOutline={programmeOutline}
       identity={identity}
       demoSession={demoSession}
     />

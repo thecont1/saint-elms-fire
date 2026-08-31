@@ -9,7 +9,10 @@ export async function loadDashboardPageData() {
     headers: incomingHeaders,
   }));
   const studentId = identity.role === 'admin' ? 'student-ananya' : identity.userId;
-  const seeded = await DataService.ensureSeededData(studentId);
+  const [seeded, programmeOutline] = await Promise.all([
+    DataService.ensureSeededData(studentId),
+    DataService.getProgrammeOutline(),
+  ]);
   const selected = identity.mode === 'demo'
     ? getDemoPersona(identity.personaId)
       ?? DEMO_PERSONAS.find((persona) => persona.userId === identity.userId && persona.role === identity.role)
@@ -17,6 +20,7 @@ export async function loadDashboardPageData() {
 
   return {
     seeded,
+    programmeOutline,
     identity: { userId: identity.userId, role: identity.role },
     demoSession: selected ? { selected, personas: DEMO_PERSONAS } : undefined,
   };

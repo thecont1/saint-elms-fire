@@ -32,7 +32,7 @@ export const evaluateSocraticFlow = ai.defineFlow(
     const originalQuestion = directDoc?.socraticQuestion || '';
 
     const prompt = `
-You are Socrates my Philosopher evaluating a student's answer to a challenging conceptual question.
+You are Socratest my Philosopher evaluating a student's answer to a challenging conceptual question.
 
 ORIGINAL QUESTION: "${originalQuestion}"
 TARGET CONCEPT: "${targetConcept}"

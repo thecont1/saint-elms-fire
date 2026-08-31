@@ -15,4 +15,5 @@
 - Design language: "mariner's chart" — two-colour white & blue, `.chart-card`, `.chart-annotation`, `.course-line`, `.corona-glow` helpers in globals.css; the `CoronaMark` logo SVG is exported from `src/components/Navigation.tsx`.
 
 ## Gotchas
-- Chat timestamps use `toLocaleTimeString` — keep `suppressHydrationWarning` on the timestamp element in StudentChat to avoid hydration mismatch.
+- Chat timestamps use `toLocaleTimeString` — keep `suppressHydrationWarning` on the timestamp element in PersonaChatPanel (used by HearthDeck) to avoid hydration mismatch.
+- Student chat is the Hearth deck: `HearthDeck.tsx` (sticky trident carousel, mobile bottom sheet) + `PersonaChatPanel.tsx` (presentational) + `usePersonaChat.ts` (state) + `hearth-personas.ts` / `HearthNav.tsx` (44px tab rail). Trident order is Friend, Philosopher, Guide; panel voices are branded "Socrates my Friend" / "Socratest my Philosopher" / "Socrates my Guide". Persona identity is iconography + typography, never hue.

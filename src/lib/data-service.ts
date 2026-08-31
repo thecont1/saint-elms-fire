@@ -19,6 +19,10 @@ import type {
   IngestionStage,
   IngestionStepRecord,
   ChatMessage,
+  ProgrammeOutline,
+  ProgrammeOutlineCourse,
+  ProgrammeOutlineModule,
+  ProgrammeOutlineSemester,
 } from './types';
 import type { IngestionArtifact, StagedVectorRecord, ExtractedGraphNode, ExtractedGraphEdge } from './second-brain-ingestion';
 import { buildPendingRelease, completeRelease, failRelease, isReleaseVisible } from './release-integrity';
@@ -234,6 +238,150 @@ export const DataService = {
     return snap.docs
       .map(doc => ({ id: doc.id, title: String(doc.data().title || '') }))
       .filter(item => item.title);
+  },
+
+  /**
+   * Loads the full programme curriculum tree (all semesters, courses,
+   * modules, and lessons) as metadata only. Lesson `markdownContent` is
+   * always stripped so unreleased content is never leaked to the client
+   * merely by rendering the outline. Used by the left courseware rail to
+   * show students the entire programme ahead with locked content visible
+   * but non-interactive.
+   */
+  async getProgrammeOutline(): Promise<ProgrammeOutline> {
+    const [programmes, semesters, courses, modulesSnap, lessonsSnap] = await Promise.all([
+      this.getProgrammes(),
+      this.getSemesters(),
+      this.getCourses(),
+      db.collection('modules').get(),
+      db.collection('lessons').get(),
+    ]);
+
+    const programme = programmes[0] ?? null;
+    const semesterById = new Map<string, Semester>();
+    for (const sem of semesters) semesterById.set(sem.id, sem);
+
+    // Group courses by semesterId
+    const coursesBySemester = new Map<string, Course[]>();
+    const orphanCourses: Course[] = [];
+    for (const course of courses) {
+      if (course.semesterId) {
+        const list = coursesBySemester.get(course.semesterId);
+        if (list) list.push(course);
+        else coursesBySemester.set(course.semesterId, [course]);
+      } else {
+        orphanCourses.push(course);
+      }
+    }
+
+    // Group modules and lessons by courseId
+    const modulesByCourse = new Map<string, CourseModule[]>();
+    for (const doc of modulesSnap.docs) {
+      const mod = sanitizeDoc<CourseModule>(doc);
+      const list = modulesByCourse.get(mod.courseId);
+      if (list) list.push(mod);
+      else modulesByCourse.set(mod.courseId, [mod]);
+    }
+    for (const list of modulesByCourse.values()) list.sort((a, b) => a.order - b.order);
+
+    const lessonsByCourse = new Map<string, Lesson[]>();
+    for (const doc of lessonsSnap.docs) {
+      const lesson = sanitizeDoc<Lesson>(doc);
+      const list = lessonsByCourse.get(lesson.courseId);
+      if (list) list.push(lesson);
+      else lessonsByCourse.set(lesson.courseId, [lesson]);
+    }
+    for (const list of lessonsByCourse.values()) list.sort((a, b) => a.order - b.order);
+
+    // Build semester groups — include semesters from Firestore plus
+    // synthesized ones from course metadata (manifest convention: sem-1..sem-6)
+    const seenSemesterIds = new Set<string>();
+    const outlineSemesters: ProgrammeOutlineSemester[] = [];
+
+    // First, add all Firestore semesters (sorted by order)
+    for (const sem of semesters) {
+      seenSemesterIds.add(sem.id);
+      const semCourses = coursesBySemester.get(sem.id) ?? [];
+      if (semCourses.length === 0) continue; // skip empty semesters
+      outlineSemesters.push({
+        id: sem.id,
+        title: sem.title,
+        semesterNumber: sem.semesterNumber,
+        order: sem.order,
+        synthesized: false,
+        courses: semCourses
+          .sort((a, b) => (a.code || '').localeCompare(b.code || '') || a.title.localeCompare(b.title))
+          .map(course => this.buildOutlineCourse(course, modulesByCourse, lessonsByCourse)),
+      });
+    }
+
+    // Then, synthesize semesters for course semesterIds not in Firestore
+    const synthesized: ProgrammeOutlineSemester[] = [];
+    for (const [semId, semCourses] of coursesBySemester.entries()) {
+      if (seenSemesterIds.has(semId)) continue;
+      // Derive semester number from manifest convention (sem-N) or fallback
+      const match = semId.match(/sem[-_]?(\d+)/i);
+      const semNumber = match ? Number(match[1]) : 0;
+      synthesized.push({
+        id: semId,
+        title: `Semester ${semNumber || '?'}`,
+        semesterNumber: semNumber,
+        order: semNumber || 100,
+        synthesized: true,
+        courses: semCourses
+          .sort((a, b) => (a.code || '').localeCompare(b.code || '') || a.title.localeCompare(b.title))
+          .map(course => this.buildOutlineCourse(course, modulesByCourse, lessonsByCourse)),
+      });
+    }
+    synthesized.sort((a, b) => a.order - b.order);
+    outlineSemesters.push(...synthesized);
+    outlineSemesters.sort((a, b) => a.order - b.order);
+
+    return {
+      programme,
+      semesters: outlineSemesters,
+      orphanCourses: orphanCourses
+        .sort((a, b) => (a.code || '').localeCompare(b.code || '') || a.title.localeCompare(b.title))
+        .map(course => this.buildOutlineCourse(course, modulesByCourse, lessonsByCourse)),
+    };
+  },
+
+  /** Helper: build an outline course with modules and metadata-only lessons. */
+  buildOutlineCourse(
+    course: Course,
+    modulesByCourse: Map<string, CourseModule[]>,
+    lessonsByCourse: Map<string, Lesson[]>,
+  ): ProgrammeOutlineCourse {
+    const courseModules = modulesByCourse.get(course.id) ?? [];
+    const courseLessons = lessonsByCourse.get(course.id) ?? [];
+    const lessonsByModule = new Map<string, Lesson[]>();
+    for (const lesson of courseLessons) {
+      const list = lessonsByModule.get(lesson.moduleId);
+      if (list) list.push(lesson);
+      else lessonsByModule.set(lesson.moduleId, [lesson]);
+    }
+
+    const outlineModules: ProgrammeOutlineModule[] = courseModules.map(mod => {
+      const modLessons = (lessonsByModule.get(mod.id) ?? []).map(l => ({
+        id: l.id,
+        courseId: l.courseId,
+        moduleId: l.moduleId,
+        title: l.title,
+        order: l.order,
+        summary: l.summary,
+        tags: l.tags,
+      }));
+      return {
+        id: mod.id,
+        courseId: mod.courseId,
+        title: mod.title,
+        description: mod.description,
+        order: mod.order,
+        lessons: modLessons,
+      };
+    });
+
+    return { course, modules: outlineModules };
   },
 
   async getPersonaState(studentId: string): Promise<PersonaState | null> {
@@ -1401,297 +1549,34 @@ export const DataService = {
   },
 
   // AUTOMATIC INITIAL SEED HELPER
-  async ensureSeededData(studentId = 'student-alex'): Promise<{
-    course: Course;
+  // Loads the student's first available course and per-student data. The
+  // programme corpus (courses/modules/lessons) is seeded via the persona
+  // seeder (src/lib/persona-seeder.ts) from content/programme-manifest.yaml.
+  // This function does NOT create courseware — it only loads it.
+  async ensureSeededData(studentId = 'student-ananya'): Promise<{
+    course: Course | null;
     modules: CourseModule[];
     lessons: Lesson[];
     releases: ReleaseEvent[];
     graph: { nodes: KnowledgeNode[]; edges: KnowledgeEdge[] };
     activeSocraticSession: SocraticSession | null;
   }> {
-    let courses = await this.getCourses();
-    let course: Course;
-    let modules: CourseModule[];
-    let lessons: Lesson[];
+    const courses = await this.getCourses();
+    let course: Course | null = null;
+    let modules: CourseModule[] = [];
+    let lessons: Lesson[] = [];
 
-    if (courses.length === 0) {
-      // Create UGC hierarchy: Programme → Subject → Semester → Course
-      const programmes = await this.getProgrammes();
-      let programme: Programme;
-      if (programmes.length === 0) {
-        programme = await this.createProgramme({
-          title: 'M.Sc. in Computer Science',
-          level: 'postgraduate',
-          durationSemesters: 4,
-          totalCredits: 80,
-          description: 'Postgraduate programme in distributed systems and AI architectures.',
-        });
-      } else {
-        programme = programmes[0];
-      }
-
-      let subjects = await this.getSubjects(programme.id);
-      let subject: Subject;
-      if (subjects.length === 0) {
-        subject = await this.createSubject({
-          programmeId: programme.id,
-          title: 'Computer Science',
-          code: 'CS',
-          description: 'Core computer science discipline.',
-        });
-      } else {
-        subject = subjects[0];
-      }
-
-      let semesters = await this.getSemesters(subject.id);
-      let semester: Semester;
-      if (semesters.length === 0) {
-        semester = await this.createSemester({
-          programmeId: programme.id,
-          subjectId: subject.id,
-          title: 'Year I - Semester 1',
-          yearNumber: 1,
-          semesterNumber: 1,
-          order: 1,
-        });
-      } else {
-        semester = semesters[0];
-      }
-
-      course = await this.createCourse({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        title: 'CS-850: Distributed Systems & Autonomous AI Architectures',
-        description: 'Foundations of resilient consensus, vector index partitioning, event-driven streaming, and decentralized agent graphs.',
-        category: 'core',
-        credits: 4,
-        instructor: 'Dr. Elena Vance & Staff',
-        code: 'CS-850',
-      });
-
-      const mod1 = await this.createModule({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        courseId: course.id,
-        title: 'Module 1: Consensus & State Machine Replication',
-        description: 'Raft protocol, Byzantine Fault Tolerance, and distributed WALs.',
-        order: 1,
-      });
-
-      const mod2 = await this.createModule({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        courseId: course.id,
-        title: 'Module 2: High-Throughput Vector Indices & RAG Partitioning',
-        description: 'HNSW, Quantization, Sharding strategies, and multi-tenant graph memory.',
-        order: 2,
-      });
-
-      const mod3 = await this.createModule({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        courseId: course.id,
-        title: 'Module 3: Autonomous Agent Orbits & Multi-Agent Consensus',
-        description: 'Durable workflows, actor mailboxes, and agentic reflection loops.',
-        order: 3,
-      });
-
-      modules = [mod1, mod2, mod3];
-
-      const lesson1_1 = await this.createLesson({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        courseId: course.id,
-        moduleId: mod1.id,
-        title: '1.1 The Raft Consensus Algorithm & Leader Election',
-        order: 1,
-        summary: 'Leader election, heartbeat timeouts, term numbers, and log replication safety in Raft.',
-        tags: ['Consensus', 'Raft', 'Distributed Systems'],
-        markdownContent: `# The Raft Consensus Algorithm: Leader Election & Safety\n\n## 1. Introduction & Problem Statement\nIn distributed computing, achieving consensus across unreliable nodes over an asynchronous network is the bedrock of resilient infrastructure. Raft addresses this by decomposing consensus into three distinct subproblems:\n- **Leader Election**\n- **Log Replication**\n- **Safety Invariants**\n\n\`\`\`\n       +-------------+\n       |   Follower  |<----------------+\n       +-------------+                 |\n              | (election timeout)     | (discovers current leader\n              v                        |  or higher term)\n       +-------------+                 |\n       |  Candidate  |-----------------+\n       +-------------+\n              | (receives majority votes)\n              v\n       +-------------+\n       |    Leader   |\n       +-------------+\n\`\`\`\n\n## 2. Server States & State Transitions\nAt any given moment, each server is in one of three states:\n1. **Leader**: Handles all client requests, replicates log entries to followers, and sends periodic heartbeats (\`AppendEntries\` RPC with empty entries).\n2. **Follower**: Passive responder; only replies to RPCs from candidates and leaders. If election timeout elapses without heartbeats, it transitions to candidate.\n3. **Candidate**: Increments term counter, votes for itself, and broadcasts \`RequestVote\` RPCs to peers.\n\n## 3. Election Invariants & Quorum\n- A candidate wins an election if it collects votes from a strict majority (\`N/2 + 1\`) of servers in the cluster for that term.\n- Each server votes for at most **one** candidate per term on a first-come, first-served basis.\n- Randomized election timeouts (e.g., 150ms–300ms) prevent split votes when multiple nodes detect leader failure simultaneously.\n\n## 4. Log Matching Invariant\nIf two logs contain an entry with the same index and term:\n- They store the same command.\n- Their logs are identical in all preceding entries.\n\n## 5. Architectural Tradeoffs\n- **Pros**: Understandable formal model, deterministic single-leader operational simplicity.\n- **Cons**: Leader bottleneck under extreme write pressure; failover pause during re-election window.\n`,
-      });
-
-      const lesson1_2 = await this.createLesson({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        courseId: course.id,
-        moduleId: mod1.id,
-        title: '1.2 Log Replication, Commit Indexes, and Byzantine Resistance',
-        order: 2,
-        summary: 'Handling network partitions, log matching checks, and comparing crash-fault-tolerant vs Byzantine systems.',
-        tags: ['Log Replication', 'Partitions', 'BFT'],
-        markdownContent: `# Log Replication & Fault Boundaries in Distributed State Machines\n\n## 1. The AppendEntries Protocol\nOnce a leader is elected, it begins serving client commands:\n1. Leader appends command to its local log as an uncommitted entry.\n2. Leader sends \`AppendEntries\` RPC containing the entry, the previous entry index, and previous entry term (\`prevLogIndex\`, \`prevLogTerm\`).\n3. Follower rejects the RPC if its log does not contain an entry matching \`prevLogIndex\` and \`prevLogTerm\`.\n4. Leader retries by decrementing \`nextIndex\` until follower log converges.\n\n## 2. Commit Rule\nAn entry is considered **committed** once it is safely replicated on a majority of nodes by the leader of the current term. Once committed, the leader executes the state machine transition and returns the result to the client.\n\n## 3. Handling Network Partitions (Split-Brain Defense)\nConsider a 5-node cluster \`[S1, S2, S3, S4, S5]\` partitioned into \`{S1, S2}\` and \`{S3, S4, S5}\`:\n- Minority partition \`{S1, S2}\` cannot commit any writes because quorum requires 3 nodes.\n- Majority partition \`{S3, S4, S5}\` elects a new leader with a higher term and commits valid client writes.\n- Upon partition healing, \`S1\` and \`S2\` recognize the higher term, step down, and overwrite uncommitted speculative logs.\n\n## 4. Crash Fault Tolerance (CFT) vs. Byzantine Fault Tolerance (BFT)\n- **CFT (Raft, Paxos)**: Assumes non-malicious nodes that may crash or drop messages, but do not lie. Tolerates up to \`f\` failures with \`2f + 1\` nodes.\n- **BFT (PBFT, Tendermint)**: Assumes adversarial nodes capable of forging messages or equivocation. Requires \`3f + 1\` nodes to tolerate \`f\` Byzantine actors.\n`,
-      });
-
-      const lesson2_1 = await this.createLesson({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        courseId: course.id,
-        moduleId: mod2.id,
-        title: '2.1 Vector Indexing with HNSW & Product Quantization',
-        order: 1,
-        summary: 'Hierarchical Navigable Small World graphs, dimensional reduction, and approximate nearest neighbor search.',
-        tags: ['Vector Search', 'HNSW', 'Quantization'],
-        markdownContent: `# Vector Indexing: HNSW Graphs & Compression Techniques\n\n## 1. High-Dimensional Similarity & The Curse of Dimensionality\nExact Nearest Neighbor (kNN) search in d-dimensional space has time complexity \\(O(N \\cdot d)\\), which fails under real-time retrieval requirements with millions of embedding vectors. Approximate Nearest Neighbor (ANN) trades small recall losses for sub-millisecond query latency.\n\n## 2. Hierarchical Navigable Small World (HNSW)\nHNSW builds a multi-layer graph hierarchy where:\n- Top layers contain sparse nodes with long-range skip connections (express routing).\n- Bottom layer (Layer 0) contains all vectors with dense local neighborhood connections.\n- Greedy routing starts at the top layer, descends upon reaching local minima, and conducts beam search on Layer 0.\n\n\`\`\`\nLayer 2: [A] ------------------------> [G]\n           \\                            \\\nLayer 1: [A] ---------> [D] ---------> [G]\n           \\            /  \\           / \\\nLayer 0: [A] -> [B] -> [C] -> [D] -> [E] -> [F] -> [G]\n\`\`\`\n\n## 3. Product Quantization (PQ)\nTo fit billions of vectors in RAM:\n1. Decompose a d-dimensional vector into \\(m\\) sub-vectors of size \\(d/m\\).\n2. Run k-means clustering on each sub-space to generate \\(k^*\\) centroids (typically 256, encoded as 1 byte).\n3. Replace each sub-vector with its nearest centroid ID.\n4. Asymmetric Distance Computation (ADC) allows calculating query-to-centroid lookup distances without decompressing stored vectors.\n`,
-      });
-
-      const lesson3_1 = await this.createLesson({
-        programmeId: programme.id,
-        subjectId: subject.id,
-        semesterId: semester.id,
-        courseId: course.id,
-        moduleId: mod3.id,
-        title: '3.1 Durable Agent Workflows & State Synchronization',
-        order: 1,
-        summary: 'Actor models, deterministic replay, event-sourced agent state, and tool-call checkpoints.',
-        tags: ['Agents', 'Durable Execution', 'State Machines'],
-        markdownContent: `# Durable Agent Workflows & State Synchronization\n\n## 1. Ephemeral vs. Durable Agent Execution\nStandard LLM agent loops execute in transient memory. If a network blip occurs mid-workflow (e.g. during a 30-second multi-step code generation or external API call), the entire context is lost.\n\nDurable Execution provides:\n- **Automatic Checkpointing**: State is saved to durable storage at each workflow step.\n- **Deterministic Replay**: When recovering, previous successful steps are replayed from cached outputs rather than re-executing expensive LLM calls.\n- **Reliable Sleep/Alarms**: Workflows can pause for hours or days waiting for user input without consuming active compute.\n`,
-      });
-
-      lessons = [lesson1_1, lesson1_2, lesson2_1, lesson3_1];
-    } else {
+    if (courses.length > 0) {
       course = courses[0];
       modules = await this.getModules(course.id);
       lessons = await this.getLessons(course.id);
     }
 
-    // Check releases
-    let releases = await this.getReleasesForStudent(studentId);
-    if (releases.length === 0 && modules.length > 0) {
-      const rel = await this.createRelease({
-        courseId: course.id,
-        moduleId: modules[0].id,
-        studentId,
-        status: 'released',
-      });
-      releases = [rel];
-    }
-
-    // Check knowledge graph
-    let graph = await this.getStudentKnowledgeGraph(studentId);
-    if (graph.nodes.length === 0 && lessons.length > 0) {
-      const initialNodes = [
-        {
-          lessonId: lessons[0].id,
-          moduleId: lessons[0].moduleId,
-          courseId: course.id,
-          concept: '1.1 The Raft Consensus Algorithm',
-          category: 'core' as const,
-          summary: 'Foundation of leader election, log safety, and state machine replication.',
-          importance: 5,
-          releasedAt: new Date().toISOString(),
-        },
-        {
-          lessonId: lessons[0].id,
-          moduleId: lessons[0].moduleId,
-          courseId: course.id,
-          concept: 'Server States & Transitions',
-          category: 'architecture' as const,
-          summary: 'Follower, Candidate, and Leader state machine with heartbeat timeouts.',
-          importance: 4,
-          releasedAt: new Date().toISOString(),
-        },
-        {
-          lessonId: lessons[0].id,
-          moduleId: lessons[0].moduleId,
-          courseId: course.id,
-          concept: 'Election Invariants & Quorum',
-          category: 'technique' as const,
-          summary: 'Strict majority (N/2 + 1) quorum prevents dual leaders in any partition.',
-          importance: 4,
-          releasedAt: new Date().toISOString(),
-        },
-        {
-          lessonId: lessons[0].id,
-          moduleId: lessons[0].moduleId,
-          courseId: course.id,
-          concept: 'Log Matching Invariant',
-          category: 'technique' as const,
-          summary: 'Identical index and term ensures identical history up to that point.',
-          importance: 4,
-          releasedAt: new Date().toISOString(),
-        },
-        {
-          lessonId: lessons[0].id,
-          moduleId: lessons[0].moduleId,
-          courseId: course.id,
-          concept: 'Byzantine Fault Tolerance (BFT)',
-          category: 'tradeoff' as const,
-          summary: 'Comparing Crash Fault Tolerant (2f+1) systems vs Byzantine Adversarial (3f+1) models.',
-          importance: 4,
-          releasedAt: new Date().toISOString(),
-        },
-      ];
-
-      const initialEdges = [
-        {
-          sourceNodeId: '',
-          targetNodeId: '',
-          sourceConcept: '1.1 The Raft Consensus Algorithm',
-          targetConcept: 'Server States & Transitions',
-          relationshipType: 'part_of' as const,
-          description: 'Core state machine lifecycle.',
-          strength: 3,
-          releasedAt: new Date().toISOString(),
-        },
-        {
-          sourceNodeId: '',
-          targetNodeId: '',
-          sourceConcept: '1.1 The Raft Consensus Algorithm',
-          targetConcept: 'Election Invariants & Quorum',
-          relationshipType: 'part_of' as const,
-          description: 'Prevents split-brain.',
-          strength: 3,
-          releasedAt: new Date().toISOString(),
-        },
-        {
-          sourceNodeId: '',
-          targetNodeId: '',
-          sourceConcept: '1.1 The Raft Consensus Algorithm',
-          targetConcept: 'Log Matching Invariant',
-          relationshipType: 'part_of' as const,
-          description: 'Guarantees log consistency.',
-          strength: 3,
-          releasedAt: new Date().toISOString(),
-        },
-        {
-          sourceNodeId: '',
-          targetNodeId: '',
-          sourceConcept: 'Election Invariants & Quorum',
-          targetConcept: 'Byzantine Fault Tolerance (BFT)',
-          relationshipType: 'contrasts_with' as const,
-          description: 'CFT vs BFT assumption comparison.',
-          strength: 3,
-          releasedAt: new Date().toISOString(),
-        },
-      ];
-
-      const { savedNodes, savedEdges } = await this.saveKnowledgeNodesAndEdges(
-        studentId,
-        initialNodes,
-        initialEdges
-      );
-      graph = { nodes: savedNodes, edges: savedEdges };
-    }
-
-    // Check active Socratic session
-    let activeSocraticSession = await this.getActiveSocraticSession(studentId);
-    if (!activeSocraticSession && lessons.length > 0) {
-      activeSocraticSession = await this.createSocraticSession({
-        studentId,
-        triggerReason: 'Proactive inquiry on core distributed systems principles.',
-        socraticQuestion: 'If a 5-node cluster is partitioned into 2 nodes and 3 nodes, why can the 2-node group never commit new log entries even if it can still communicate internally?',
-        targetConcept: 'Raft Consensus Quorum',
-        relatedLessonId: lessons[0].id,
-        status: 'pending',
-      });
-    }
+    // Load per-student data (releases, graph, socratic sessions are created
+    // by the persona seeder, not here).
+    const releases = await this.getReleasesForStudent(studentId);
+    const graph = await this.getStudentKnowledgeGraph(studentId);
+    const activeSocraticSession = await this.getActiveSocraticSession(studentId);
 
     return {
       course,
