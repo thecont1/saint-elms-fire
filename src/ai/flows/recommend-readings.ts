@@ -10,7 +10,7 @@
  * SOFT FAILURE by design: this stage never fails a release. Failures are
  * logged with bounded categories and can be retried via the job loop.
  */
-import { ai, COURSEWARE_EMBEDDER } from '../genkit';
+import { embedWithRouting } from '../embed-router';
 import { DataService } from '../../lib/data-service';
 import { chunkMarkdown } from '../../lib/courseware-rag';
 import {
@@ -19,12 +19,11 @@ import {
 } from '../../lib/reading-recommendation';
 
 async function embedText(text: string): Promise<number[]> {
-  const response = await ai.embed({
-    embedder: COURSEWARE_EMBEDDER,
+  const response = await embedWithRouting({
     content: text,
     options: { taskType: 'RETRIEVAL_QUERY' },
   });
-  const embedding = response[0]?.embedding ?? [];
+  const embedding = response.embedding;
   if (!embedding.length) throw new Error('Empty embedding');
   return embedding;
 }

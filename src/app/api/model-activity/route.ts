@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getActiveModelActivity } from '@/ai/model-router';
-import { GEMINI_FLASH } from '@/ai/genkit';
-import { SARVAM_MODEL } from '@/ai/sarvam';
+import { getActiveModelActivity, getRecentModelRequests } from '@/ai/model-router';
 import { DataService } from '@/lib/data-service';
 
 export const runtime = 'nodejs';
@@ -33,6 +31,8 @@ async function getCachedGenerationMetrics(): Promise<Awaited<ReturnType<typeof D
 export async function GET(req: Request) {
   const activity = getActiveModelActivity();
   const { searchParams } = new URL(req.url);
+  const parsedLimit = Number(searchParams.get('limit'));
+  const limit = Number.isFinite(parsedLimit) ? parsedLimit : 20;
 
   let generation: Awaited<ReturnType<typeof DataService.getGenerationMetrics>> | undefined;
   if (searchParams.get('metrics') === '1') {
@@ -44,10 +44,8 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({
-    models: {
-      [GEMINI_FLASH]: activity[GEMINI_FLASH] ?? { inFlight: false, recent: false },
-      [SARVAM_MODEL]: activity[SARVAM_MODEL] ?? { inFlight: false, recent: false },
-    },
+    models: activity,
+    recentRequests: getRecentModelRequests(limit),
     ...(generation ? { generation } : {}),
     timestamp: new Date().toISOString(),
   });

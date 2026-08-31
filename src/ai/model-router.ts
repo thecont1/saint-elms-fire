@@ -24,6 +24,12 @@ import { sarvamGenerate, SARVAM_MODEL } from './sarvam';
 // version Genkit's `z` re-exports) and Zod v4 schemas into JSON Schema.
 // Zod v3 has no .toJSONSchema() method, so this is the version-agnostic path.
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { modelRoutingStore } from './model-routing-store';
+import {
+  globalCircuitBreakers,
+  routeModelCall,
+  type ServedBy,
+} from './model-routing';
 
 /**
  * Gemini models the primary dropdown can route to. 3.7 Flash is preferred;
@@ -32,7 +38,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
  */
 export const GEMINI_MODELS = {
   'gemini-3.7-flash': {
-    label: 'Gemini 3.7 Flash (preferred)',
+    label: 'Gemini 3.7 Flash',
     modelId: 'gemini-3.7-flash',
   },
   'gemini-3.6-flash': {
@@ -40,19 +46,13 @@ export const GEMINI_MODELS = {
     modelId: 'gemini-3.6-flash',
   },
   'gemini-3.5-flash': {
-    label: 'Gemini 3.5 Flash',
+    label: 'Gemini 3.5 Flash (preferred)',
     modelId: 'gemini-3.5-flash',
   },
 } as const;
 
-/** All Gemini model IDs the dropdown exposes. */
 export const ROUTABLE_GEMINI_MODELS = Object.values(GEMINI_MODELS).map((m) => m.modelId);
 
-/**
- * Resolve a dropdown selection (or model ID) to a canonical Gemini model ID.
- * Falls back to GEMINI_FLASH when the value is unknown/empty so callers can
- * safely pass untrusted URL/query params.
- */
 export function resolveGeminiModel(model: string | undefined | null): string {
   if (model && (GEMINI_MODELS as Record<string, { modelId: string }>)[model]) {
     return (GEMINI_MODELS as Record<string, { modelId: string }>)[model].modelId;
@@ -68,7 +68,7 @@ export const ACTIVE_MODELS = {
 } as const;
 
 /** Any provider that can actually serve a generation call (Gemini or Sarvam). */
-export type ModelUsed = typeof GEMINI_FLASH | 'gemini-3.6-flash' | 'gemini-3.5-flash' | typeof SARVAM_MODEL;
+export type ModelUsed = string;
 
 /**
  * Lightweight in-process activity tracking for the model status lights.
@@ -125,35 +125,83 @@ export interface RoutedResult<T> {
   text?: string;
   /** Which model actually served this request. */
   model: ModelUsed;
+  /** Runtime routing provenance for UI chips and observability. */
+  servedBy: ServedBy;
+  /** Provider-verified web sources, separate from canonical course citations. */
+  webSources?: VerifiedWebSource[];
 }
 
-function isAvailabilityError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return /\b(429|500|502|503|504)\b|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded|JSON5: invalid|no schema with key or ref|parse error/i.test(
-    message,
-  );
+export interface VerifiedWebSource {
+  uri: string;
+  title: string;
+}
+
+export function extractVerifiedWebSources(raw: unknown): VerifiedWebSource[] {
+  if (!raw || typeof raw !== 'object') return [];
+  const candidates = (raw as { candidates?: unknown }).candidates;
+  if (!Array.isArray(candidates)) return [];
+  const byUri = new Map<string, VerifiedWebSource>();
+  for (const candidate of candidates) {
+    const chunks = (candidate as { groundingMetadata?: { groundingChunks?: unknown } })
+      ?.groundingMetadata?.groundingChunks;
+    if (!Array.isArray(chunks)) continue;
+    for (const chunk of chunks) {
+      const web = (chunk as { web?: { uri?: unknown; title?: unknown } })?.web;
+      if (typeof web?.uri !== 'string' || typeof web.title !== 'string') continue;
+      try {
+        const uri = new URL(web.uri);
+        if (!['http:', 'https:'].includes(uri.protocol) || byUri.has(uri.href)) continue;
+        byUri.set(uri.href, { uri: uri.href, title: web.title.trim() || uri.hostname });
+      } catch {
+        // Ignore malformed provider metadata.
+      }
+    }
+  }
+  return [...byUri.values()];
+}
+
+export interface ModelRequestActivity {
+  id: string;
+  startedAt: string;
+  completedAt: string;
+  latencyMs: number;
+  status: 'served' | 'failed';
+  servedBy?: ServedBy;
+  error?: string;
+}
+
+const REQUEST_HISTORY_LIMIT = 50;
+const recentRequests: ModelRequestActivity[] = [];
+
+function recordRequest(entry: ModelRequestActivity): void {
+  recentRequests.unshift(entry);
+  if (recentRequests.length > REQUEST_HISTORY_LIMIT) recentRequests.length = REQUEST_HISTORY_LIMIT;
+}
+
+export function getRecentModelRequests(limit = 20): ModelRequestActivity[] {
+  return recentRequests.slice(0, Math.max(0, Math.min(REQUEST_HISTORY_LIMIT, limit)));
+}
+
+export function clearRecentModelRequestsForTest(): void {
+  recentRequests.length = 0;
 }
 
 type GenerateArgs<T> = {
   system?: string;
-  prompt: string;
-  /**
-   * Optional Gemini model to route the primary call to (defaults to
-   * GEMINI_FLASH). Accepts either a dropdown value or a full model ID and is
-   * resolved defensively via resolveGeminiModel. The Sarvam fallback is
-   * always used only if the chosen Gemini model is unavailable.
-   */
+  prompt: string | Array<{ text: string }>;
   model?: string | undefined | null;
-  /**
-   * App-level Zod v4 schema. Converted once via its own toJSONSchema() and
-   * handed to Genkit as plain JSON Schema — no cross-zod-version coupling.
-   */
+  config?: any;
+  tools?: any[];
   schema?: {
     parse: (data: unknown) => T;
     safeParse?: (data: unknown) => { success: boolean };
     toJSONSchema?: () => unknown;
   };
 };
+
+function promptAsText(prompt: GenerateArgs<unknown>['prompt']): string {
+  return typeof prompt === 'string' ? prompt : prompt.map((part) => part.text).join('\n');
+}
 
 /**
  * Extract the first balanced JSON object from a model response. Returns null
@@ -227,17 +275,26 @@ function schemaExample(schema: { toJSONSchema?: () => unknown }): Record<string,
   return example;
 }
 
-/** Single entry point for all chat generation in the app. */
+function isSarvamModel(model: string): boolean {
+  return model === SARVAM_MODEL;
+}
+
+/** Single entry point for routed generation in the app. */
 export async function generateWithFallback<T>({
   system,
   prompt,
   model,
+  config,
+  tools,
   schema,
 }: GenerateArgs<T>): Promise<RoutedResult<T>> {
-  // Resolve the user-selected Gemini model, defensively falling back to
-  // GEMINI_FLASH for unknown/empty values (e.g. tampered query params).
-  const primaryModel = resolveGeminiModel(model);
-  const primaryModelRef = googleAI.model(primaryModel as Parameters<typeof googleAI.model>[0]);
+  const requestStartedAt = Date.now();
+  const requestId = `model-${requestStartedAt}-${Math.random().toString(36).slice(2, 8)}`;
+  const routing = await modelRoutingStore.get();
+  // Preserve the public per-call selection as an explicit override. Otherwise
+  // the durable config is authoritative and can change without a restart.
+  const primaryModel = model?.trim() || routing.overrides.chat || routing.primary;
+  const fallbackModel = routing.fallback;
   let jsonSchema: Record<string, unknown> | undefined;
   try {
     const rawJsonSchema = schema
@@ -255,107 +312,106 @@ export async function generateWithFallback<T>({
     });
   }
 
-  try {
-    markModelActivityStart(primaryModel);
-    const response = schema
-      ? await (ai.generate as (args: {
-          system?: string;
-          prompt: string;
-          output: { jsonSchema: unknown };
-          model?: unknown;
-        }) => Promise<{ output?: unknown; text?: string }>)({
-          system,
-          prompt,
-          output: { jsonSchema },
-          model: primaryModelRef,
-        })
-      : await ai.generate({ system, prompt, model: primaryModelRef });
-    markModelActivityEnd(primaryModel);
-    if (schema) {
-      // Gemini may return null output when jsonSchema-constrained decoding
-      // yields no tool call; fall back rather than failing the request.
-      if (!response.output) {
-        throw new Error('UNAVAILABLE: primary model returned no structured output');
-      }
-      // Gemini may return JSON that parses but does not match the requested
-      // schema (e.g. missing keys on complex shapes). Treat that as a
-      // fallback-eligible failure too — the caller asked for a verified shape.
-      // Both primary and fallback paths validate through the caller's
-      // schema.parse, so a malformed object is never returned as T.
-      if (schema.safeParse && !schema.safeParse(response.output).success) {
-        throw new Error('UNAVAILABLE: primary model returned schema-invalid output');
-      }
-      return { output: schema.parse(response.output), model: primaryModel as ModelUsed };
-    }
-    const text = (response.text || '').trim();
-    if (!text) throw new Error('empty model response');
-    return { text, model: primaryModel as ModelUsed };
-  } catch (primaryError) {
-    markModelActivityEnd(primaryModel);
-    if (!isAvailabilityError(primaryError)) throw primaryError;
-    console.warn('gemini_unavailable_falling_back', {
-      model: primaryModel,
-      error: primaryError instanceof Error ? primaryError.message : String(primaryError),
-    });
-
-    // Schema-constrained path: instruct the fallback to emit raw JSON and
-    // validate locally — sarvam-105b has no native structured-output mode.
-    // If JSON Schema conversion failed earlier, still ask for JSON using the
-    // schema-parse validation loop as the safety net.
-    const jsonInstruction = schema
-      ? `${system ?? ''}\n\nRespond with ONLY a single valid JSON object matching this shape, no markdown fences, no commentary:\n${jsonSchema ? JSON.stringify(jsonSchema) : '(match the keys implied by the worked example and the request)'}`
-      : system;
-
-    // sarvam-105b-conversations is nondeterministic on complex schemas: it
-    // sometimes returns a plausible-but-wrong shape (e.g. {id,label} nodes
-    // instead of the schema contract). Retry with escalating anchors until
-    // the response validates against the caller's schema.
-    if (schema) {
-      // The example anchors the exact shape; build defensively so a schema
-      // introspection failure can't mask the real fallback behavior.
-      let example: string;
-      try {
-        example = JSON.stringify(schema.parse(schemaExample(schema)));
-      } catch (exampleError) {
-        console.warn('fallback_example_build_failed', {
-          error: exampleError instanceof Error ? exampleError.message : String(exampleError),
-        });
-        example = '';
-      }
-      const attempts = [
-        jsonInstruction,
-        `${jsonInstruction}\n\nWorked example — match this EXACT key structure (values are placeholders):\n${example}`,
-        `${jsonInstruction}\n\nWorked example — match this EXACT key structure (values are placeholders):\n${example}\n\nSTRICT REQUIREMENT: output ONLY the JSON object. Every key in the example must appear. No extra keys. No prose before or after.`,
-      ];
-      let text = '';
-      let parsed: unknown | null = null;
-      for (let i = 0; i < attempts.length; i++) {
-        markModelActivityStart(SARVAM_MODEL);
-        try {
-          text = await sarvamGenerate({ system: attempts[i], prompt });
-        } finally {
-          markModelActivityEnd(SARVAM_MODEL);
-        }
-        parsed = extractJsonObject(text);
-        if (parsed && schema.safeParse && schema.safeParse(parsed).success) {
-          return { output: schema.parse(parsed), model: SARVAM_MODEL };
-        }
-        console.warn('fallback_schema_mismatch_retrying', {
-          model: SARVAM_MODEL,
-          attempt: i + 1,
-          received: text.slice(0, 120),
-        });
-      }
-      throw new Error(`fallback model could not produce schema-valid output: ${text.slice(0, 200)}`);
-    }
-
-    markModelActivityStart(SARVAM_MODEL);
-    let text: string;
+  let example = '';
+  if (schema) {
     try {
-      text = await sarvamGenerate({ system: jsonInstruction, prompt });
-    } finally {
-      markModelActivityEnd(SARVAM_MODEL);
+      example = JSON.stringify(schema.parse(schemaExample(schema)));
+    } catch (exampleError) {
+      console.warn('fallback_example_build_failed', {
+        error: exampleError instanceof Error ? exampleError.message : String(exampleError),
+      });
     }
-    return { text, model: SARVAM_MODEL };
   }
+
+  const callOne = async (targetModel: string): Promise<{ output?: T; text?: string; webSources?: VerifiedWebSource[] }> => {
+    markModelActivityStart(targetModel);
+    try {
+      if (isSarvamModel(targetModel)) {
+        const sarvamSystem = schema
+          ? `${system ?? ''}\n\nRespond with ONLY one valid JSON object matching this schema. No fences or commentary:\n${jsonSchema ? JSON.stringify(jsonSchema) : '(use every key in the worked example)'}\n\nWorked example (placeholder values):\n${example}`
+          : system;
+        const raw = await sarvamGenerate({ system: sarvamSystem, prompt: promptAsText(prompt) });
+        if (!schema) return { text: raw };
+        const parsed = extractJsonObject(raw);
+        if (!parsed || (schema.safeParse && !schema.safeParse(parsed).success)) {
+          throw new Error('Model returned schema-invalid output');
+        }
+        return { output: schema.parse(parsed) };
+      }
+
+      const modelRef = googleAI.model(targetModel as Parameters<typeof googleAI.model>[0]);
+      const response = schema
+        ? await (ai.generate as any)({ system, prompt, output: { jsonSchema }, model: modelRef, config, tools })
+        : await ai.generate({ system, prompt, model: modelRef, config, tools } as any);
+      if (schema) {
+        if (!response.output || (schema.safeParse && !schema.safeParse(response.output).success)) {
+          throw new Error('Model returned schema-invalid output');
+        }
+        return { output: schema.parse(response.output), webSources: extractVerifiedWebSources(response.custom) };
+      }
+      const text = (response.text || '').trim();
+      if (!text) throw new Error('UNAVAILABLE: model returned empty response');
+      return { text, webSources: extractVerifiedWebSources(response.custom) };
+    } finally {
+      markModelActivityEnd(targetModel);
+    }
+  };
+
+  try {
+    const routed = await routeModelCall({
+      primary: primaryModel,
+      fallback: fallbackModel,
+      maxRetries: 2,
+      breakers: globalCircuitBreakers,
+      call: (targetModel) => callOne(targetModel),
+    });
+    const completedAt = Date.now();
+    recordRequest({
+      id: requestId,
+      startedAt: new Date(requestStartedAt).toISOString(),
+      completedAt: new Date(completedAt).toISOString(),
+      latencyMs: completedAt - requestStartedAt,
+      status: 'served',
+      servedBy: routed.servedBy,
+    });
+    return { ...routed.value, model: routed.servedBy.model, servedBy: routed.servedBy };
+  } catch (error) {
+    const completedAt = Date.now();
+    recordRequest({
+      id: requestId,
+      startedAt: new Date(requestStartedAt).toISOString(),
+      completedAt: new Date(completedAt).toISOString(),
+      latencyMs: completedAt - requestStartedAt,
+      status: 'failed',
+      error: error instanceof Error ? error.message.slice(0, 240) : 'unknown',
+    });
+    throw error;
+  }
+}
+
+/** Admin Helm test-fire: one real attempt against exactly one model. */
+export async function testFireModel(model: string): Promise<{ latencyMs: number; servedBy: ServedBy; text: string }> {
+  const startedAt = Date.now();
+  const result = await routeModelCall({
+    primary: model,
+    fallback: model,
+    maxRetries: 0,
+    breakers: globalCircuitBreakers,
+    call: async (targetModel) => {
+      markModelActivityStart(targetModel);
+      try {
+        if (isSarvamModel(targetModel)) {
+          return (await sarvamGenerate({ prompt: 'Reply with exactly: helm-ok' })).trim();
+        }
+        const response = await ai.generate({
+          prompt: 'Reply with exactly: helm-ok',
+          model: googleAI.model(targetModel as Parameters<typeof googleAI.model>[0]),
+        } as any);
+        return (response.text || '').trim();
+      } finally {
+        markModelActivityEnd(targetModel);
+      }
+    },
+  });
+  return { latencyMs: Date.now() - startedAt, servedBy: result.servedBy, text: result.value };
 }

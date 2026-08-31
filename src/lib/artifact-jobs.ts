@@ -23,7 +23,7 @@ export interface ArtifactPipelineDeps {
   getArtifact: typeof DataService.getArtifact;
   markArtifactReady: typeof DataService.markArtifactReady;
   markArtifactFailed: typeof DataService.markArtifactFailed;
-  generate(job: JobRecord, formatType: 'structured_notes' | 'podcast_dialogue'): Promise<{ content: string; sources?: import('./artifacts').ArtifactSource[] }>;
+  generate(job: JobRecord, formatType: 'structured_notes' | 'podcast_dialogue'): Promise<{ content: string; sources?: import('./artifacts').ArtifactSource[]; servedBy?: import('../ai/model-routing').ServedBy }>;
   synthesizePodcast(script: string): Promise<Buffer>;
   renderPdf(job: JobRecord, markdown: string): Promise<Buffer>;
   save(storagePath: string, data: Buffer, contentType: string): Promise<{ sizeBytes: number }>;
@@ -43,10 +43,12 @@ export async function handleNotesPdfJob(job: JobRecord, deps: ArtifactPipelineDe
 
   let markdown: string;
   let sources: import('./artifacts').ArtifactSource[] | undefined;
+  let servedBy: import('../ai/model-routing').ServedBy | undefined;
   try {
     const result = await deps.generate(job, 'structured_notes');
     markdown = result.content;
     sources = result.sources;
+    servedBy = result.servedBy;
   } catch (error) {
     await failBoth(deps, job, 'generation_failed', error);
     return;
@@ -62,7 +64,7 @@ export async function handleNotesPdfJob(job: JobRecord, deps: ArtifactPipelineDe
 
   try {
     const { sizeBytes } = await deps.save(artifact.storagePath, pdf, artifact.mimeType);
-    await deps.markArtifactReady(artifact.id, sizeBytes, sources);
+    await deps.markArtifactReady(artifact.id, sizeBytes, sources, servedBy);
   } catch (error) {
     await failBoth(deps, job, 'storage_write_failed', error);
   }
@@ -74,10 +76,12 @@ export async function handlePodcastAudioJob(job: JobRecord, deps: ArtifactPipeli
 
   let script: string;
   let sources: import('./artifacts').ArtifactSource[] | undefined;
+  let servedBy: import('../ai/model-routing').ServedBy | undefined;
   try {
     const result = await deps.generate(job, 'podcast_dialogue');
     script = result.content;
     sources = result.sources;
+    servedBy = result.servedBy;
   } catch (error) {
     await failBoth(deps, job, 'generation_failed', error);
     return;
@@ -93,7 +97,7 @@ export async function handlePodcastAudioJob(job: JobRecord, deps: ArtifactPipeli
 
   try {
     const { sizeBytes } = await deps.save(artifact.storagePath, audio, artifact.mimeType);
-    await deps.markArtifactReady(artifact.id, sizeBytes, sources);
+    await deps.markArtifactReady(artifact.id, sizeBytes, sources, servedBy);
   } catch (error) {
     await failBoth(deps, job, 'storage_write_failed', error);
   }
@@ -128,20 +132,23 @@ export async function handleReadingRecommendationJob(job: JobRecord): Promise<vo
 function defaultDeps(): ArtifactPipelineDeps {
   return {
     getArtifact: (id) => DataService.getArtifact(id),
-    markArtifactReady: (id, size) => DataService.markArtifactReady(id, size),
+    markArtifactReady: (id, size, sources, servedBy) => DataService.markArtifactReady(id, size, sources, servedBy),
     markArtifactFailed: (id, category) => DataService.markArtifactFailed(id, category),
     async generate(job, formatType) {
       const result = await multiFormatGenerationFlow({
         lessonId: job.payload.lessonId,
         studentId: job.payload.studentId,
         formatType,
-        persona: job.payload.persona || undefined,
+        persona: ['guide', 'philosopher', 'friend'].includes(job.payload.persona)
+          ? job.payload.persona as 'guide' | 'philosopher' | 'friend'
+          : undefined,
         corpusScope: (job.payload.corpusScope as 'lesson' | 'second_brain') || 'second_brain',
       });
       if (!result.content) throw new Error('empty generation');
       return {
         content: result.content,
         sources: (result.metadata?.sources as import('./artifacts').ArtifactSource[] | undefined) || undefined,
+        servedBy: result.metadata?.servedBy as import('../ai/model-routing').ServedBy | undefined,
       };
     },
     synthesizePodcast: (script) => synthesizePodcast(script),

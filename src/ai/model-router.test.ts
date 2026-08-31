@@ -2,6 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   extractJsonObject,
+  extractVerifiedWebSources,
   resolveGeminiModel,
   GEMINI_MODELS,
   ROUTABLE_GEMINI_MODELS,
@@ -51,6 +52,16 @@ describe('extractJsonObject', () => {
     // String never closes -> depth never returns to 0 -> null. Correct: the
     // input is genuinely malformed and must not parse.
     expect(extractJsonObject('{"answer":"never closed')).toBeNull();
+  });
+});
+
+describe('extractVerifiedWebSources', () => {
+  test('canonicalizes and deduplicates provider search-grounding metadata', () => {
+    expect(extractVerifiedWebSources({ candidates: [{ groundingMetadata: { groundingChunks: [
+      { web: { uri: 'https://example.org/a', title: 'Source A' } },
+      { web: { uri: 'https://example.org/a', title: 'Spoofed duplicate' } },
+      { web: { uri: 'javascript:alert(1)', title: 'Unsafe' } },
+    ] } }] })).toEqual([{ uri: 'https://example.org/a', title: 'Source A' }]);
   });
 });
 

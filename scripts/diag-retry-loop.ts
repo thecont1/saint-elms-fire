@@ -50,3 +50,5 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 }
 console.log('exhausted attempts without ready');
 process.exit(1);
+
+export {};

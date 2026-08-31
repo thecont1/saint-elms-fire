@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Shield, User } from 'lucide-react';
+import type { DemoPersona, DemoPersonaId } from '@/lib/demo-session';
 
 function RefreshIcon({ className = 'w-3.5 h-3.5', spin = false }: { className?: string; spin?: boolean }) {
   return (
@@ -50,7 +51,7 @@ function ModelLight({ label, up, serving, latencyMs, title }: ModelLightProps) {
       />
       <span className="capitalize">{label.replace(/-/g, ' ')}</span>
       {latencyMs != null && (
-        <span className={`tabular-nums ${up ? 'text-marine-400' : 'text-red-400'}`}>
+        <span className={`tabular-nums ${up ? 'text-marine-600' : 'text-red-400'}`}>
           {up ? `${(latencyMs / 1000).toFixed(1)}s` : '—'}
         </span>
       )}
@@ -143,6 +144,7 @@ export function ModelStatusLights() {
       <div className="flex items-center gap-1.5">
         <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${status.geminiUp ? 'bg-emerald-500' : 'bg-red-400'} ${status.geminiUp && status.geminiServing ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`} />
         <select
+          aria-label="Primary model"
           value={selectedGemini}
           onChange={(e) => setSelectedGemini(e.target.value)}
           className="flex-1 min-w-0 rounded-md border-beacon-200 bg-white px-2 py-1 text-xs text-marine-900 focus:border-beacon-500 focus:outline-none focus:ring-beacon-200"
@@ -155,7 +157,7 @@ export function ModelStatusLights() {
           <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
         </select>
         {status.geminiLatency != null && (
-          <span className={`tabular-nums text-[10px] ${status.geminiUp ? 'text-marine-400' : 'text-red-400'}`}>
+          <span className={`tabular-nums text-[10px] ${status.geminiUp ? 'text-marine-600' : 'text-red-400'}`}>
             {status.geminiUp ? `${(status.geminiLatency / 1000).toFixed(1)}s` : '—'}
           </span>
         )}
@@ -165,6 +167,7 @@ export function ModelStatusLights() {
       <div className="flex items-center gap-1.5">
         <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${status.sarvamUp ? 'bg-emerald-500' : 'bg-red-400'} ${status.sarvamUp && status.sarvamServing ? 'animate-flicker-fast' : ''} shadow-[0_0_4px_currentColor]`} />
         <select
+          aria-label="Fallback model"
           value={selectedSarvam}
           onChange={() => {}}
           disabled={true}
@@ -176,7 +179,7 @@ export function ModelStatusLights() {
           <option value="sarvam-105b-conversations">Sarvam 105b (fallback)</option>
         </select>
         {status.sarvamLatency != null && (
-          <span className={`tabular-nums text-[10px] ${status.sarvamUp ? 'text-marine-400' : 'text-red-400'}`}>
+          <span className={`tabular-nums text-[10px] ${status.sarvamUp ? 'text-marine-600' : 'text-red-400'}`}>
             {status.sarvamUp ? `${(status.sarvamLatency / 1000).toFixed(1)}s` : '—'}
           </span>
         )}
@@ -187,7 +190,10 @@ export function ModelStatusLights() {
 
 interface NavigationProps {
   currentRole: 'admin' | 'student';
-  onRoleChange: (role: 'admin' | 'student') => void;
+  currentPersona?: DemoPersona;
+  personas?: readonly DemoPersona[];
+  onPersonaChange?: (persona: DemoPersonaId) => void;
+  isChangingPersona?: boolean;
   /** Optional: renders a Sync button to the right of the role switcher. */
   onSync?: () => void;
   isSyncing?: boolean;
@@ -229,7 +235,10 @@ export function CoronaMark({ className = 'w-6 h-6' }: { className?: string }) {
 
 export function Navigation({
   currentRole,
-  onRoleChange,
+  currentPersona,
+  personas,
+  onPersonaChange,
+  isChangingPersona = false,
   onSync,
   isSyncing = false,
   onBoom,
@@ -275,7 +284,7 @@ export function Navigation({
                 Saint Elms Fire
               </span>
               <span
-                className="hidden sm:inline font-mono text-[10px] text-marine-500 leading-none"
+                className="hidden sm:inline font-mono text-[10px] text-marine-700 leading-none"
                 suppressHydrationWarning
               >
                 {currentDateTime}
@@ -283,34 +292,36 @@ export function Navigation({
             </div>
           </div>
 
-          {/* Role Switcher + Sync */}
+          {/* Demo identity + data controls */}
           {!controlsHidden && (
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
-                <button
-                  onClick={() => onRoleChange('admin')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                    currentRole === 'admin'
-                      ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
-                      : 'text-marine-500 hover:text-marine-800'
-                  }`}
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>Admin</span>
-                </button>
+              {currentPersona && personas && onPersonaChange && (
+                <label className="relative flex min-h-11 items-center gap-2 rounded-full border border-beacon-200 bg-beacon-50 px-3 text-xs font-semibold text-marine-700">
+                  {currentRole === 'admin' ? <Shield className="h-4 w-4 text-beacon-700" /> : <User className="h-4 w-4 text-beacon-700" />}
+                  <span className="sr-only">Demo identity</span>
+                  <select
+                    aria-label="Demo identity"
+                    value={currentPersona.id}
+                    disabled={isChangingPersona}
+                    onChange={(event) => onPersonaChange(event.target.value as DemoPersonaId)}
+                    className="min-h-11 max-w-[15rem] cursor-pointer appearance-none bg-transparent pr-5 text-xs font-semibold text-marine-800 outline-none disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {personas.map((persona) => (
+                      <option key={persona.id} value={persona.id}>
+                        {persona.id === 'admin' ? 'Admin' : persona.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span aria-hidden="true" className="pointer-events-none absolute right-3">⌄</span>
+                </label>
+              )}
 
-                <button
-                  onClick={() => onRoleChange('student')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                    currentRole === 'student'
-                      ? 'bg-beacon-600 text-white shadow-sm'
-                      : 'text-marine-500 hover:text-marine-800'
-                  }`}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  <span>Student · Alex</span>
-                </button>
-              </div>
+              {!currentPersona && (
+                <span className="flex min-h-11 items-center gap-2 rounded-full border border-beacon-200 bg-beacon-50 px-3 text-xs font-semibold text-marine-700">
+                  {currentRole === 'admin' ? <Shield className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                  {currentRole === 'admin' ? 'Admin' : 'Student'}
+                </span>
+              )}
 
               {onSync && (
                 <button

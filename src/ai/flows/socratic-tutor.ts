@@ -1,14 +1,15 @@
 import { z } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { ai } from '../genkit';
-import { resolveGeminiModel } from '../model-router';
+import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { selectProactiveTarget } from '../../lib/courseware-rag';
+import { shouldUseBreakMode } from '../persona-contracts';
+import { buildBreakModeChallenge } from '../persona-responses';
 
 export const ProactiveTutorInputSchema = z.object({
   studentId: z.string().trim().min(1),
   forceNew: z.boolean().optional(),
-  model: z.string().optional().default('gemini-3.7-flash'),
+  model: z.string().trim().min(1).optional(),
 });
 
 export const SocraticChallengeOutputSchema = z.object({
@@ -33,7 +34,7 @@ export const proactiveTutor = ai.defineFlow(
     inputSchema: ProactiveTutorInputSchema,
     outputSchema: SocraticChallengeOutputSchema,
   },
-  async ({ studentId, forceNew = false, model = 'gemini-3.7-flash' }) => {
+  async ({ studentId, forceNew = false, model }) => {
     if (!forceNew) {
       const active = await DataService.getActiveSocraticSession(studentId);
       if (active) {
@@ -65,11 +66,44 @@ export const proactiveTutor = ai.defineFlow(
       };
     }
 
-    const [quizHistory, graph, activeReleases] = await Promise.all([
+    const [quizHistory, graph, activeReleases, releaseAudit, personaState, recommendations, libraryItems] = await Promise.all([
       DataService.getQuizHistory(studentId),
       DataService.getStudentKnowledgeGraph(studentId),
       DataService.getReleasesForStudent(studentId),
+      DataService.getReleaseAuditForStudent(studentId),
+      DataService.getPersonaState(studentId),
+      DataService.getRecommendedReadingsForStudent(studentId),
+      DataService.getLibraryItems(),
     ]);
+
+    // Chetna break mode: all released through Sem V, no pending releases, and seeded
+    // recommend-readings. Switch from quiz-weak-spot challenges to spaced revisitation.
+    const pendingCount = releaseAudit.filter(r => r.status === 'pending' || r.status === 'scheduled').length;
+    if (personaState && shouldUseBreakMode({
+      breakMode: personaState.breakMode,
+      completedSemester: personaState.completedSemester,
+      pendingReleaseCount: pendingCount,
+    })) {
+      const reading = recommendations[0];
+      const book = libraryItems.find(item => item.id === reading?.libraryItemId);
+      const node = graph.nodes.find(n => n.id === reading?.nodeId) ?? graph.nodes[0];
+      if (node && book) {
+        const lesson = await DataService.getLesson(node.lessonId);
+        const lessonTitle = lesson?.title || node.lessonId;
+        const challenge = buildBreakModeChallenge({
+          studentId, sessionId: '', concept: node.concept, lessonTitle, readingTitle: book.title,
+        });
+        const session = await DataService.createSocraticSession({
+          studentId,
+          triggerReason: challenge.triggerReason,
+          socraticQuestion: challenge.socraticQuestion,
+          targetConcept: node.concept,
+          relatedLessonId: node.lessonId,
+          status: 'pending',
+        });
+        return { ...challenge, sessionId: session.id, relatedLessonTitle: lessonTitle };
+      }
+    }
     const target = selectProactiveTarget({
       releasedLessons,
       activeReleases,
@@ -77,11 +111,11 @@ export const proactiveTutor = ai.defineFlow(
       knowledgeNodes: graph.nodes,
     });
 
-    const response = await ai.generate({
-      system: 'You are Socrates my Guide. Ask one question that tests reasoning without revealing the answer. Use only the supplied released lesson.',
+    const response = await generateWithFallback({
+      system: 'You are Socratest my Philosopher. You push students to explore beyond the syllabus. Ask one thought-provoking question that builds on the target concept and connects to the broader world. Ask one Socratic question.',
       prompt: `TARGET: ${target.concept}\nREASON: ${target.triggerReason}\nRELEASED LESSON: ${target.lessonTitle}\n\n${target.lessonContent}`,
-      output: { schema: GeneratedChallengeSchema },
-      model: googleAI.model(resolveGeminiModel(model) as Parameters<typeof googleAI.model>[0]),
+      schema: GeneratedChallengeSchema,
+      model,
     });
     if (!response.output) throw new Error('Gemini returned no Socratic challenge');
     const generated = GeneratedChallengeSchema.parse(response.output);

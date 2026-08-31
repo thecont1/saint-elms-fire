@@ -4,6 +4,7 @@ import { kickArtifactJobs } from '@/lib/artifact-jobs';
 import { ARTIFACT_FORMAT_TYPES, type ArtifactFormatType } from '@/lib/artifacts';
 import { ArtifactQuotaError } from '@/lib/quotas';
 import { resolveRequestIdentity, resolveStudentScope, authorizationResponse } from '@/lib/request-identity';
+import { HEARTH_PERSONA_IDS, type HearthPersona } from '@/lib/ai-contracts';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,9 @@ export async function POST(req: Request) {
     if (corpusScope && !['lesson', 'second_brain'].includes(corpusScope as string)) {
       return NextResponse.json({ error: 'corpusScope must be lesson or second_brain' }, { status: 400 });
     }
+    if (persona && !HEARTH_PERSONA_IDS.includes(persona as HearthPersona)) {
+      return NextResponse.json({ error: 'persona must be guide, philosopher, or friend' }, { status: 400 });
+    }
 
     // Release gating: artifacts for unreleased lessons cannot be generated.
     const released = await DataService.isLessonReleasedToStudent(lessonId, studentId);
@@ -58,7 +62,7 @@ export async function POST(req: Request) {
       lessonId,
       formatType: formatType as ArtifactFormatType,
       sinceIso: since,
-      persona: typeof persona === 'string' ? persona.slice(0, 200) : undefined,
+      persona: typeof persona === 'string' ? persona as HearthPersona : undefined,
       corpusScope: corpusScope === 'lesson' ? 'lesson' : corpusScope === 'second_brain' ? 'second_brain' : undefined,
     });
     kickArtifactJobs();

@@ -152,7 +152,7 @@ export function KnowledgeGraphVisualizer({
                 {nodes.length} stars &bull; {edges.length} bearings
               </span>
             </h3>
-            <p className="text-xs text-marine-500">
+            <p className="text-xs text-marine-700">
               Spreading like the fire along the masts of your unlocked curriculum
             </p>
           </div>
@@ -162,7 +162,7 @@ export function KnowledgeGraphVisualizer({
         <div className="flex items-center gap-2">
           {/* Search */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-marine-400" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-marine-600" />
             <input
               type="text"
               placeholder="Search concepts..."
@@ -174,6 +174,7 @@ export function KnowledgeGraphVisualizer({
 
           {/* Category Filter */}
           <select
+            aria-label="Filter by category"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
             className="bg-white border border-beacon-200 rounded-full text-xs text-marine-700 px-3 py-1.5 focus:outline-none focus:border-beacon-500 font-medium"
@@ -190,21 +191,21 @@ export function KnowledgeGraphVisualizer({
           <div className="flex items-center bg-white border border-beacon-200 rounded-full p-0.5">
             <button
               onClick={() => setZoomLevel((z) => Math.min(1.6, z + 0.15))}
-              className="p-1.5 hover:text-beacon-700 text-marine-400 transition rounded-full"
+              className="p-1.5 hover:text-beacon-700 text-marine-600 transition rounded-full"
               title="Zoom in"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setZoomLevel((z) => Math.max(0.6, z - 0.15))}
-              className="p-1.5 hover:text-beacon-700 text-marine-400 transition rounded-full"
+              className="p-1.5 hover:text-beacon-700 text-marine-600 transition rounded-full"
               title="Zoom out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setZoomLevel(1)}
-              className="p-1.5 hover:text-beacon-700 text-marine-400 transition rounded-full"
+              className="p-1.5 hover:text-beacon-700 text-marine-600 transition rounded-full"
               title="Reset view"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -226,7 +227,7 @@ export function KnowledgeGraphVisualizer({
               <CoronaMark className="w-8 h-8" />
             </div>
             <h4 className="font-display text-base font-semibold text-marine-900 mb-1">The sky is still overcast</h4>
-            <p className="text-xs text-marine-500 max-w-sm mb-4 leading-relaxed">
+            <p className="text-xs text-marine-700 max-w-sm mb-4 leading-relaxed">
               No stars have been sighted yet. Once your instructor triggers a release,
               the beacon will extract and fix each concept to your chart.
             </p>
@@ -413,7 +414,7 @@ export function KnowledgeGraphVisualizer({
               </div>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="text-marine-400 hover:text-marine-800 text-xs p-1 rounded-md"
+                className="text-marine-600 hover:text-marine-800 text-xs p-1 rounded-md"
               >
                 ✕
               </button>
@@ -421,7 +422,7 @@ export function KnowledgeGraphVisualizer({
 
             <p className="text-xs text-marine-600 leading-relaxed mb-3">{selectedNode.summary}</p>
 
-            <div className="flex items-center justify-between pt-2 border-t border-beacon-100 text-[11px] text-marine-500">
+            <div className="flex items-center justify-between pt-2 border-t border-beacon-100 text-[11px] text-marine-700">
               <span className="flex items-center gap-1 font-medium text-beacon-700">
                 <BookOpen className="w-3.5 h-3.5 text-beacon-500" />
                 Lesson: {selectedNode.lessonId.slice(0, 8)}...

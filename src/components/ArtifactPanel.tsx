@@ -12,6 +12,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FileDown, AudioLines, RefreshCw, AlertTriangle, Loader2, Hourglass } from 'lucide-react';
+import { ServedByChip } from '@/components/ServedByChip';
 
 interface ArtifactJobState {
   status: string;
@@ -28,6 +29,7 @@ interface ArtifactRecord {
   error?: string;
   job?: ArtifactJobState;
   sources?: Array<{ kind: string; refId: string; label?: string }>;
+  servedBy?: { model: string; role: 'primary' | 'fallback'; attemptCount: number };
 }
 
 interface ArtifactPanelProps {
@@ -208,7 +210,7 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
         </p>
       )}
       {pollNotice === 'connection' && (
-        <p className="text-xs text-marine-500 flex items-center gap-1.5">
+        <p className="text-xs text-marine-700 flex items-center gap-1.5">
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Waiting on the server — still trying…
         </p>
       )}
@@ -218,7 +220,7 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
           <span>Taking longer than expected — the watchdog will settle this job.</span>
           <button
             onClick={stopWaiting}
-            className="font-bold text-marine-500 hover:text-marine-800 underline underline-offset-2"
+            className="font-bold text-marine-700 hover:text-marine-800 underline underline-offset-2"
           >
             Stop waiting
           </button>
@@ -276,10 +278,11 @@ export function ArtifactPanel({ lessonId, studentId }: ArtifactPanelProps) {
                 )}
               </div>
               {artifact?.status === 'ready' && artifact.sources && artifact.sources.length > 0 && (
-                <p className="text-[10px] text-marine-500 leading-snug">
+                <p className="text-[10px] text-marine-700 leading-snug">
                   Built from: {artifact.sources.map((s) => s.label ?? s.refId).join(', ')}
                 </p>
               )}
+              {artifact?.status === 'ready' && <ServedByChip servedBy={artifact.servedBy} />}
               {artifact?.status === 'failed' && (
                 <p className="text-[10px] text-red-600">
                   Failed: {artifact.error ?? artifact.job?.errorCategory ?? 'unknown'} — retry below.

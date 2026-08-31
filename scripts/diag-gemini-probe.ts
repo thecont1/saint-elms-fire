@@ -34,3 +34,5 @@ try {
   clearTimeout(timer);
 }
 process.exit(0);
+
+export {};

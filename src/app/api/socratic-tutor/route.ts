@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const studentId = resolveStudentScope(identity, searchParams.get('studentId'));
     const forceNew = searchParams.get('forceNew') === 'true';
-    const model = searchParams.get('model') || 'gemini-3.7-flash';
+    const model = searchParams.get('model') || undefined;
 
     const session = await proactiveSocraticTutorFlow({
       studentId,
@@ -27,8 +27,8 @@ export async function GET(req: Request) {
   } catch (error: unknown) {
     const authResponse = authorizationResponse(error);
     if (authResponse) return authResponse;
-    console.error('Socrates my Philosopher error:', error);
-    return NextResponse.json({ error: 'Unable to load Socrates my Philosopher session' }, { status: 500 });
+    console.error('Socratest my Philosopher error:', error);
+    return NextResponse.json({ error: 'Unable to load Socratest my Philosopher session' }, { status: 500 });
   }
 }
 

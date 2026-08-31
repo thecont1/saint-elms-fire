@@ -1,3 +1,5 @@
+import type { HearthPersona, ServedBy } from '@/lib/ai-contracts';
+
 export type UserRole = 'admin' | 'student';
 
 export interface UserProfile {
@@ -93,6 +95,55 @@ export interface Lesson {
   summary?: string;
   tags?: string[];
   createdAt: string;
+}
+
+// ── Programme Outline (full curriculum tree, metadata-only) ────────────
+// Used by the left courseware rail to show the entire programme
+// (Semesters I–VI → Courses → Modules → Lessons) with locked/future
+// content visible but non-interactive. Lesson markdownContent is always
+// stripped from the outline so unreleased content is never leaked to the
+// client merely by rendering the outline.
+
+export interface ProgrammeOutlineLesson {
+  id: string;
+  courseId: string;
+  moduleId: string;
+  title: string;
+  order: number;
+  summary?: string;
+  tags?: string[];
+}
+
+export interface ProgrammeOutlineModule {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  order: number;
+  lessons: ProgrammeOutlineLesson[];
+}
+
+export interface ProgrammeOutlineCourse {
+  course: Course;
+  modules: ProgrammeOutlineModule[];
+}
+
+export interface ProgrammeOutlineSemester {
+  /** Semester document if present; otherwise synthesized from manifest convention. */
+  id: string;
+  title: string;
+  semesterNumber: number;
+  order: number;
+  /** True when no Firestore semester document existed — derived from course metadata. */
+  synthesized: boolean;
+  courses: ProgrammeOutlineCourse[];
+}
+
+export interface ProgrammeOutline {
+  programme: Programme | null;
+  semesters: ProgrammeOutlineSemester[];
+  /** Courses that carry no semesterId and could not be placed in a semester group. */
+  orphanCourses: ProgrammeOutlineCourse[];
 }
 
 export type IngestionStage = 'parsing' | 'chunking' | 'embedding' | 'vector_write' | 'graph_write';
@@ -199,7 +250,8 @@ export interface GeneratedFormat {
   formatType: 'structured_notes' | 'podcast_dialogue' | 'video_lecture_script';
   title: string;
   content: string; // Markdown or script
-  persona?: string;
+  persona?: HearthPersona;
+  servedBy?: ServedBy;
   createdAt: string;
 }
 
@@ -247,6 +299,7 @@ export interface SocraticSession {
 export interface ChatMessage {
   id: string;
   sender: 'student' | 'tutor' | 'system';
+  persona?: HearthPersona;
   content: string;
   timestamp: string;
   groundedSources?: Array<{
@@ -255,4 +308,5 @@ export interface ChatMessage {
     concept: string;
   }>;
   isGrounded: boolean;
+  servedBy?: ServedBy;
 }

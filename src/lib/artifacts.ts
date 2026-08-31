@@ -1,3 +1,5 @@
+import type { HearthPersona, ServedBy } from './ai-contracts';
+
 /**
  * Generated artifact domain logic (Phase 6, Track A1).
  *
@@ -40,8 +42,9 @@ export interface GeneratedArtifact {
   mimeType: string;
   sizeBytes?: number;
   sources?: ArtifactSource[];
+  servedBy?: ServedBy;
   /** Generation options preserved so retries can replay the original request. */
-  persona?: string;
+  persona?: HearthPersona;
   corpusScope?: 'lesson' | 'second_brain';
   /** Backing job id for this artifact; used for idempotent create and polling. */
   jobId?: string;
@@ -90,7 +93,7 @@ export function buildPendingArtifact(input: {
   lessonId: string;
   formatType: ArtifactFormatType;
   requestedAt: string;
-  persona?: string;
+  persona?: HearthPersona;
   corpusScope?: 'lesson' | 'second_brain';
   sources?: ArtifactSource[];
   jobId?: string;
@@ -137,8 +140,9 @@ export function completeArtifact(
   sizeBytes: number,
   completedAt: string,
   sources?: ArtifactSource[],
+  servedBy?: GeneratedArtifact['servedBy'],
 ): GeneratedArtifact {
-  return { ...artifact, status: 'ready', sizeBytes, completedAt, updatedAt: completedAt, sources: sources ?? artifact.sources, error: undefined };
+  return { ...artifact, status: 'ready', sizeBytes, completedAt, updatedAt: completedAt, sources: sources ?? artifact.sources, servedBy: servedBy ?? artifact.servedBy, error: undefined };
 }
 
 /**

@@ -50,7 +50,9 @@ describe('Genkit presentation surface', () => {
 
     for (const flow of [
       "import('./flows/ingestion')",
-      "import('./flows/student-chat')",
+      "import('./flows/guide-chat')",
+      "import('./flows/friend-chat')",
+      "import('./flows/philosopher-chat')",
       "import('./flows/multi-format')",
       "import('./flows/socratic-tutor')",
       "import('./flows/evaluate-socratic')",
@@ -77,16 +79,17 @@ describe('model fallback routing', () => {
     expect(ingestion).toContain("import { generateWithFallback } from '../model-router';");
     // The graph stage must never call ai.generate directly — a retryable
     // Gemini outage would otherwise fail graph_write instead of degrading.
-    expect(ingestion).toContain('const { output, model } = await generateWithFallback({');
+    expect(ingestion).toContain('const { output, servedBy } = await generateWithFallback({');
     expect(ingestion).toContain('schema: GraphExtractionSchema');
   });
 
   test('RAG chat routes generation through the model router', () => {
-    const chat = read('src/ai/flows/student-chat.ts');
+    const chat = read('src/ai/flows/guide-chat.ts');
 
     expect(chat).toContain("import { generateWithFallback } from '../model-router';");
-    expect(chat).toContain('const { output, model } = await generateWithFallback({');
-    expect(chat).not.toContain('Gemini returned no structured RAG answer');
+    expect(chat).toContain('const { output, servedBy } = await generateWithFallback({');
+    expect(chat).toContain('servedBy,');
+    expect(chat).toContain("throw new Error('model returned no structured RAG answer')");
   });
 
   test('model router treats retryable availability errors as fallback triggers', () => {

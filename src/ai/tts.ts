@@ -9,6 +9,8 @@
  * Podcast artifacts are therefore stored as audio/wav `.wav` objects.
  */
 import { withDeadline } from '../lib/deadline';
+import { modelRoutingStore } from './model-routing-store';
+import { modelsForCapability } from './model-routing';
 
 export interface SpeakerSegment {
   speaker: 'HOST' | 'GUEST';
@@ -197,6 +199,20 @@ export const sarvamTts: TtsAdapter = {
   },
 };
 
+function ttsAdapterForModel(modelId: string): TtsAdapter {
+  if (modelId === GEMINI_TTS_MODEL || modelId === geminiTts.name) return geminiTts;
+  if (modelId === 'sarvam-tts-bulbul-v3' || modelId === sarvamTts.name) return sarvamTts;
+  throw new TtsUnavailableError(`Unsupported TTS model: ${modelId}`);
+}
+
+export function selectTtsAdapters(modelId: string): { primary: TtsAdapter; fallback?: TtsAdapter } {
+  const primary = ttsAdapterForModel(modelId);
+  return {
+    primary,
+    fallback: primary === sarvamTts ? geminiTts : sarvamTts,
+  };
+}
+
 /** Phase 7, Track A1: per-segment caps exist, but a long episode needs an
  *  overall ceiling so synthesis terminates in bounded time. */
 export const PODCAST_SYNTHESIS_DEADLINE_MS = 120_000;
@@ -208,12 +224,19 @@ export const PODCAST_SYNTHESIS_DEADLINE_MS = 120_000;
  * @param adapters - The primary text-to-speech adapter and optional fallback adapter
  * @returns The synthesized podcast as WAV audio data
  */
-export function synthesizePodcast(
+export async function synthesizePodcast(
   script: string,
-  adapters: { primary: TtsAdapter; fallback?: TtsAdapter } = { primary: geminiTts, fallback: sarvamTts },
+  adapters?: { primary: TtsAdapter; fallback?: TtsAdapter },
 ): Promise<Buffer> {
+  const selected = adapters ?? await (async () => {
+    const models = modelsForCapability(await modelRoutingStore.get(), 'tts');
+    return {
+      primary: ttsAdapterForModel(models.primary),
+      fallback: ttsAdapterForModel(models.fallback),
+    };
+  })();
   return withDeadline(
-    (signal) => synthesizePodcastUncapped(script, adapters, signal),
+    (signal) => synthesizePodcastUncapped(script, selected, signal),
     PODCAST_SYNTHESIS_DEADLINE_MS,
     'podcast synthesis',
   );

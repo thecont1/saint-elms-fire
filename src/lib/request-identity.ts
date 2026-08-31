@@ -1,11 +1,13 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import type { UserRole } from './types';
+import { demoIdentityFromCookie, type DemoPersonaId } from './demo-session';
 
 export interface RequestIdentity {
   userId: string;
   role: UserRole;
   mode: 'demo' | 'trusted-proxy';
+  personaId?: DemoPersonaId;
 }
 
 export class AuthorizationError extends Error {
@@ -48,10 +50,22 @@ export function resolveRequestIdentity(req: Request): RequestIdentity {
   }
 
   if (!mode || mode === 'demo') {
+    const sessionIdentity = demoIdentityFromCookie(req.headers.get('cookie'));
+    if (sessionIdentity) return sessionIdentity;
+    const configuredUserId = process.env.DEMO_USER_ID;
+    const configuredRole = process.env.DEMO_USER_ROLE as UserRole | undefined;
+    if (configuredUserId || configuredRole) {
+      return {
+        userId: configuredUserId || 'student-ananya',
+        role: configuredRole || 'student',
+        mode: 'demo',
+      };
+    }
     return {
-      userId: process.env.DEMO_USER_ID || 'student-alex',
-      role: (process.env.DEMO_USER_ROLE as UserRole) || 'admin',
+      userId: 'student-ananya',
+      role: 'student',
       mode: 'demo',
+      personaId: 'ananya',
     };
   }
 

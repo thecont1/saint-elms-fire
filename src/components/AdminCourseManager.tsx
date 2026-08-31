@@ -254,6 +254,7 @@ export function AdminCourseManager({
                     Assign to Module
                   </label>
                   <select
+                    aria-label="Assign to module"
                     value={lessonModuleId}
                     onChange={(e) => setLessonModuleId(e.target.value)}
                     required

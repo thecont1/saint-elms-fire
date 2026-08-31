@@ -1,8 +1,11 @@
 import { z } from 'genkit';
-import { ai, COURSEWARE_EMBEDDER } from '../genkit';
+import { ai } from '../genkit';
+import { embedWithRouting } from '../embed-router';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { filterReleasedRetrievedChunks } from '../../lib/courseware-rag';
+import { findMentionedUnreleasedTitle } from '../persona-contracts';
+import { buildGuideRefusal } from '../persona-responses';
 
 export const ChatHistoryMessageSchema = z.object({
   role: z.enum(['student', 'tutor', 'user', 'model', 'system']),
@@ -31,6 +34,7 @@ export const RagChatOutputSchema = z.object({
   unreleasedTopicsWarning: z.string().optional(),
   confidence: z.number().min(0).max(1),
   retrievedChunkCount: z.number().int().nonnegative(),
+  servedBy: z.object({ model: z.string(), role: z.enum(['primary', 'fallback']), attemptCount: z.number().int().positive() }).optional(),
 });
 
 const GeneratedAnswerSchema = z.object({
@@ -63,15 +67,24 @@ export const ragChat = ai.defineFlow(
     // the empty-courseware path returns above without an extra Firestore read.
     const activeReleases = await DataService.getReleasesForStudent(studentId);
 
-    const queryEmbedding = await ai.embed({
-      embedder: COURSEWARE_EMBEDDER,
+    const releasedIds = new Set(releasedLessons.map((lesson) => lesson.id));
+
+    // Deterministic preflight: if the question explicitly names a course/lesson
+    // that is NOT in the student's released set, refuse before any retrieval.
+    const allLessonTitles = await DataService.getLessonTitles();
+    const releasedTitleSet = new Set(releasedLessons.map(l => l.title.toLowerCase()));
+    const unreleasedNames = allLessonTitles
+      .filter(t => !releasedTitleSet.has(t.title.toLowerCase()))
+      .map(t => t.title);
+    const mentioned = findMentionedUnreleasedTitle(question, unreleasedNames);
+    if (mentioned) return buildGuideRefusal();
+
+    const queryEmbedding = await embedWithRouting({
       content: question,
       options: { taskType: 'RETRIEVAL_QUERY' },
     });
-    const vector = queryEmbedding[0]?.embedding;
+    const vector = queryEmbedding.embedding;
     if (!vector?.length) throw new Error('Gemini returned no query embedding');
-
-    const releasedIds = new Set(releasedLessons.map((lesson) => lesson.id));
     const rawChunks = await DataService.retrieveCoursewareChunks(
       vector,
       [...releasedIds],
@@ -99,8 +112,8 @@ export const ragChat = ai.defineFlow(
 
     // Generation goes through the model router: Gemini primary, Sarvam
     // fallback on availability errors — chat never waits out a 503 storm.
-    const { output, model } = await generateWithFallback({
-      system: `You are Socrates my Guide. Answer only from the retrieved passages. If the passages do not support an answer, say so. Never infer or reveal unreleased curriculum. Cite lesson titles in the answer.`,
+    const { output, servedBy } = await generateWithFallback({
+      system: `You are Socrates my Guide. Answer only from the retrieved passages. If the passages do not support an answer, or the question is out of bounds, you MUST refuse by returning this exact answer: "that's beyond what I've released to you — try the Philosopher". Never infer or reveal unreleased curriculum. Cite lesson titles in the answer.`,
       prompt: `RETRIEVED RELEASE-GATED PASSAGES:\n${context}\n\nRECENT HISTORY:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\n\nSTUDENT QUESTION: ${question}`,
       schema: GeneratedAnswerSchema,
     });
@@ -122,11 +135,12 @@ export const ragChat = ai.defineFlow(
       groundedSources: [...sourceMap.values()],
       confidence: generated.confidence,
       retrievedChunkCount: chunks.length,
+      servedBy,
     };
   }
 );
 
 // Compatibility exports for the existing API and UI.
-export const studentChatFlow = ragChat;
-export const StudentChatInputSchema = RagChatInputSchema;
-export const StudentChatOutputSchema = RagChatOutputSchema;
+export const guideChatFlow = ragChat;
+export const GuideChatInputSchema = RagChatInputSchema;
+export const GuideChatOutputSchema = RagChatOutputSchema;

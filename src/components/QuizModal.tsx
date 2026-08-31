@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { HelpCircle, CheckCircle2, XCircle, Sparkles, Send, Lightbulb, Loader2, AlertTriangle } from 'lucide-react';
 import type { Lesson } from '@/lib/types';
+import type { ServedBy } from '@/lib/ai-contracts';
+import { ServedByChip } from '@/components/ServedByChip';
 
 interface QuizModalProps {
   lesson: Lesson;
@@ -18,6 +20,7 @@ interface QuizData {
   correctIndex: number;
   explanation: string;
   model?: string;
+  servedBy?: ServedBy;
 }
 
 export function QuizModal({
@@ -163,6 +166,7 @@ export function QuizModal({
               <HelpCircle className="w-3.5 h-3.5 text-beacon-500 mt-0.5 shrink-0" />
               <span>{quizData.question}</span>
             </p>
+            <ServedByChip servedBy={quizData.servedBy} className="mb-4" />
 
             {/* Options */}
             <div className="space-y-2.5 mb-4">
