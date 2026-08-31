@@ -134,20 +134,22 @@ Catalog regenerated to 281 lessons / 38 courses and both manifest rows flipped t
 
 **Goal:** Fill the mathematics spine for Ananya/Brinda continuity.
 
+**Status (2026-08-31): CLOSED at time-box minimum (2 courses, 18 lessons). Existence sweep found the package premise stale: Differential Equations, Real Analysis, Linear Algebra, Abstract Algebra and Numerical Methods already exist on disk with full released lesson sets — re-authoring them is forbidden by this package's own verification rule — and Probability and Statistics / Topology are not manifest rows, so there is nothing to author for them. The authorable scope collapsed to the planned semester-6 electives. Per Mahesh's scope decision (time-box minimum), authored Number Theory (9/9, commit `c1a67bff`) and Operations Research (9/9, commit `2b9ef098`); both manifest rows flipped to `released` with `contentPath` (releasedRows 41 → 43, manifestVersion 2026-08-31.5), catalog regenerated to 321 lessons / 43 courses with `--check` clean.**
+
 **Verification rule:** For each WP-E row, verify against the manifest and the `content/` tree whether lessons already exist (the 17 editorial corrections touched Linear Algebra, Abstract Algebra, Numerical Methods — those courses are not empty). **Forbid re-authoring any course that already has lessons on disk.**
 
 Courses (semester order, 6–9 lessons each):
 
-- Differential Equations (Sem 2)
-- Real Analysis (Sem 3)
-- Linear Algebra (Sem 2) — verify existing lessons first
-- Abstract Algebra (Sem 4) — verify existing lessons first
-- Number Theory (Sem 3, elective)
-- Probability and Statistics (Sem 3, elective)
-- Numerical Methods (Sem 4, elective) — verify existing lessons first
-- Operations Research (Sem 4, elective)
-- Mathematical Modelling (Sem 5, elective)
-- Topology (Sem 5, elective)
+- Differential Equations (Sem 2) — exists on disk, released; not re-authored
+- Real Analysis (Sem 3) — exists on disk, released; not re-authored
+- Linear Algebra (Sem 2) — verified: exists on disk, released; not re-authored
+- Abstract Algebra (Sem 4) — verified: exists on disk, released; not re-authored
+- Number Theory (Sem 3, elective) — authored 9/9 as a semester-6 elective per manifest (`c1a67bff`), released
+- Probability and Statistics (Sem 3, elective) — not a manifest row; nothing to author
+- Numerical Methods (Sem 4, elective) — verified: exists on disk, released; not re-authored
+- Operations Research (Sem 4, elective) — authored 9/9 as a semester-6 elective per manifest (`2b9ef098`), released
+- Mathematical Modelling (Sem 5, elective) — remains planned (out of the time-boxed scope chosen)
+- Topology (Sem 5, elective) — not a manifest row; nothing to author
 
 **Time-box:** Stop after Differential Equations + Real Analysis + two electives if Phase 9 deadlines tighten.
 
@@ -210,6 +212,6 @@ Each lesson file:
 - [x] WP-F: university-support corpus (6 lessons) → run `ingest-friend-corpus.ts` (corpus pre-existed on `main`)
 - [x] WP-D: Astrophysics III + IV (18 lessons)
 - [x] WP-C leftovers (22 lessons) — 4 lab courses complete; manifest flipped to released; catalog at 303 lessons / 41 courses
-- [ ] WP-E math breadth (time-boxed)
+- [x] WP-E math breadth (time-boxed) — closed at 2 courses (Number Theory, Operations Research); manifest at 43 released rows; catalog at 321 lessons / 43 courses
 - [ ] Open PR per work package; merge when verified
 - [ ] Never touch `src/` in this branch

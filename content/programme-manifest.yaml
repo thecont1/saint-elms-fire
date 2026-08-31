@@ -2,8 +2,8 @@
 # Christ University, Bangalore
 # Programme manifest (source of truth for course and lesson metadata)
 #
-# 71 PDF rows transcribed. 41 rows currently have authored courseware under content/.
-# 31 rows remain (planned, external, or in authoring) per the action plan dated 2026-08-31.
+# 71 PDF rows transcribed. 43 rows currently have authored courseware under content/.
+# 29 rows remain (planned, external, or in authoring) per the action plan dated 2026-08-31.
 #
 # Status legend:
 #   released       — Authored courseware present in content/ and QA-approved.
@@ -18,9 +18,9 @@ programmeName: B.Sc. Physics & Mathematics with minor in Astrophysics
 institution: Christ University, Bangalore
 sourcePdfs:
   - BScPM_Astropysics2024_20241109100918.pdf
-manifestVersion: "2026-08-31.4"
+manifestVersion: "2026-08-31.5"
 totalPdfRows: 71
-releasedRows: 41
+releasedRows: 43
 authoringRows: 37
 
 # ===========================================================================
@@ -1093,8 +1093,9 @@ semester-6:
       optionGroup: sem6-mathematics-elective-i
       deliveryMode: authored-courseware
       prerequisites: [abstract-algebra]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory
+      contentPath: content/semester-6/mathematics/number-theory/
       notes: Divisibility, congruences, primes, arithmetic functions, finite fields, applications.
 
     - rowId: sem6-row-14
@@ -1108,8 +1109,9 @@ semester-6:
       optionGroup: sem6-mathematics-elective-i
       deliveryMode: authored-courseware
       prerequisites: [linear-algebra, differential-calculus]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-applied-mathematics
+      contentPath: content/semester-6/mathematics/operations-research/
       notes: Linear programming, simplex, duality, networks, scheduling, sensitivity analysis.
 
     - rowId: sem6-row-15

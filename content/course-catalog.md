@@ -5,8 +5,8 @@ institution: Christ University, Bangalore
 batch: 2023–2027
 generatedAt: 2026-08-31
 totalSemesters: 6
-totalCourses: 41
-totalLessons: 303
+totalCourses: 43
+totalLessons: 321
 sourceType: authored-courseware
 ---
 
@@ -24,7 +24,7 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | subjectId | subjectName | Semesters | Courses | Lessons |
 |-----------|-------------|-----------|---------|---------|
 | physics | Physics | 1–6 | 25 | 171 |
-| mathematics | Mathematics | 1–6 | 10 | 81 |
+| mathematics | Mathematics | 1–6 | 12 | 99 |
 | astrophysics | Astrophysics (minor) | 1–4 | 4 | 36 |
 | computational-methods | Computational Methods | 4 | 1 | 9 |
 | university-support | University Support and Student Information | all | 1 | 6 |
@@ -282,6 +282,24 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Optimisation — Gradient Descent, Newton and Nonlinear Fitting | mathematics-lab-using-python-iii-m1-l4 | intermediate | 50 |
 | 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Visualisation as Measurement — Fields, Diagnostics and Motion | mathematics-lab-using-python-iii-m1-l5 | intermediate | 50 |
 | 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Capstone — An Open Computational Investigation | mathematics-lab-using-python-iii-m1-l6 | advanced | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Divisibility and Congruences | The Integers — Divisibility, the Euclidean Algorithm and Unique Factorisation | number-theory-m1-l1 | foundation | 50 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Divisibility and Congruences | Congruences, Residue Classes and the Chinese Remainder Theorem | number-theory-m1-l2 | intermediate | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Divisibility and Congruences | Fermat, Euler, Wilson and the Group of Units | number-theory-m1-l3 | intermediate | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Arithmetic Functions and the Distribution of Primes | Multiplicative Functions and Möbius Inversion | number-theory-m2-l4 | intermediate | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Arithmetic Functions and the Distribution of Primes | The Distribution of Primes | number-theory-m2-l5 | intermediate | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Arithmetic Functions and the Distribution of Primes | Quadratic Residues and Quadratic Reciprocity | number-theory-m2-l6 | intermediate | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Finite Fields and Applications | Polynomial Rings and the Construction of Finite Fields | number-theory-m3-l7 | advanced | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Finite Fields and Applications | The Structure of Finite Fields — Cyclic Groups, Frobenius and Cryptography | number-theory-m3-l8 | advanced | 55 |
+| 6 | mathematics | Number Theory (Math Elective I, B) | Finite Fields and Applications | Capstone — Primality, Cryptography and Finite-Field Computation | number-theory-m3-l9 | advanced | 55 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Linear Programming — Geometry, Simplex and Duality | Linear Programming — Formulation and the Geometry of Optima | operations-research-m1-l1 | foundation | 50 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Linear Programming — Geometry, Simplex and Duality | The Simplex Method — Tableaux, Pivots and Termination | operations-research-m1-l2 | intermediate | 55 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Linear Programming — Geometry, Simplex and Duality | Duality — Shadow Prices, Bounds and Complementary Slackness | operations-research-m1-l3 | intermediate | 55 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Networks and Project Scheduling | Transportation and Assignment Problems | operations-research-m2-l4 | intermediate | 55 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Networks and Project Scheduling | Shortest Paths and Max-Flow Min-Cut | operations-research-m2-l5 | intermediate | 55 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Networks and Project Scheduling | Project Scheduling — Critical Path and PERT | operations-research-m2-l6 | intermediate | 50 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Integer Programming, Sensitivity and Applications | Integer Programming and Branch-and-Bound | operations-research-m3-l7 | advanced | 55 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Integer Programming, Sensitivity and Applications | Sensitivity Analysis — How Long the Answer Stays True | operations-research-m3-l8 | advanced | 55 |
+| 6 | mathematics | Operations Research (Math Elective I, C) | Integer Programming, Sensitivity and Applications | Capstone — Modelling a Real Operation | operations-research-m3-l9 | advanced | 55 |
 | 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Quantum Eigenvalue Problems by Matrix Diagonalisation | advanced-quantum-mechanics-lab-m1-l1 | intermediate | 50 |
 | 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Bound States of the Finite Well — the Shooting Method | advanced-quantum-mechanics-lab-m1-l2 | intermediate | 50 |
 | 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Wavepacket Propagation — Time Evolution with Crank–Nicolson | advanced-quantum-mechanics-lab-m1-l3 | intermediate | 50 |
