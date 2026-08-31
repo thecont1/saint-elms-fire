@@ -180,6 +180,12 @@ interface MutableBreaker {
   consecutiveFailures: number;
   openedAt?: number;
   probeInFlight: boolean;
+  generation: number;
+}
+
+interface BreakerAdmission {
+  generation: number;
+  halfOpenProbe: boolean;
 }
 
 export interface CircuitBreakerOptions {
@@ -190,7 +196,22 @@ export interface CircuitBreakerOptions {
 
 export function isBreakerFailure(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /(?:^|\D)(?:429|503)(?:\D|$)|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded/i.test(message);
+  const name = error instanceof Error ? error.name : '';
+  const errorRecord = error && typeof error === 'object' ? error as Record<string, unknown> : undefined;
+  const code = String(errorRecord?.code ?? '');
+  const structuredStatus = errorRecord?.status ?? errorRecord?.statusCode;
+  const statusText = structuredStatus === undefined ? '' : String(structuredStatus);
+  const contextualStatus = message.match(/\b(?:HTTP(?:\/\d(?:\.\d)?)?|status(?:\s+code)?)\s*[:=]?\s*(\d{3})\b/i)?.[1];
+  const leadingStatus = message.match(/^\s*(\d{3})\b/)?.[1];
+  const status = /^\d{3}$/.test(statusText) ? statusText : contextualStatus ?? leadingStatus;
+  const explicitNonTransient = ['400', '401', '403'].includes(status ?? '')
+    || /authent(?:ication|icated)|authori[sz]ation|permission denied|invalid argument|failed precondition|schema(?:-invalid| validation)|validation (?:failed|error|timed?\s*out|timeout)/i.test(message)
+    || /^(?:UNAUTHENTICATED|PERMISSION_DENIED|INVALID_ARGUMENT|FAILED_PRECONDITION)$/i.test(code);
+  if (explicitNonTransient) return false;
+  return ['408', '429', '503', '504'].includes(status ?? '')
+    || /RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded|timed?\s*out|timeout|deadline exceeded/i.test(message)
+    || /^(?:TimeoutError|ETIMEDOUT|ECONNABORTED|DEADLINE_EXCEEDED)$/i.test(name)
+    || /^(?:ETIMEDOUT|ECONNABORTED|DEADLINE_EXCEEDED)$/i.test(code);
 }
 
 export function isSchemaInvalidOutput(error: unknown): boolean {
@@ -212,49 +233,86 @@ export class CircuitBreakerRegistry {
   private mutable(model: string): MutableBreaker {
     let state = this.states.get(model);
     if (!state) {
-      state = { state: 'closed', consecutiveFailures: 0, probeInFlight: false };
+      state = { state: 'closed', consecutiveFailures: 0, probeInFlight: false, generation: 0 };
       this.states.set(model, state);
     }
     return state;
   }
 
   tryAcquire(model: string): boolean {
-    const state = this.mutable(model);
-    if (state.state === 'closed') return true;
-    if (state.state === 'half-open') return false;
-    if (state.openedAt === undefined || this.now() - state.openedAt < this.cooldownMs) return false;
-    state.state = 'half-open';
-    state.probeInFlight = true;
-    return true;
+    return this.acquire(model) !== undefined;
   }
 
-  recordSuccess(model: string): void {
+  acquire(model: string): BreakerAdmission | undefined {
     const state = this.mutable(model);
+    if (state.state === 'closed') {
+      return { generation: state.generation, halfOpenProbe: false };
+    }
+    if (state.state === 'half-open') return undefined;
+    if (state.openedAt === undefined || this.now() - state.openedAt < this.cooldownMs) return undefined;
+    state.state = 'half-open';
+    state.probeInFlight = true;
+    return { generation: state.generation, halfOpenProbe: true };
+  }
+
+  isAdmissionActive(model: string, admission: BreakerAdmission): boolean {
+    const state = this.mutable(model);
+    if (admission.generation !== state.generation) return false;
+    return admission.halfOpenProbe ? state.state === 'half-open' : state.state === 'closed';
+  }
+
+  recordSuccess(model: string, admission?: BreakerAdmission): boolean {
+    const state = this.mutable(model);
+    if (admission && admission.generation !== state.generation) return false;
+    // A success from a request admitted before peers opened the breaker is
+    // stale. Only a closed-state call or the exclusive half-open probe may
+    // close/reset the breaker.
+    if (state.state === 'open') return false;
     state.state = 'closed';
     state.consecutiveFailures = 0;
     state.openedAt = undefined;
     state.probeInFlight = false;
+    if (admission?.halfOpenProbe) state.generation += 1;
+    return true;
   }
 
-  recordFailure(model: string, error: unknown): void {
+  recordFailure(model: string, error: unknown, admission?: BreakerAdmission): boolean {
     const state = this.mutable(model);
+    if (admission && admission.generation !== state.generation) return false;
+    // Requests admitted while closed may settle after a peer has already
+    // opened the breaker. Those late results belong to the same failure burst:
+    // do not inflate telemetry or move the cooldown window forward.
+    if (state.state === 'open') return false;
+
     if (!isBreakerFailure(error)) {
-      // A different outcome interrupts a run of consecutive 429/503 failures.
+      // A different outcome interrupts a run of consecutive transient failures.
       state.consecutiveFailures = 0;
       if (state.state === 'half-open') {
         state.state = 'closed';
         state.probeInFlight = false;
         state.openedAt = undefined;
+        if (admission?.halfOpenProbe) state.generation += 1;
       }
-      return;
+      return true;
     }
 
-    state.consecutiveFailures += 1;
-    if (state.state === 'half-open' || state.consecutiveFailures >= this.failureThreshold) {
+    if (state.state === 'half-open') {
+      state.consecutiveFailures = this.failureThreshold;
       state.state = 'open';
       state.openedAt = this.now();
       state.probeInFlight = false;
+      state.generation += 1;
+      return true;
     }
+
+    state.consecutiveFailures = Math.min(this.failureThreshold, state.consecutiveFailures + 1);
+    if (state.consecutiveFailures >= this.failureThreshold) {
+      state.state = 'open';
+      state.openedAt = this.now();
+      state.probeInFlight = false;
+      state.generation += 1;
+    }
+    return true;
   }
 
   getState(model: string): BreakerSnapshot {
@@ -309,25 +367,26 @@ export async function routeModelCall<T>(options: RouteModelCallOptions<T>): Prom
   let lastError: unknown = new Error('No model is currently available');
 
   for (const candidate of candidates) {
-    if (!breakers.tryAcquire(candidate.model)) continue;
-    const halfOpenProbe = breakers.getState(candidate.model).state === 'half-open';
-    const allowedAttempts = halfOpenProbe ? 1 : maxRetries + 1;
+    const admission = breakers.acquire(candidate.model);
+    if (!admission) continue;
+    const allowedAttempts = admission.halfOpenProbe ? 1 : maxRetries + 1;
 
     for (let attempt = 1; attempt <= allowedAttempts; attempt++) {
+      if (attempt > 1 && !breakers.isAdmissionActive(candidate.model, admission)) break;
       totalAttempts += 1;
       try {
         const value = await options.call(candidate.model, { role: candidate.role, attempt });
-        breakers.recordSuccess(candidate.model);
+        breakers.recordSuccess(candidate.model, admission);
         return {
           value,
           servedBy: { model: candidate.model, role: candidate.role, attemptCount: totalAttempts },
         };
       } catch (error) {
         lastError = error;
-        breakers.recordFailure(candidate.model, error);
+        const recorded = breakers.recordFailure(candidate.model, error, admission);
         if (isSchemaInvalidOutput(error)) break;
         if (!isBreakerFailure(error)) throw error;
-        if (breakers.getState(candidate.model).state === 'open') break;
+        if (!recorded || breakers.getState(candidate.model).state === 'open') break;
         if (attempt < allowedAttempts) {
           const jitter = 0.5 + Math.max(0, Math.min(1, random()));
           await sleep(Math.round(baseDelayMs * (2 ** (attempt - 1)) * jitter));

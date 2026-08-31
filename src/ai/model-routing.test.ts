@@ -4,6 +4,7 @@ import {
   CircuitBreakerRegistry,
   ModelRoutingConfigStore,
   ModelRoutingWriteSchema,
+  isBreakerFailure,
   modelsForCapability,
   routeModelCall,
   type ModelRoutingConfig,
@@ -138,7 +139,12 @@ describe('CircuitBreakerRegistry', () => {
     breakers.recordFailure('model-a', new Error('429 rate limited'));
     expect(breakers.getState('model-a').state).toBe('closed');
     breakers.recordFailure('model-a', new Error('503 unavailable'));
-    expect(breakers.getState('model-a').state).toBe('open');
+    expect(breakers.getState('model-a')).toMatchObject({
+      state: 'open',
+      consecutiveFailures: 2,
+      openedAt: now,
+      probeInFlight: false,
+    });
     expect(breakers.tryAcquire('model-a')).toBe(false);
 
     now += 120_000;
@@ -151,7 +157,7 @@ describe('CircuitBreakerRegistry', () => {
     expect(breakers.tryAcquire('model-a')).toBe(true);
   });
 
-  test('does not open for schema, authentication, or other non-429/503 failures', () => {
+  test('does not open for schema, authentication, or other non-transient failures', () => {
     const breakers = new CircuitBreakerRegistry({ failureThreshold: 1, cooldownMs: 120_000, now: () => 0 });
     breakers.recordFailure('model-a', new Error('schema invalid'));
     breakers.recordFailure('model-a', new Error('401 unauthenticated'));
@@ -162,6 +168,165 @@ describe('CircuitBreakerRegistry', () => {
     const breakers = new CircuitBreakerRegistry({ failureThreshold: 1, cooldownMs: 120_000, now: () => 0 });
     breakers.recordFailure('model-a', new Error('Model returned schema-invalid output'));
     expect(breakers.getState('model-a').state).toBe('closed');
+  });
+
+  test.each([
+    new Error('401 authentication timed out'),
+    new Error('403 permission denied after timeout'),
+    new Error('400 schema validation timeout'),
+    Object.assign(new Error('request timed out'), { code: 'UNAUTHENTICATED' }),
+    Object.assign(new Error('deadline exceeded'), { code: 'INVALID_ARGUMENT' }),
+  ])('keeps explicit auth and validation failures non-transient %#', (error) => {
+    expect(isBreakerFailure(error)).toBe(false);
+  });
+
+  test.each([
+    new Error('503 unavailable, retry after 400ms'),
+    new Error('429 Too Many Requests; quota 401 exceeded'),
+    new Error('503 unavailable (trace 4013ab0)'),
+    new Error('429 rate limited after 4030 tokens'),
+    new Error('UNAVAILABLE: backend at 10.0.0.403 down'),
+    Object.assign(new Error('request failed'), { status: 503 }),
+    Object.assign(new Error('request failed'), { statusCode: 429 }),
+  ])('does not mistake incidental numbers for non-transient statuses %#', (error) => {
+    expect(isBreakerFailure(error)).toBe(true);
+  });
+
+  test.each([
+    Object.assign(new Error('request timed out'), { status: 401 }),
+    Object.assign(new Error('deadline exceeded'), { statusCode: 403 }),
+  ])('honors structured non-transient HTTP status over timeout text %#', (error) => {
+    expect(isBreakerFailure(error)).toBe(false);
+  });
+
+  test('a failed half-open probe reopens at the threshold with a fresh cooldown', () => {
+    let now = 1_000;
+    const breakers = new CircuitBreakerRegistry({ failureThreshold: 2, cooldownMs: 120_000, now: () => now });
+    breakers.recordFailure('model-a', new Error('503 unavailable'));
+    breakers.recordFailure('model-a', new Error('503 unavailable'));
+
+    now = 121_000;
+    expect(breakers.tryAcquire('model-a')).toBe(true);
+    expect(breakers.getState('model-a').state).toBe('half-open');
+
+    now = 121_100;
+    breakers.recordFailure('model-a', new Error('request timed out'));
+    expect(breakers.getState('model-a')).toMatchObject({
+      state: 'open',
+      consecutiveFailures: 2,
+      openedAt: 121_100,
+      retryAt: 241_100,
+      probeInFlight: false,
+    });
+  });
+
+  test('caps late concurrent failures at the threshold without extending the cooldown', async () => {
+    let now = 1_000;
+    const breakers = new CircuitBreakerRegistry({ failureThreshold: 2, cooldownMs: 120_000, now: () => now });
+    let releasePrimary: (() => void) | undefined;
+    const primaryGate = new Promise<void>((resolve) => { releasePrimary = resolve; });
+    let admitted = 0;
+    let allAdmitted: (() => void) | undefined;
+    const admittedGate = new Promise<void>((resolve) => { allAdmitted = resolve; });
+
+    const calls = Array.from({ length: 6 }, () => routeModelCall({
+      primary: 'primary', fallback: 'fallback', maxRetries: 0, breakers,
+      call: async (model) => {
+        if (model === 'fallback') return 'fallback-ok';
+        admitted += 1;
+        if (admitted === 6) allAdmitted?.();
+        await primaryGate;
+        throw new Error('503 unavailable');
+      },
+      sleep: async () => {}, random: () => 0,
+    }));
+
+    await admittedGate;
+    releasePrimary?.();
+    const results = await Promise.all(calls);
+    expect(results).toHaveLength(6);
+    expect(results.every((result) => result.value === 'fallback-ok')).toBe(true);
+
+    const opened = breakers.getState('primary');
+    expect(opened).toMatchObject({ state: 'open', consecutiveFailures: 2, openedAt: 1_000 });
+    now = 121_000;
+    expect(breakers.tryAcquire('primary')).toBe(true);
+  });
+
+  test('does not let stale calls from the failed burst override a half-open probe', async () => {
+    let now = 1_000;
+    const breakers = new CircuitBreakerRegistry({ failureThreshold: 2, cooldownMs: 120_000, now: () => now });
+    const pending: Array<{
+      resolve: (value: string) => void;
+      reject: (error: Error) => void;
+    }> = [];
+    const call = (model: string) => {
+      if (model === 'fallback') return Promise.resolve('fallback-ok');
+      return new Promise<string>((resolve, reject) => pending.push({ resolve, reject }));
+    };
+    const options = {
+      primary: 'primary', fallback: 'fallback', maxRetries: 0, breakers, call,
+      sleep: async () => {}, random: () => 0,
+    };
+
+    const oldCalls = [routeModelCall(options), routeModelCall(options), routeModelCall(options)];
+    await Promise.resolve();
+    expect(pending).toHaveLength(3);
+    pending[0].reject(new Error('503 unavailable'));
+    pending[1].reject(new Error('503 unavailable'));
+    await Promise.all([oldCalls[0], oldCalls[1]]);
+    expect(breakers.getState('primary').state).toBe('open');
+
+    now = 121_000;
+    const probe = routeModelCall(options);
+    await Promise.resolve();
+    expect(pending).toHaveLength(4);
+    expect(breakers.getState('primary').state).toBe('half-open');
+
+    pending[2].reject(new Error('503 stale unavailable'));
+    await oldCalls[2];
+    expect(breakers.getState('primary').state).toBe('half-open');
+
+    pending[3].resolve('probe-ok');
+    await expect(probe).resolves.toMatchObject({ value: 'probe-ok' });
+    expect(breakers.getState('primary')).toMatchObject({ state: 'closed', consecutiveFailures: 0 });
+  });
+
+  test('does not retry an admission after a peer opens the breaker', async () => {
+    const breakers = new CircuitBreakerRegistry({ failureThreshold: 2, cooldownMs: 120_000, now: () => 1_000 });
+    let releaseBackoff: (() => void) | undefined;
+    const backoffGate = new Promise<void>((resolve) => { releaseBackoff = resolve; });
+    let firstCallAttempts = 0;
+    let secondCallAttempts = 0;
+
+    const first = routeModelCall({
+      primary: 'primary', fallback: 'fallback', maxRetries: 2, breakers,
+      call: async (model) => {
+        if (model === 'fallback') return 'fallback-ok';
+        firstCallAttempts += 1;
+        throw new Error('503 unavailable');
+      },
+      sleep: async () => backoffGate,
+      random: () => 0,
+    });
+    await Promise.resolve();
+
+    const second = routeModelCall({
+      primary: 'primary', fallback: 'fallback', maxRetries: 0, breakers,
+      call: async (model) => {
+        if (model === 'fallback') return 'fallback-ok';
+        secondCallAttempts += 1;
+        throw new Error('503 unavailable');
+      },
+      sleep: async () => {},
+      random: () => 0,
+    });
+    await second;
+    releaseBackoff?.();
+    await first;
+
+    expect(firstCallAttempts).toBe(1);
+    expect(secondCallAttempts).toBe(1);
   });
 });
 
@@ -233,5 +398,45 @@ describe('routeModelCall', () => {
     expect(calls).toEqual(['primary', 'fallback']);
     expect(result.servedBy).toEqual({ model: 'fallback', role: 'fallback', attemptCount: 2 });
     expect(breakers.getState('primary')).toMatchObject({ state: 'closed', consecutiveFailures: 0 });
+  });
+
+  test.each([
+    new Error('request timed out'),
+    new Error('request timeout'),
+    Object.assign(new Error('provider request failed'), { name: 'TimeoutError' }),
+    Object.assign(new Error('socket closed'), { code: 'ETIMEDOUT' }),
+    Object.assign(new Error('deadline exceeded'), { code: 'DEADLINE_EXCEEDED' }),
+  ])('advances to fallback after provider timeout %#', async (timeoutError) => {
+    const calls: string[] = [];
+    const result = await routeModelCall({
+      primary: 'primary', fallback: 'fallback', maxRetries: 0,
+      breakers: new CircuitBreakerRegistry({ failureThreshold: 1, cooldownMs: 120_000, now: () => 0 }),
+      call: async (model) => {
+        calls.push(model);
+        if (model === 'primary') throw timeoutError;
+        return 'fallback-ok';
+      },
+      sleep: async () => {}, random: () => 0,
+    });
+
+    expect(calls).toEqual(['primary', 'fallback']);
+    expect(result).toEqual({
+      value: 'fallback-ok',
+      servedBy: { model: 'fallback', role: 'fallback', attemptCount: 2 },
+    });
+  });
+
+  test('does not route authentication failures to fallback', async () => {
+    const calls: string[] = [];
+    await expect(routeModelCall({
+      primary: 'primary', fallback: 'fallback', maxRetries: 2,
+      breakers: new CircuitBreakerRegistry({ failureThreshold: 1, cooldownMs: 120_000, now: () => 0 }),
+      call: async (model) => {
+        calls.push(model);
+        throw new Error('401 authentication failed');
+      },
+      sleep: async () => {}, random: () => 0,
+    })).rejects.toThrow('401 authentication failed');
+    expect(calls).toEqual(['primary']);
   });
 });
