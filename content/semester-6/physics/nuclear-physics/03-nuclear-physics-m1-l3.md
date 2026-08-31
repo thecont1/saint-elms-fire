@@ -164,25 +164,13 @@ Predict the magnetic moment of $^{17}$O using the Schmidt limits for a $d_{5/2}$
 
 **Solution.** The Schmidt magnetic moment for a single nucleon with $j = \ell + 1/2$ is
 
-$$\mu = \left(j - \frac{1}{2} + \mu_n\right) \frac{\mu_N}{j},$$
+$$\mu = \left[g_l \ell + \frac{g_s}{2}\right] \mu_N,$$
 
-where $\mu_n = -1.913$ is the neutron magnetic moment in nuclear magnetons. For $d_{5/2}$ ($j = 5/2, \ell = 2$):
+where $g_l$ is the orbital $g$-factor and $g_s$ is the spin $g$-factor. For a neutron, $g_l = 0$ and $g_s = 2 \mu_n = -3.826$ (i.e. $\mu_n = -1.913$). For $d_{5/2}$ ($j = 5/2, \ell = 2, j = \ell + 1/2$):
 
-$$\mu = \left(2 + (-1.913)\right) \frac{\mu_N}{5/2} = 0.087 \times \frac{2}{5}\mu_N = -0.035\,\mu_N.$$
+$$\mu = \left[0 \times 2 + \frac{-3.826}{2}\right] \mu_N = -1.913\,\mu_N.$$
 
-Wait, that gives a very small moment. Let me reconsider. The Schmidt formula for a $j = \ell + 1/2$ neutron is
-
-$$\mu = \mu_n - \frac{\mu_n - 1/2}{(\ell + 1)(2\ell + 1)} \cdot j,$$
-
-or alternatively, in closed form:
-
-$$\mu = \frac{j}{j+1}\left[(\ell + 1)\mu_n - \frac{1}{2}\right]\frac{\mu_N}{j}.$$
-
-For $d_{5/2}$ ($j = 5/2, \ell = 2$):
-
-$$\mu = \frac{5/2}{7/2}\left[3 \times (-1.913) - \frac{1}{2}\right]\frac{\mu_N}{5/2} = \frac{5}{7}\left[-5.74 - 0.5\right]\frac{2}{5} \mu_N = \frac{5}{7} \times (-6.24) \times \frac{2}{5} = -1.78\,\mu_N.$$
-
-The experimental value is $-1.89\,\mu_N$, in reasonable agreement with the Schmidt limit.
+The experimental value is $-1.893\,\mu_N$, in good agreement with the Schmidt limit.
 
 ### Example 3 — Predicting the magic nucleus $^{208}$Pb
 

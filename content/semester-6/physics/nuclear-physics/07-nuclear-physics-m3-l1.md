@@ -147,7 +147,7 @@ These questions drive the experimental programme of particle physics today, with
 
 Consider the reaction $\pi^- + p \to \Lambda^0 + K^0$. The pion is $u\bar{d}$ or $d\bar{u}$, the proton is $uud$, the $\Lambda^0$ is $uds$, and the $K^0$ is $d\bar{s}$. Verify the conservation of charge, baryon number, and strangeness.
 
-**Solution.** Choose the $\pi^-$ as $d\bar{u}$. Initial state: $d\bar{u} + uud = udd + \bar{u} + u = uud + u\bar{d} = $ quark content $uud + d\bar{u}$. Wait, let me just count the quarks. The initial state has the quarks $d, \bar{u}, u, u, d$ = two $u$'s, two $d$'s, one $\bar{u}$ — net two $u$'s and one $d$ (so $uud$). The final state has $u, d, s, d, \bar{s}$ = $udd + s\bar{s}$ = net $udd$. Both initial and final states have the quark content $uud$ plus a $q\bar{q}$ pair, but with different flavours. So the net quark content of the hadrons is $uud$ on both sides, but the initial pion and final kaon have different flavour structure.
+**Solution.** Choose the $\pi^-$ as $d\bar{u}$. Initial state quarks: $d, \bar{u}$ (from $\pi^-$) plus $u, u, d$ (from $p$) — net $u, u, d, d$ with one $\bar{u}$, i.e. net $u, d, d$ (the $\bar{u}$ annihilates one $u$). Final state: $\Lambda^0 = uds$ and $K^0 = d\bar{s}$ — quarks $u, d, s, d, \bar{s}$ — net $u, d, d$ (the $s$ and $\bar{s}$ cancel). Both sides have net quark content $u, d, d$. ✓
 
 Charge: initial: $\pi^- + p$ has charge $(-1) + (+1) = 0$. Final: $\Lambda^0 + K^0$ has charge $0 + 0 = 0$. Charge is conserved.
 
