@@ -139,7 +139,11 @@ export function LmsDashboardClient({
   }, [role]);
 
   const handlePersonaChange = async (persona: DemoPersonaId) => {
+    if (persona === demoSession?.selected.id || isChangingPersona) return;
     setIsChangingPersona(true);
+    // Demo personas are server-resolved principals. A full navigation is
+    // required so every server component and API scope switches atomically;
+    // render an explicit veil meanwhile to prevent any stale-persona flash.
     try {
       const response = await fetch('/api/session', {
         method: 'POST',
@@ -325,6 +329,18 @@ export function LmsDashboardClient({
 
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-marine-900">
+      {isChangingPersona && (
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-white/95 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-3 rounded-full border border-beacon-200 bg-white px-5 py-3 text-sm font-semibold text-marine-800 shadow-lg">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-beacon-500 border-t-transparent" />
+            Plotting the selected student’s voyage…
+          </div>
+        </div>
+      )}
       {/* 1. TOP HEADER / APP NAVIGATION */}
       <Navigation
         currentRole={role}

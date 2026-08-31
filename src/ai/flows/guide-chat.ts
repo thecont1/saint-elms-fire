@@ -3,7 +3,10 @@ import { ai } from '../genkit';
 import { embedWithRouting } from '../embed-router';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
-import { filterReleasedRetrievedChunks } from '../../lib/courseware-rag';
+import {
+  resolveRagRetrievalConfig,
+  selectReleasedRetrievedChunks,
+} from '../../lib/courseware-rag';
 import { findMentionedUnreleasedTitle } from '../persona-contracts';
 import { buildGuideRefusal } from '../persona-responses';
 
@@ -50,7 +53,13 @@ export const ragChat = ai.defineFlow(
     inputSchema: RagChatInputSchema,
     outputSchema: RagChatOutputSchema,
   },
-  async ({ studentId, question, courseId, history = [], topK = 6 }) => {
+  async ({ studentId, question, courseId, history = [], topK }) => {
+    const configuredRetrieval = resolveRagRetrievalConfig();
+    const retrievalConfig = {
+      ...configuredRetrieval,
+      topK: topK ?? configuredRetrieval.topK,
+      candidateK: Math.max(topK ?? configuredRetrieval.topK, configuredRetrieval.candidateK),
+    };
     const releasedLessons = await DataService.getReleasedLessonsForStudent(studentId, courseId);
     if (releasedLessons.length === 0) {
       return {
@@ -88,12 +97,23 @@ export const ragChat = ai.defineFlow(
     const rawChunks = await DataService.retrieveCoursewareChunks(
       vector,
       [...releasedIds],
-      topK,
+      retrievalConfig.candidateK,
       activeReleases.map(release => release.id),
     );
     const visibleReleaseIds = new Set(activeReleases.map(release => release.id));
-    const chunks = filterReleasedRetrievedChunks(rawChunks, releasedIds, topK)
-      .filter(chunk => !chunk.releaseId || visibleReleaseIds.has(chunk.releaseId));
+    const visibleCandidates = rawChunks.filter(
+      chunk => chunk.releaseId !== undefined && visibleReleaseIds.has(chunk.releaseId),
+    );
+    const retrieval = selectReleasedRetrievedChunks(visibleCandidates, releasedIds, retrievalConfig);
+    const chunks = retrieval.chunks;
+    console.info('rag_retrieval', {
+      studentId,
+      releasedLessonCount: releasedIds.size,
+      topK: retrievalConfig.topK,
+      candidateK: retrievalConfig.candidateK,
+      similarityThreshold: retrievalConfig.similarityThreshold,
+      ...retrieval.metrics,
+    });
     if (chunks.length === 0) {
       return {
         answer: 'No indexed passage from your released lessons matched this question. Ask your instructor to re-ingest the released courseware, or try a question closer to the lesson text.',

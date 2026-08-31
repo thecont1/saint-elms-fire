@@ -4,8 +4,10 @@ import {
   chunkMarkdown,
   filterReleasedRetrievedChunks,
   isReleaseActive,
+  resolveRagRetrievalConfig,
   resolveRegenerationSource,
   selectProactiveTarget,
+  selectReleasedRetrievedChunks,
   type RetrievedCoursewareChunk,
 } from './courseware-rag';
 
@@ -60,6 +62,71 @@ describe('filterReleasedRetrievedChunks', () => {
   test('respects topK and handles an empty release set', () => {
     expect(filterReleasedRetrievedChunks(chunks, new Set(), 3)).toEqual([]);
     expect(filterReleasedRetrievedChunks(chunks, new Set(['released-1', 'released-2']), 1)).toHaveLength(1);
+  });
+});
+
+describe('RAG retrieval configuration', () => {
+  test('uses scale-ready defaults and validates environment overrides', () => {
+    expect(resolveRagRetrievalConfig({})).toEqual({ topK: 8, candidateK: 24, similarityThreshold: 0.72 });
+    expect(resolveRagRetrievalConfig({
+      RAG_TOP_K: '10',
+      RAG_CANDIDATE_K: '30',
+      RAG_SIMILARITY_THRESHOLD: '0.65',
+    })).toEqual({ topK: 10, candidateK: 30, similarityThreshold: 0.65 });
+    expect(() => resolveRagRetrievalConfig({ RAG_TOP_K: '0' })).toThrow('RAG_TOP_K');
+    expect(() => resolveRagRetrievalConfig({ RAG_SIMILARITY_THRESHOLD: '1.2' })).toThrow('RAG_SIMILARITY_THRESHOLD');
+  });
+
+  test('filters candidates by cosine similarity and reports retrieval metrics', () => {
+    const candidates: RetrievedCoursewareChunk[] = [
+      { id: 'b', lessonId: 'released-1', lessonTitle: 'Released', content: 'second', chunkIndex: 1, distance: 0.3 },
+      { id: 'a', lessonId: 'secret', lessonTitle: 'Secret', content: 'unreleased', chunkIndex: 0, distance: 0.01 },
+      { id: 'b', lessonId: 'released-1', lessonTitle: 'Released', content: 'duplicate', chunkIndex: 1, distance: 0.2 },
+      { id: 'c', lessonId: 'released-2', lessonTitle: 'Released 2', content: 'first', chunkIndex: 0, distance: 0.1 },
+    ];
+    const result = selectReleasedRetrievedChunks(candidates, new Set(['released-1', 'released-2']), {
+      topK: 5,
+      candidateK: 10,
+      similarityThreshold: 0.7,
+    });
+    expect(result.chunks.map((chunk) => chunk.id)).toEqual(['c', 'b']);
+    expect(result.metrics).toEqual({ candidatesRetrieved: 4, filteredByRelease: 1, filteredByThreshold: 0, returned: 2 });
+  });
+
+  test('Chetna-scale retrieval finds known passages across hundreds of lessons', () => {
+    const releasedIds = new Set<string>();
+    const corpus: RetrievedCoursewareChunk[] = [];
+    for (let index = 0; index < 219; index += 1) {
+      const lessonId = `lesson-${String(index).padStart(3, '0')}`;
+      releasedIds.add(lessonId);
+      corpus.push({
+        id: `${lessonId}-chunk-0`,
+        lessonId,
+        lessonTitle: `Synthetic lesson ${index}`,
+        content: `Distractor passage ${index}`,
+        chunkIndex: 0,
+        distance: 0.45 + (index % 40) / 100,
+      });
+    }
+    corpus.push(
+      { id: 'oscillator', lessonId: 'lesson-041', lessonTitle: 'The Harmonic Oscillator', content: 'Resonance in a driven oscillator occurs near the natural frequency.', chunkIndex: 1, distance: 0.03 },
+      { id: 'fine-structure', lessonId: 'lesson-173', lessonTitle: 'Fine Structure', content: 'Fine-structure splitting arises from relativistic and spin-orbit corrections.', chunkIndex: 2, distance: 0.05 },
+    );
+
+    for (const knownId of ['oscillator', 'fine-structure']) {
+      const rankedForQuestion = corpus
+        .map((chunk) => (
+          chunk.id === knownId ? { ...chunk, distance: 0.03 } : { ...chunk, distance: Math.max(chunk.distance ?? 1, 0.45) }
+        ))
+        .sort((left, right) => (left.distance ?? 1) - (right.distance ?? 1));
+      const result = selectReleasedRetrievedChunks(rankedForQuestion, releasedIds, {
+        topK: 8,
+        candidateK: 24,
+        similarityThreshold: 0.72,
+      });
+      expect(result.chunks.length).toBeGreaterThan(0);
+      expect(result.chunks.some((chunk) => chunk.id === knownId)).toBe(true);
+    }
   });
 });
 

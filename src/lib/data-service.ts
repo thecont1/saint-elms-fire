@@ -844,42 +844,58 @@ export const DataService = {
   ): Promise<RetrievedCoursewareChunk[]> {
     if (releasedLessonIds.length === 0 || limit <= 0) return [];
 
-    // Query each released lesson separately. This keeps unreleased documents
-    // outside the query itself instead of retrieving globally and filtering
-    // only after the fact.
-    const snapshots = await Promise.all(
-      [...new Set(releasedLessonIds)].map((lessonId) =>
-        db
-          .collection('courseware_chunks')
-          .where('lessonId', '==', lessonId)
-          .findNearest({
-            vectorField: 'embedding',
-            queryVector,
-            limit,
-            distanceMeasure: 'COSINE',
-            distanceResultField: 'vectorDistance',
-          })
-          .get()
-      )
-    );
+    // Query release-gated lesson batches rather than issuing one vector query per
+    // lesson. Firestore supports an `in` pre-filter with up to 30 values; this
+    // keeps a 219-lesson persona to eight indexed vector queries instead of 219.
+    const lessonIdBatches: string[][] = [];
+    const uniqueLessonIds = [...new Set(releasedLessonIds)];
+    for (let index = 0; index < uniqueLessonIds.length; index += 30) {
+      lessonIdBatches.push(uniqueLessonIds.slice(index, index + 30));
+    }
+    const snapshots: Array<{ docs: import('@google-cloud/firestore').QueryDocumentSnapshot[] }> = [];
+    const batchConcurrency = 4;
+    for (let index = 0; index < lessonIdBatches.length; index += batchConcurrency) {
+      const window = lessonIdBatches.slice(index, index + batchConcurrency);
+      const windowSnapshots = await Promise.all(
+        window.map((lessonIds) => {
+          const collection = db.collection('courseware_chunks');
+          const query = lessonIds.length === 1
+            ? collection.where('lessonId', '==', lessonIds[0])
+            : collection.where('lessonId', 'in', lessonIds);
+          return query
+            .findNearest({
+              vectorField: 'embedding',
+              queryVector,
+              limit,
+              distanceMeasure: 'COSINE',
+              distanceResultField: 'vectorDistance',
+            })
+            .get();
+        }),
+      );
+      snapshots.push(...windowSnapshots);
+    }
 
     const visibleSet = visibleReleaseIds ? new Set(visibleReleaseIds) : null;
     return snapshots.flatMap((snapshot) => snapshot.docs)
       .map((doc) => {
         const data = doc.data();
+        const releaseId = typeof data.releaseId === 'string' && data.releaseId.length > 0
+          ? data.releaseId
+          : undefined;
         return {
           id: doc.id,
           lessonId: String(data.lessonId || ''),
           lessonTitle: String(data.lessonTitle || ''),
           courseId: String(data.courseId || ''),
           moduleId: String(data.moduleId || ''),
-          releaseId: String(data.releaseId || ''),
+          releaseId,
           chunkIndex: Number(data.chunkIndex || 0),
           content: String(data.content || ''),
           distance: typeof data.vectorDistance === 'number' ? data.vectorDistance : undefined,
         };
       })
-      .filter(chunk => !visibleSet || !chunk.releaseId || visibleSet.has(chunk.releaseId))
+      .filter(chunk => !visibleSet || (chunk.releaseId !== undefined && visibleSet.has(chunk.releaseId)))
       .sort((a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY))
       .slice(0, limit);
   },

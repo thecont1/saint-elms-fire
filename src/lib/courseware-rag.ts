@@ -16,6 +16,63 @@ export interface RetrievedCoursewareChunk {
   releaseId?: string;
 }
 
+export interface RagRetrievalConfig {
+  topK: number;
+  candidateK: number;
+  /** Minimum cosine similarity (1 - Firestore COSINE distance). */
+  similarityThreshold: number;
+}
+
+export interface RagRetrievalMetrics {
+  candidatesRetrieved: number;
+  filteredByRelease: number;
+  filteredByThreshold: number;
+  returned: number;
+}
+
+const DEFAULT_RAG_RETRIEVAL_CONFIG: RagRetrievalConfig = {
+  topK: 8,
+  candidateK: 24,
+  similarityThreshold: 0.72,
+};
+
+function parseIntegerEnv(name: string, raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw.trim() === '') return fallback;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1 || value > 100) {
+    throw new Error(`${name} must be an integer between 1 and 100`);
+  }
+  return value;
+}
+
+function parseSimilarityEnv(raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw.trim() === '') return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new Error('RAG_SIMILARITY_THRESHOLD must be a number between 0 and 1');
+  }
+  return value;
+}
+
+export function resolveRagRetrievalConfig(
+  env: Record<string, string | undefined> = process.env,
+): RagRetrievalConfig {
+  const topK = parseIntegerEnv('RAG_TOP_K', env.RAG_TOP_K, DEFAULT_RAG_RETRIEVAL_CONFIG.topK);
+  const configuredCandidateK = parseIntegerEnv(
+    'RAG_CANDIDATE_K',
+    env.RAG_CANDIDATE_K,
+    DEFAULT_RAG_RETRIEVAL_CONFIG.candidateK,
+  );
+  return {
+    topK,
+    candidateK: Math.max(topK, configuredCandidateK),
+    similarityThreshold: parseSimilarityEnv(
+      env.RAG_SIMILARITY_THRESHOLD,
+      DEFAULT_RAG_RETRIEVAL_CONFIG.similarityThreshold,
+    ),
+  };
+}
+
 interface ChunkOptions {
   maxChars?: number;
   overlapChars?: number;
@@ -206,6 +263,33 @@ export function filterReleasedRetrievedChunks(
       return a.chunkIndex - b.chunkIndex;
     })
     .slice(0, Math.floor(topK));
+}
+
+/**
+ * Apply release and relevance guardrails to an over-fetched vector candidate
+ * set. Firestore COSINE queries return distance, so similarity is `1-distance`.
+ */
+export function selectReleasedRetrievedChunks(
+  candidates: RetrievedCoursewareChunk[],
+  releasedLessonIds: ReadonlySet<string>,
+  config: RagRetrievalConfig,
+): { chunks: RetrievedCoursewareChunk[]; metrics: RagRetrievalMetrics } {
+  const candidateWindow = candidates.slice(0, config.candidateK);
+  const releasedCandidates = candidateWindow.filter((chunk) => releasedLessonIds.has(chunk.lessonId));
+  const relevantCandidates = releasedCandidates.filter((chunk) => {
+    if (chunk.distance === undefined) return false;
+    return 1 - chunk.distance >= config.similarityThreshold;
+  });
+  const chunks = filterReleasedRetrievedChunks(relevantCandidates, releasedLessonIds, config.topK);
+  return {
+    chunks,
+    metrics: {
+      candidatesRetrieved: candidateWindow.length,
+      filteredByRelease: candidateWindow.length - releasedCandidates.length,
+      filteredByThreshold: releasedCandidates.length - relevantCandidates.length,
+      returned: chunks.length,
+    },
+  };
 }
 
 export function selectProactiveTarget(input: {
