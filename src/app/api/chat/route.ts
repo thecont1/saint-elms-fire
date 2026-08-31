@@ -9,6 +9,8 @@ import { DataService } from '@/lib/data-service';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const MessageIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/).optional();
+
 function publicErrorStatus(error: unknown): number {
   if (error instanceof z.ZodError) return 400;
   const message = error instanceof Error ? error.message : '';
@@ -20,7 +22,8 @@ export async function POST(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);
     const body = await req.json();
-    const { question, courseId, history = [], topK, persona, messageId } = body;
+    const { question, courseId, history = [], topK, persona } = body;
+    const messageId = MessageIdSchema.parse(body.messageId);
     
     if (!persona || !['guide', 'philosopher', 'friend'].includes(persona)) {
       return NextResponse.json({ error: 'persona is required and must be one of: guide, philosopher, friend' }, { status: 400 });
@@ -41,8 +44,8 @@ export async function POST(req: Request) {
       content: question,
       timestamp: now,
       isGrounded: false,
-    }, typeof messageId === 'string' && messageId.trim()
-      ? `${studentId}-${persona}-student-${messageId.trim()}`
+    }, messageId
+      ? `${studentId}-${persona}-student-${messageId}`
       : undefined);
 
     let result;
@@ -83,8 +86,8 @@ export async function POST(req: Request) {
       isGrounded: result.isGrounded,
       groundedSources: result.groundedSources,
       servedBy: result.servedBy,
-    }, typeof messageId === 'string' && messageId.trim()
-      ? `${studentId}-${persona}-tutor-${messageId.trim()}`
+    }, messageId
+      ? `${studentId}-${persona}-tutor-${messageId}`
       : undefined);
 
     return NextResponse.json(result);
