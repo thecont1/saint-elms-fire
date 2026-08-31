@@ -50,7 +50,9 @@ describe('Genkit presentation surface', () => {
 
     for (const flow of [
       "import('./flows/ingestion')",
-      "import('./flows/student-chat')",
+      "import('./flows/guide-chat')",
+      "import('./flows/friend-chat')",
+      "import('./flows/philosopher-chat')",
       "import('./flows/multi-format')",
       "import('./flows/socratic-tutor')",
       "import('./flows/evaluate-socratic')",
@@ -82,11 +84,11 @@ describe('model fallback routing', () => {
   });
 
   test('RAG chat routes generation through the model router', () => {
-    const chat = read('src/ai/flows/student-chat.ts');
+    const chat = read('src/ai/flows/guide-chat.ts');
 
     expect(chat).toContain("import { generateWithFallback } from '../model-router';");
     expect(chat).toContain('const { output, model } = await generateWithFallback({');
-    expect(chat).not.toContain('Gemini returned no structured RAG answer');
+    expect(chat).toContain("throw new Error('model returned no structured RAG answer')");
   });
 
   test('model router treats retryable availability errors as fallback triggers', () => {

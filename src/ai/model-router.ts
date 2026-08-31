@@ -51,7 +51,7 @@ export function resolveGeminiModel(model: string | undefined | null): string {
   if (model && (GEMINI_MODELS as Record<string, { modelId: string }>)[model]) {
     return (GEMINI_MODELS as Record<string, { modelId: string }>)[model].modelId;
   }
-  return 'gemini-3.5-flash';
+  return GEMINI_FLASH;
 }
 
 export const ACTIVE_MODELS = {

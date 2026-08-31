@@ -6,7 +6,9 @@ nextEnv.loadEnvConfig(process.cwd());
 
 await Promise.all([
   import('./flows/ingestion'),
-  import('./flows/student-chat'),
+  import('./flows/guide-chat'),
+  import('./flows/friend-chat'),
+  import('./flows/philosopher-chat'),
   import('./flows/multi-format'),
   import('./flows/socratic-tutor'),
   import('./flows/evaluate-socratic'),

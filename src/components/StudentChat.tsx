@@ -286,7 +286,7 @@ export function StudentChat({
         )}
         {unreleasedWarning && (
           <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded flex items-center text-xs text-amber-800">
-            <InfoIcon className="w-4 h-4 mr-2 shrink-0 text-amber-600" />
+            <InfoIcon text="This answer is constrained by your released courseware." className="w-4 h-4 mr-2 shrink-0 text-amber-600" />
             <span>{unreleasedWarning}</span>
           </div>
         )}
