@@ -122,7 +122,7 @@ R = 0.012 × (0.6/1.2)^{1/3} = 0.012 × 0.794 ≈ 0.0095 R_☉
 Heavier yet ~20% smaller.
 
 **Example 3 — Energy of a Type Ia.**
-Fusing ~1.4 M_☉ of CO to iron-group releases ≈ 0.1% of rest mass... more precisely the nuclear yield is ~1.5 × 10⁴⁴ J, of which ~10⁴⁴ J emerges as radiation and kinetic energy. Peak luminosity ~10³⁶ W (≈ 4 × 10⁹ L_☉) sustained for weeks: a single stellar corpse outshines its host galaxy of 10¹¹ stars.
+Fusing ~1.4 M_☉ of CO material to iron-group nuclei releases ~1.5 × 10⁴⁴ J of nuclear binding energy (about 0.06% of the star's rest mass), of which ~10⁴⁴ J emerges as kinetic energy and radiation. Peak luminosity ~10³⁶ W (≈ 4 × 10⁹ L_☉) sustained for weeks: a single stellar corpse outshines its host galaxy of 10¹¹ stars.
 
 **Example 4 — Distance from a Type Ia.**
 A Type Ia at peak has standardised M_V = −19.3. Observed m_V = 15.7 (extinction-corrected):
