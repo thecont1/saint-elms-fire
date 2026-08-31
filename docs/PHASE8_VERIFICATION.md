@@ -49,6 +49,21 @@ legitimately progressing job now always reaches a terminal state by its own
 deadlines before the watchdog may fire; the watchdog stays a safety net for
 crashed/orphaned jobs. Regression guards: `src/lib/job-watchdog.test.ts`.
 
+**Post-deploy verification.** The fix shipped in revision `00011-mg8`
+(contract re-verified: `cpu-throttling=false minScale=1 maxScale=1`); the
+post-deploy smoke is **4/4, EXIT=0**. The decisive boundary — a *live* sweep
+firing while a *live* job is past the old 120s ceiling — is covered by the
+intersection of two proven paths: the unit test proves `sweepStaleWork` leaves
+a 200s podcast alone (and dead-letters at 241s), and T4 proves the sweep
+wiring runs live on this revision. A dedicated fresh cross-ceiling probe
+(release a new lesson → generate podcast → sleep past 120s → fire the admin
+sweep + the artifacts-list poll → confirm the job survives to `ready`) was
+attempted at ~07:37 but was blocked when Gemini flapped down at the
+release/ingestion step; **this end-to-end probe remains unverified**. To re-run
+it in a healthy window, use `bun run scripts/golden-path-test.ts` (a fresh
+podcast legitimately crosses 120s and now survives) alongside a manual
+`POST /api/jobs/sweep`.
+
 ## Run
 
 ```bash
@@ -100,6 +115,7 @@ run it deliberately, then delete it.
 | 2026-08-31 ~05:47 | `00010-l2p` | cpu-throttling=false, min=1, max=1 | FAIL (degraded: gemini=down, sarvam=down — environmental flap, honestly reported) | PASS (401 / 401 / correct secret 200) | FAIL terminal (first attempt `tts_unavailable`, retry `generation_failed` under the flap) — **but runtime-contract evidence positive: job was `running` after the 90s silent window, i.e. the worker claimed and continued the job with zero client ticks; no job stayed `pending`** | PASS (`swept 0/0/0`) | Same run also validated the secret rotation drill end-to-end (see PHASE8_OPS.md). |
 | 2026-08-31 ~06:03 | `00010-l2p` | same | FAIL (flap ongoing at probe time) | PASS | **PASS** — after the 90s silent window the first attempt was honestly `failed generation_failed` (worker ran, bounded failure), the one allowed transient retry succeeded: job `succeeded`, artifact `ready`, 232s total including the silent window | PASS | Critical test passed: podcast completed with zero client polling. |
 | 2026-08-31 ~06:06 | `00010-l2p` | same | **PASS** (`status=ok`, firestore=up, gemini=up; sarvam text probe down — not part of the health contract) | PASS | **PASS, first attempt** — the job was already `succeeded` at the first post-window check: the podcast generation finished entirely inside the 90s silent window with zero client ticks; artifact `ready`, attempts=1, 90s total | PASS | **4/4 clean pass.** Strongest form of the proof: no polling needed at any point after the 202. |
+| 2026-08-31 ~07:35 | `00011-mg8` (watchdog ceiling fix) | same | **PASS** | PASS | **PASS** — `succeeded`/`ready` after the silent window, exit code 0; caveat: the generate endpoint's 24h dedupe returned the artifact made ready at 06:06, so this run confirms post-deploy delivery, not fresh background generation (see the post-deploy verification note above) | PASS | Post-fix health check: **4/4, EXIT=0**. |
 
 Interpretation: with the contract flags in place the failure mode under a
 Gemini/Sarvam flap is an honest, bounded `failed` with a category — never a
