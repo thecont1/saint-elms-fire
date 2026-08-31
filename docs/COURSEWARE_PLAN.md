@@ -89,11 +89,29 @@ the Phase 9 persona workstream — no authoring needed in this branch.
 ### 3.3 WP-D: Astrophysics theory courses (18 lessons, closes the minor spine)
 
 **Goal:** Unblock Brinda (end Sem III) and Chetna (completed Sem V) staging; the Astrophysics minor cannot demo while Astro III/IV are missing.
+**Status (2026-08-31): DONE — 18/18 lessons authored and committed on `content/wp-fdg`.**
 
-Courses (verify exact list in the manifest before starting):
+Manifest verification corrected the plan's semester assignments: **Astrophysics III is
+Semester 3** and **Astrophysics IV is Semester 4** (the plan draft said Sem 5/6; the
+manifest is authoritative).
 
-- **Astrophysics III** (Sem 5, 9 lessons, theory): stellar structure, stellar evolution, stellar atmospheres.
-- **Astrophysics IV** (Sem 6, 9 lessons, theory): galactic astronomy, extragalactic astronomy, cosmology.
+- **Astrophysics III** (`content/semester-3/astrophysics/astrophysics-iii/`, 9/9,
+  commit `2c4a4b69`): M1 Stellar Properties and Spectra (magnitudes/distances, spectral
+  classification, HR diagram); M2 Stellar Structure and Energy (hydrostatic equilibrium
+  and transport, pp/CNO burning, main sequence and mass–luminosity); M3 Stellar
+  Evolution and Distance Indicators (post-main-sequence, white dwarfs + Type Ia,
+  clusters/isochrones with a photometry data exercise).
+- **Astrophysics IV** (`content/semester-4/astrophysics/astrophysics-iv/`, 9/9,
+  commit `522ac955`): M1 The Milky Way and Galaxies (Galactic structure, Hubble
+  sequence/scaling relations, AGN/quasars); M2 Cosmology (expansion and the distance
+  ladder, Big Bang/CMB, dark matter/dark energy/ΛCDM); M3 Compact Objects and the
+  Evolving Universe (neutron stars/pulsars, black holes/gravitational waves, capstone
+  survey + Hubble-diagram data exercise).
+
+All lessons follow the mandated schema: `***` frontmatter, `difficulty: advanced`,
+`estimatedStudyMinutes` 50–55, chained prerequisites, 9-section body, 10–17 KB each.
+Catalog regenerated to 281 lessons / 38 courses and both manifest rows flipped to
+`released` with `contentPath` (commit `e63db6cd`, manifestVersion 2026-08-31.3).
 
 **Authoring pattern:** 9-section body schema, `difficulty: advanced`, `estimatedStudyMinutes: 45–55` per lesson.
 
@@ -183,12 +201,12 @@ Each lesson file:
 
 ## 6. Quick-start checklist for the next session
 
-- [ ] `git checkout main && git pull`
-- [ ] `git checkout -b content/wp-fdg` (fresh branch from main)
-- [ ] **Step 0:** verify `***` frontmatter acceptance; patch parser or migrate if needed
-- [ ] WP-G: catalog + status + release-verified import
-- [ ] WP-F: university-support corpus (6 lessons) → run `ingest-friend-corpus.ts`
-- [ ] WP-D: Astrophysics III + IV (18 lessons)
+- [x] `git checkout main && git pull`
+- [x] `git checkout -b content/wp-fdg` (fresh branch from main)
+- [x] **Step 0:** verify `***` frontmatter acceptance — ACCEPTED (no parser; YAML rides chunk 0)
+- [x] WP-G: catalog + status + release-verified import — done except flap-gated release re-verification
+- [x] WP-F: university-support corpus (6 lessons) → run `ingest-friend-corpus.ts` (corpus pre-existed on `main`)
+- [x] WP-D: Astrophysics III + IV (18 lessons)
 - [ ] WP-C leftovers (22 lessons)
 - [ ] WP-E math breadth (time-boxed)
 - [ ] Open PR per work package; merge when verified
