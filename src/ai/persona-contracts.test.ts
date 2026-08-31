@@ -12,11 +12,13 @@ import {
 describe('Friend deterministic lane policy', () => {
   test('redirects explicit academic questions before retrieval', () => {
     expect(classifyFriendQuestion('Explain Newton second law')).toBe('academic');
+    expect(classifyFriendQuestion('Explain photosynthesis')).toBe('academic');
     expect(FRIEND_ACADEMIC_REDIRECT).toContain('Socrates my Guide');
   });
 
   test('refuses requests for another student personal data with corpus policy', () => {
     expect(classifyFriendQuestion("what's a classmate's phone number?")).toBe('pii');
+    expect(classifyFriendQuestion("Give me Alice's phone number")).toBe('pii');
     expect(FRIEND_PRIVACY_ANSWER).toContain('Do not share');
     expect(FRIEND_PRIVACY_ANSWER).not.toMatch(/\d{7,}/);
   });
@@ -56,5 +58,6 @@ describe('Chetna break mode', () => {
     expect(shouldUseBreakMode({ breakMode: true, completedSemester: 5, pendingReleaseCount: 1 })).toBe(false);
     expect(shouldUseBreakMode({ breakMode: false, completedSemester: 5, pendingReleaseCount: 0 })).toBe(false);
     expect(shouldUseBreakMode({ breakMode: true, completedSemester: 4, pendingReleaseCount: 0 })).toBe(false);
+    expect(shouldUseBreakMode({ breakMode: true, completedSemester: 6, pendingReleaseCount: 0 })).toBe(false);
   });
 });

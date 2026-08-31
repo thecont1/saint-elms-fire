@@ -22,7 +22,7 @@ export const RegenerateFormatInputSchema = z.object({
   markdownContent: z.string().trim().min(1).optional(),
   sourceTitle: z.string().trim().min(1).optional(),
   formatType: FormatTypeSchema,
-  persona: z.string().max(200).optional(),
+  persona: z.enum(['guide', 'philosopher', 'friend']).optional(),
   /**
    * Phase 6, Track A0: 'second_brain' (default) grounds generation in the
    * student's curated corpus (lesson + accepted library/peer material);

@@ -1,4 +1,3 @@
-// @ts-nocheck -- Bun exposes bun:test at runtime.
 import { describe, expect, test } from 'bun:test';
 import { buildPersonaSeedPlans, readProgrammeManifest } from './persona-seed-plan';
 
@@ -23,14 +22,14 @@ describe('manifest-derived persona seed plans', () => {
     expect(plan.breakMode).toBe(false);
   });
 
-  test('Brinda uses the real Semester III substitution and never deferred WP-D', () => {
+  test('Brinda uses every course currently released through Semester III', () => {
     const plan = buildPersonaSeedPlans(manifest).brinda;
     const semesterThree = plan.releasedCourses
       .filter((course) => course.semesterNumber === 3)
       .map((course) => course.courseId);
-    expect(semesterThree).toEqual(['waves-and-optics', 'waves-and-optics-lab', 'real-analysis']);
-    expect(plan.releasedCourseIds.some((id) => /astrophysics-(iii|iv)/.test(id))).toBe(false);
-    expect(plan.seedComment).toContain('WP-D');
+    expect(semesterThree).toEqual(['waves-and-optics', 'waves-and-optics-lab', 'real-analysis', 'astrophysics-iii']);
+    expect(plan.releasedCourseIds).toContain('astrophysics-iii');
+    expect(plan.seedComment).toContain('programme manifest');
   });
 
   test('Chetna has every released course through Semester V and break mode', () => {

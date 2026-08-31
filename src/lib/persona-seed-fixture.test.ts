@@ -1,4 +1,3 @@
-// @ts-nocheck -- Bun exposes bun:test at runtime.
 import { describe, expect, test } from 'bun:test';
 import { buildPersonaSeedFixture } from './persona-seed-fixture';
 import { buildPersonaSeedPlans, readProgrammeManifest } from './persona-seed-plan';

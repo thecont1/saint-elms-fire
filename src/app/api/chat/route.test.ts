@@ -15,10 +15,12 @@ mock.module('@/lib/request-identity', () => ({
 }));
 
 const savedMessages: any[] = [];
+const savedIds: Array<string | undefined> = [];
 mock.module('@/lib/data-service', () => ({
   DataService: {
-    saveChatMessage: async (studentId: string, msg: any) => {
-      const record = { id: `msg-${savedMessages.length + 1}`, ...msg };
+    saveChatMessage: async (studentId: string, msg: any, id?: string) => {
+      savedIds.push(id);
+      const record = { id: id ?? `msg-${savedMessages.length + 1}`, ...msg };
       savedMessages.push({ studentId, ...record });
       return record;
     },
@@ -64,6 +66,7 @@ function chatRequest(body: Record<string, unknown>): Request {
 
 beforeEach(() => {
   savedMessages.length = 0;
+  savedIds.length = 0;
   flowCalls.length = 0;
   identity.userId = 'student-brinda';
   identity.role = 'student';
@@ -117,6 +120,14 @@ describe('/api/chat persona contract', () => {
       sender: 'tutor',
       servedBy: { model: 'gemini-3.7-flash', role: 'primary', attemptCount: 1 },
     });
+  });
+
+  test('uses stable document ids when the client retries the same turn', async () => {
+    await POST(chatRequest({ persona: 'guide', question: 'Explain momentum', messageId: 'turn-42' }));
+    expect(savedIds).toEqual([
+      'student-brinda-guide-student-turn-42',
+      'student-brinda-guide-tutor-turn-42',
+    ]);
   });
 
   test('passes conversation history through to the persona flow', async () => {

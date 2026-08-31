@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: 'No courses found. Seed the programme corpus via the persona seeder (src/lib/persona-seeder.ts) from content/programme-manifest.yaml.',
       courseCount: 0,
+      seeded: false,
     });
   } catch (error: unknown) {
     const authResponse = authorizationResponse(error);

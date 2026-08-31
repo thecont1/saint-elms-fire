@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { sweepStaleWork, JOB_LEASE_MS, JOB_TIMEOUT_MS, MAX_JOB_ATTEMPTS, ARTIFACT_PENDING_DEADLINE_MS, type WatchdogStore } from './job-watchdog';
+import { sweepStaleWork, JOB_LEASE_MS, JOB_TIMEOUT_MS, MAX_JOB_ATTEMPTS, ARTIFACT_PENDING_DEADLINE_MS, parsePodcastCeilingMs, type WatchdogStore } from './job-watchdog';
 import type { JobRecord } from './job-queue';
 import type { GeneratedArtifact } from './artifacts';
 
@@ -164,5 +164,14 @@ describe('sweepStaleWork', () => {
     const result = await sweepStaleWork(store, now);
     expect(result.orphanedArtifacts).toBe(0);
     expect(calls).toEqual([]);
+  });
+});
+
+describe('parsePodcastCeilingMs', () => {
+  test('accepts only positive finite integer seconds', () => {
+    expect(parsePodcastCeilingMs('300')).toBe(300_000);
+    for (const invalid of [undefined, '', '0', '-2', '1.5', '12seconds', 'Infinity', 'NaN']) {
+      expect(parsePodcastCeilingMs(invalid)).toBe(4 * 60_000);
+    }
   });
 });

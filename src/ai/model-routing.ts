@@ -1,10 +1,20 @@
 import { z } from 'zod';
+import type { ModelRole, ServedBy } from '@/lib/ai-contracts';
+export type { ModelRole, ServedBy } from '@/lib/ai-contracts';
 
 export const MODEL_CAPABILITIES = ['chat', 'embed', 'tts'] as const;
 export type ModelCapability = (typeof MODEL_CAPABILITIES)[number];
-export type ModelRole = 'primary' | 'fallback';
+
 
 const ModelIdSchema = z.string().trim().min(1).max(200);
+
+export const SUPPORTED_TTS_MODEL_IDS = [
+  'gemini-2.5-flash-preview-tts',
+  'sarvam-tts-bulbul-v3',
+  'gemini-tts',
+  'sarvam-tts',
+] as const;
+export const TtsModelIdSchema = z.enum(SUPPORTED_TTS_MODEL_IDS);
 
 export const ModelRoutingWriteSchema = z.object({
   primary: ModelIdSchema,
@@ -12,7 +22,7 @@ export const ModelRoutingWriteSchema = z.object({
   overrides: z.object({
     chat: ModelIdSchema.optional(),
     embed: ModelIdSchema.optional(),
-    tts: ModelIdSchema.optional(),
+    tts: TtsModelIdSchema.optional(),
   }).strict(),
 }).strict();
 
@@ -24,12 +34,6 @@ export const ModelRoutingConfigSchema = ModelRoutingWriteSchema.extend({
 export type ModelRoutingWrite = z.infer<typeof ModelRoutingWriteSchema>;
 export type ModelRoutingConfig = z.infer<typeof ModelRoutingConfigSchema>;
 
-export interface ServedBy {
-  model: string;
-  role: ModelRole;
-  /** Total provider attempts made for this routed request, including failures. */
-  attemptCount: number;
-}
 
 export function bootstrapModelRoutingConfig(env: NodeJS.ProcessEnv = process.env): ModelRoutingConfig {
   const overrides = {
@@ -189,6 +193,10 @@ export function isBreakerFailure(error: unknown): boolean {
   return /(?:^|\D)(?:429|503)(?:\D|$)|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|overloaded/i.test(message);
 }
 
+export function isSchemaInvalidOutput(error: unknown): boolean {
+  return error instanceof Error && error.message === 'Model returned schema-invalid output';
+}
+
 export class CircuitBreakerRegistry {
   private readonly failureThreshold: number;
   private readonly cooldownMs: number;
@@ -317,6 +325,7 @@ export async function routeModelCall<T>(options: RouteModelCallOptions<T>): Prom
       } catch (error) {
         lastError = error;
         breakers.recordFailure(candidate.model, error);
+        if (isSchemaInvalidOutput(error)) break;
         if (!isBreakerFailure(error)) throw error;
         if (breakers.getState(candidate.model).state === 'open') break;
         if (attempt < allowedAttempts) {

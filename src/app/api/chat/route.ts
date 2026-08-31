@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   try {
     const identity = resolveRequestIdentity(req);
     const body = await req.json();
-    const { question, courseId, history = [], topK, persona } = body;
+    const { question, courseId, history = [], topK, persona, messageId } = body;
     
     if (!persona || !['guide', 'philosopher', 'friend'].includes(persona)) {
       return NextResponse.json({ error: 'persona is required and must be one of: guide, philosopher, friend' }, { status: 400 });
@@ -41,7 +41,9 @@ export async function POST(req: Request) {
       content: question,
       timestamp: now,
       isGrounded: false,
-    });
+    }, typeof messageId === 'string' && messageId.trim()
+      ? `${studentId}-${persona}-student-${messageId.trim()}`
+      : undefined);
 
     let result;
     if (persona === 'guide') {
@@ -81,7 +83,9 @@ export async function POST(req: Request) {
       isGrounded: result.isGrounded,
       groundedSources: result.groundedSources,
       servedBy: result.servedBy,
-    });
+    }, typeof messageId === 'string' && messageId.trim()
+      ? `${studentId}-${persona}-tutor-${messageId.trim()}`
+      : undefined);
 
     return NextResponse.json(result);
   } catch (error: unknown) {
@@ -89,7 +93,7 @@ export async function POST(req: Request) {
     if (authResponse) return authResponse;
     console.error('Chat flow execution error:', error);
     return NextResponse.json(
-      { error: 'Socrates my Guide could not answer from indexed courseware.' },
+      { error: 'The selected persona could not answer this request.' },
       { status: publicErrorStatus(error) }
     );
   }

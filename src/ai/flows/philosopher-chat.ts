@@ -32,6 +32,7 @@ export const PhilosopherChatOutputSchema = z.object({
   groundedSources: z.array(GroundedSourceSchema),
   confidence: z.number().min(0).max(1),
   retrievedChunkCount: z.number().int().nonnegative(),
+  webSources: z.array(z.object({ uri: z.string().url(), title: z.string() })).optional(),
   servedBy: z.object({ model: z.string(), role: z.enum(['primary', 'fallback']), attemptCount: z.number().int().positive() }).optional(),
 });
 
@@ -81,7 +82,7 @@ export const philosopherChatFlow = ai.defineFlow(
       `[course_chunk_${index + 1}] ${chunk.lessonTitle} (lessonId=${chunk.lessonId}, chunk=${chunk.chunkIndex})\n${chunk.content}`
     ).join('\n\n');
 
-    const { output, servedBy } = await generateWithFallback({
+    const { output, servedBy, webSources = [] } = await generateWithFallback({
       system: `You are Socratest my Philosopher, a forward-looking mentor. You use BOTH the courseware context and Google Search (web) to answer the student's question.
       
 IMPORTANT RULES:
@@ -110,19 +111,22 @@ IMPORTANT RULES:
       throw new Error(`Philosopher contract violation: ${validation.reason}`);
     }
 
-    const safeSources = generated.groundedSources.filter((source) => releasedIds.has(source.lessonId));
-    const defaultSources = chunks.map((chunk) => ({
+    const retrievedSourceMap = new Map(chunks.map((chunk) => [chunk.lessonId, {
       lessonId: chunk.lessonId,
       lessonTitle: lessonById.get(chunk.lessonId)?.title || chunk.lessonTitle,
       concept: lessonById.get(chunk.lessonId)?.title || chunk.lessonTitle,
-      summary: chunk.content.slice(0, 220),
+      summary: String(chunk.content || '').slice(0, 220),
+    }]));
+    const sourceMap = new Map(generated.groundedSources.flatMap((source) => {
+      const canonical = retrievedSourceMap.get(source.lessonId);
+      return canonical ? [[canonical.lessonId, canonical] as const] : [];
     }));
-    const sourceMap = new Map((safeSources.length ? safeSources : defaultSources).map((source) => [`${source.lessonId}:${source.concept}`, source]));
 
     return {
       answer: generated.answer,
-      isGrounded: generated.isGrounded,
+      isGrounded: sourceMap.size > 0 || webSources.length > 0,
       groundedSources: [...sourceMap.values()],
+      webSources,
       confidence: generated.confidence,
       retrievedChunkCount: chunks.length,
       servedBy,

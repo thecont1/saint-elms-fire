@@ -1,7 +1,11 @@
 #!/usr/bin/env bun
 import { seedPersonas } from '../src/lib/persona-seeder';
 
-const manifestPath = process.argv.find((argument) => argument.endsWith('.yaml')) || 'content/programme-manifest.yaml';
+const suppliedPath = process.argv[2];
+if (suppliedPath !== undefined && !suppliedPath.trim()) {
+  throw new Error('Manifest path must be a non-empty positional argument');
+}
+const manifestPath = suppliedPath ?? 'content/programme-manifest.yaml';
 const { fixtures, counts } = await seedPersonas(manifestPath);
 
 console.table(fixtures.map((fixture) => ({

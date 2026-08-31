@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const identity = resolveRequestIdentity(req);
     requireAdmin(identity);
     const body = await req.json();
-    const { courseId, moduleId, title, markdownContent, summary, tags, order, programmeId, subjectId, semesterId } = body;
+    const { id, courseId, moduleId, title, markdownContent, summary, tags, order, programmeId, subjectId, semesterId } = body;
 
     if (!courseId || !moduleId || !title || !markdownContent) {
       return NextResponse.json(
@@ -46,6 +46,7 @@ export async function POST(req: Request) {
     }
 
     const lesson = await DataService.createLesson({
+      ...(id && { id }),
       courseId,
       moduleId,
       title,

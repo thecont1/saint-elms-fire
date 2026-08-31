@@ -66,10 +66,11 @@ export const proactiveTutor = ai.defineFlow(
       };
     }
 
-    const [quizHistory, graph, activeReleases, personaState, recommendations, libraryItems] = await Promise.all([
+    const [quizHistory, graph, activeReleases, releaseAudit, personaState, recommendations, libraryItems] = await Promise.all([
       DataService.getQuizHistory(studentId),
       DataService.getStudentKnowledgeGraph(studentId),
       DataService.getReleasesForStudent(studentId),
+      DataService.getReleaseAuditForStudent(studentId),
       DataService.getPersonaState(studentId),
       DataService.getRecommendedReadingsForStudent(studentId),
       DataService.getLibraryItems(),
@@ -77,7 +78,7 @@ export const proactiveTutor = ai.defineFlow(
 
     // Chetna break mode: all released through Sem V, no pending releases, and seeded
     // recommend-readings. Switch from quiz-weak-spot challenges to spaced revisitation.
-    const pendingCount = activeReleases.filter(r => r.status === 'pending' || r.status === 'scheduled').length;
+    const pendingCount = releaseAudit.filter(r => r.status === 'pending' || r.status === 'scheduled').length;
     if (personaState && shouldUseBreakMode({
       breakMode: personaState.breakMode,
       completedSemester: personaState.completedSemester,
@@ -87,8 +88,10 @@ export const proactiveTutor = ai.defineFlow(
       const book = libraryItems.find(item => item.id === reading?.libraryItemId);
       const node = graph.nodes.find(n => n.id === reading?.nodeId) ?? graph.nodes[0];
       if (node && book) {
+        const lesson = await DataService.getLesson(node.lessonId);
+        const lessonTitle = lesson?.title || node.lessonId;
         const challenge = buildBreakModeChallenge({
-          studentId, sessionId: '', concept: node.concept, lessonTitle: node.lessonId, readingTitle: book.title,
+          studentId, sessionId: '', concept: node.concept, lessonTitle, readingTitle: book.title,
         });
         const session = await DataService.createSocraticSession({
           studentId,
@@ -98,7 +101,7 @@ export const proactiveTutor = ai.defineFlow(
           relatedLessonId: node.lessonId,
           status: 'pending',
         });
-        return { ...challenge, sessionId: session.id, relatedLessonTitle: node.lessonId };
+        return { ...challenge, sessionId: session.id, relatedLessonTitle: lessonTitle };
       }
     }
     const target = selectProactiveTarget({

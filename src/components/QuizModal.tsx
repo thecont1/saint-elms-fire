@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { HelpCircle, CheckCircle2, XCircle, Sparkles, Send, Lightbulb, Loader2, AlertTriangle } from 'lucide-react';
 import type { Lesson } from '@/lib/types';
+import type { ServedBy } from '@/lib/ai-contracts';
 import { ServedByChip } from '@/components/ServedByChip';
 
 interface QuizModalProps {
@@ -19,7 +20,7 @@ interface QuizData {
   correctIndex: number;
   explanation: string;
   model?: string;
-  servedBy?: { model: string; role: 'primary' | 'fallback'; attemptCount: number };
+  servedBy?: ServedBy;
 }
 
 export function QuizModal({

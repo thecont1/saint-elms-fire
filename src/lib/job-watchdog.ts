@@ -13,6 +13,16 @@ import type { GeneratedArtifact, ArtifactErrorCategory } from './artifacts';
 export const JOB_LEASE_MS = 5 * 60_000;
 export const MAX_JOB_ATTEMPTS = 3;
 
+const DEFAULT_PODCAST_CEILING_MS = 4 * 60_000;
+
+export function parsePodcastCeilingMs(value: string | undefined): number {
+  if (!value || !/^\d+$/.test(value)) return DEFAULT_PODCAST_CEILING_MS;
+  const seconds = Number(value);
+  return Number.isSafeInteger(seconds) && seconds > 0
+    ? seconds * 1000
+    : DEFAULT_PODCAST_CEILING_MS;
+}
+
 /** Wall-clock dead-letter ceilings measured from createdAt. They MUST sit
  *  above each pipeline's own bounded worst case (podcast ≈ 75s generation +
  *  120s TTS + 30s storage ≈ 225s; PDF ≈ 75s + render + 30s ≈ 110s): a
@@ -21,7 +31,7 @@ export const MAX_JOB_ATTEMPTS = 3;
  *  work — the artifacts list endpoint sweeps on every UI poll, so an
  *  under-sized ceiling fails legitimate jobs while users watch. */
 export const JOB_TIMEOUT_MS: Record<JobKind, number> = {
-  podcast_audio: process.env.WATCHDOG_PODCAST_CEILING_S ? parseInt(process.env.WATCHDOG_PODCAST_CEILING_S, 10) * 1000 : 4 * 60_000,
+  podcast_audio: parsePodcastCeilingMs(process.env.WATCHDOG_PODCAST_CEILING_S),
   notes_pdf: 2 * 60_000,
   reading_recommendation: 2 * 60_000,
 };

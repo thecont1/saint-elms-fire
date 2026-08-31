@@ -64,7 +64,7 @@ export function usePersonaChat(studentId: string, persona: HearthPersona): Perso
 
   /** Calls /api/chat for a question already present on the thread. */
   const requestAnswer = useCallback(
-    async (content: string, historySource: ChatMessage[]) => {
+    async (content: string, historySource: ChatMessage[], messageId: string) => {
       const historyForModel = historySource
         .filter((m) => m.sender !== 'system')
         .map((m) => ({ role: m.sender === 'student' ? 'user' : 'model', content: m.content }));
@@ -76,7 +76,7 @@ export function usePersonaChat(studentId: string, persona: HearthPersona): Perso
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studentId, persona, question: content, history: historyForModel, topK: 6 }),
+          body: JSON.stringify({ studentId, persona, question: content, messageId, history: historyForModel, topK: 6 }),
         });
         if (!res.ok) throw new Error(`chat ${res.status}`);
         const data = await res.json();
@@ -121,7 +121,7 @@ export function usePersonaChat(studentId: string, persona: HearthPersona): Perso
       setInput('');
       const next = [...messages, userMessage];
       setMessages(next);
-      void requestAnswer(content, next);
+      void requestAnswer(content, next, userMessage.id);
     },
     [input, sending, messages, requestAnswer],
   );
@@ -133,7 +133,8 @@ export function usePersonaChat(studentId: string, persona: HearthPersona): Perso
     }
     if (failedQuestion && !sending) {
       // The failed question is already on the thread — re-request only the answer.
-      await requestAnswer(failedQuestion, messages);
+      const failedMessage = [...messages].reverse().find((message) => message.sender === 'student' && message.content === failedQuestion);
+      await requestAnswer(failedQuestion, messages, failedMessage?.id ?? crypto.randomUUID());
     }
   }, [phase, failedQuestion, sending, load, requestAnswer, messages]);
 

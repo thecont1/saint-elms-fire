@@ -67,13 +67,6 @@ export const ragChat = ai.defineFlow(
     // the empty-courseware path returns above without an extra Firestore read.
     const activeReleases = await DataService.getReleasesForStudent(studentId);
 
-    const queryEmbedding = await embedWithRouting({
-      content: question,
-      options: { taskType: 'RETRIEVAL_QUERY' },
-    });
-    const vector = queryEmbedding.embedding;
-    if (!vector?.length) throw new Error('Gemini returned no query embedding');
-
     const releasedIds = new Set(releasedLessons.map((lesson) => lesson.id));
 
     // Deterministic preflight: if the question explicitly names a course/lesson
@@ -85,6 +78,13 @@ export const ragChat = ai.defineFlow(
       .map(t => t.title);
     const mentioned = findMentionedUnreleasedTitle(question, unreleasedNames);
     if (mentioned) return buildGuideRefusal();
+
+    const queryEmbedding = await embedWithRouting({
+      content: question,
+      options: { taskType: 'RETRIEVAL_QUERY' },
+    });
+    const vector = queryEmbedding.embedding;
+    if (!vector?.length) throw new Error('Gemini returned no query embedding');
     const rawChunks = await DataService.retrieveCoursewareChunks(
       vector,
       [...releasedIds],

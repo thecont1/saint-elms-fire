@@ -198,7 +198,9 @@ export function LmsDashboardClient({
   // Handle lesson selection from the full programme outline. If the lesson
   // belongs to a different course than the currently loaded one, fetch that
   // course's modules/lessons first so the reader gets full markdownContent.
+  const programmeSelectionRequest = React.useRef(0);
   const handleProgrammeLessonSelect = async (lesson: { id: string; courseId: string }) => {
+    const requestId = ++programmeSelectionRequest.current;
     const existing = lessons.find((l) => l.id === lesson.id);
     if (existing) {
       setSelectedLesson(existing);
@@ -211,6 +213,7 @@ export function LmsDashboardClient({
       const courseRes = await fetch(`/api/courses/${lesson.courseId}`);
       if (!courseRes.ok) throw new Error(`Failed to load course: ${courseRes.status}`);
       const data = await courseRes.json();
+      if (requestId !== programmeSelectionRequest.current) return;
       const targetCourse = courses.find((c) => c.id === lesson.courseId) ?? data.course;
       if (targetCourse) setSelectedCourse(targetCourse);
       setModules(data.modules || []);
@@ -221,9 +224,11 @@ export function LmsDashboardClient({
         setReaderCollapsed(false);
       }
     } catch (err) {
-      console.error('Failed to load programme lesson:', err);
+      if (requestId === programmeSelectionRequest.current) {
+        console.error('Failed to load programme lesson:', err);
+      }
     } finally {
-      setIsSyncing(false);
+      if (requestId === programmeSelectionRequest.current) setIsSyncing(false);
     }
   };
 

@@ -253,8 +253,8 @@ export const DataService = {
       this.getProgrammes(),
       this.getSemesters(),
       this.getCourses(),
-      db.collection('modules').get(),
-      db.collection('lessons').get(),
+      db.collection('modules').select('courseId', 'title', 'description', 'order').get(),
+      db.collection('lessons').select('courseId', 'moduleId', 'title', 'order', 'summary', 'tags').get(),
     ]);
 
     const programme = programmes[0] ?? null;
@@ -390,10 +390,11 @@ export const DataService = {
   },
 
   async createLesson(lesson: Omit<Lesson, 'id' | 'createdAt'> & { id?: string }): Promise<Lesson> {
-    const ref = db.collection('lessons').doc();
+    const { id, ...lessonData } = lesson;
+    const ref = id ? db.collection('lessons').doc(id) : db.collection('lessons').doc();
     const newLesson: Lesson = {
       id: ref.id,
-      ...lesson,
+      ...lessonData,
       createdAt: new Date().toISOString(),
     };
     await ref.set(newLesson);
@@ -890,7 +891,7 @@ export const DataService = {
     formatType: GeneratedArtifact['formatType'];
     sinceIso: string;
     cap?: number;
-    persona?: string;
+    persona?: GeneratedArtifact['persona'];
     corpusScope?: 'lesson' | 'second_brain';
     sources?: GeneratedArtifact['sources'];
   }): Promise<{ artifact: GeneratedArtifact; job: JobRecord }> {
@@ -1528,8 +1529,8 @@ export const DataService = {
   },
 
   // CHAT MESSAGES
-  async saveChatMessage(studentId: string, msg: Omit<ChatMessage, 'id'>): Promise<ChatMessage> {
-    const ref = db.collection('chat_messages').doc();
+  async saveChatMessage(studentId: string, msg: Omit<ChatMessage, 'id'>, id?: string): Promise<ChatMessage> {
+    const ref = id ? db.collection('chat_messages').doc(id) : db.collection('chat_messages').doc();
     const record: ChatMessage = {
       id: ref.id,
       ...msg,

@@ -31,6 +31,8 @@ async function getCachedGenerationMetrics(): Promise<Awaited<ReturnType<typeof D
 export async function GET(req: Request) {
   const activity = getActiveModelActivity();
   const { searchParams } = new URL(req.url);
+  const parsedLimit = Number(searchParams.get('limit'));
+  const limit = Number.isFinite(parsedLimit) ? parsedLimit : 20;
 
   let generation: Awaited<ReturnType<typeof DataService.getGenerationMetrics>> | undefined;
   if (searchParams.get('metrics') === '1') {
@@ -43,7 +45,7 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     models: activity,
-    recentRequests: getRecentModelRequests(searchParams.get('limit') ? Number(searchParams.get('limit')) : 20),
+    recentRequests: getRecentModelRequests(limit),
     ...(generation ? { generation } : {}),
     timestamp: new Date().toISOString(),
   });

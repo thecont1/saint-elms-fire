@@ -127,6 +127,37 @@ export interface RoutedResult<T> {
   model: ModelUsed;
   /** Runtime routing provenance for UI chips and observability. */
   servedBy: ServedBy;
+  /** Provider-verified web sources, separate from canonical course citations. */
+  webSources?: VerifiedWebSource[];
+}
+
+export interface VerifiedWebSource {
+  uri: string;
+  title: string;
+}
+
+export function extractVerifiedWebSources(raw: unknown): VerifiedWebSource[] {
+  if (!raw || typeof raw !== 'object') return [];
+  const candidates = (raw as { candidates?: unknown }).candidates;
+  if (!Array.isArray(candidates)) return [];
+  const byUri = new Map<string, VerifiedWebSource>();
+  for (const candidate of candidates) {
+    const chunks = (candidate as { groundingMetadata?: { groundingChunks?: unknown } })
+      ?.groundingMetadata?.groundingChunks;
+    if (!Array.isArray(chunks)) continue;
+    for (const chunk of chunks) {
+      const web = (chunk as { web?: { uri?: unknown; title?: unknown } })?.web;
+      if (typeof web?.uri !== 'string' || typeof web.title !== 'string') continue;
+      try {
+        const uri = new URL(web.uri);
+        if (!['http:', 'https:'].includes(uri.protocol) || byUri.has(uri.href)) continue;
+        byUri.set(uri.href, { uri: uri.href, title: web.title.trim() || uri.hostname });
+      } catch {
+        // Ignore malformed provider metadata.
+      }
+    }
+  }
+  return [...byUri.values()];
 }
 
 export interface ModelRequestActivity {
@@ -245,7 +276,7 @@ function schemaExample(schema: { toJSONSchema?: () => unknown }): Record<string,
 }
 
 function isSarvamModel(model: string): boolean {
-  return model === SARVAM_MODEL || model.toLowerCase().startsWith('sarvam-');
+  return model === SARVAM_MODEL;
 }
 
 /** Single entry point for routed generation in the app. */
@@ -292,7 +323,7 @@ export async function generateWithFallback<T>({
     }
   }
 
-  const callOne = async (targetModel: string): Promise<{ output?: T; text?: string }> => {
+  const callOne = async (targetModel: string): Promise<{ output?: T; text?: string; webSources?: VerifiedWebSource[] }> => {
     markModelActivityStart(targetModel);
     try {
       if (isSarvamModel(targetModel)) {
@@ -316,11 +347,11 @@ export async function generateWithFallback<T>({
         if (!response.output || (schema.safeParse && !schema.safeParse(response.output).success)) {
           throw new Error('Model returned schema-invalid output');
         }
-        return { output: schema.parse(response.output) };
+        return { output: schema.parse(response.output), webSources: extractVerifiedWebSources(response.custom) };
       }
       const text = (response.text || '').trim();
       if (!text) throw new Error('UNAVAILABLE: model returned empty response');
-      return { text };
+      return { text, webSources: extractVerifiedWebSources(response.custom) };
     } finally {
       markModelActivityEnd(targetModel);
     }

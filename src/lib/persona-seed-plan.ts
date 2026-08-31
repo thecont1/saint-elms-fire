@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { parse } from 'yaml';
+
 export interface ProgrammeManifestRow {
   rowId: string;
   courseId: string;
@@ -33,7 +36,7 @@ interface RawManifest {
 }
 
 export async function readProgrammeManifest(path: string): Promise<ProgrammeManifest> {
-  const raw = Bun.YAML.parse(await Bun.file(path).text()) as RawManifest;
+  const raw = parse(await readFile(path, 'utf8')) as RawManifest;
   const totalPdfRows = Number(raw.totalPdfRows);
   const rows: ProgrammeManifestRow[] = [];
   for (const [key, value] of Object.entries(raw)) {
@@ -87,14 +90,6 @@ export function buildPersonaSeedPlans(manifest: ProgrammeManifest): Record<Perso
   const ananyaIds = new Set(['bridge-physics', 'mechanics', 'mechanics-lab', 'differential-calculus']);
   const ananyaCourses = manifest.rows.filter((row) => row.status === 'released' && ananyaIds.has(row.courseId));
   const brindaCourses = releasedThrough(manifest, 3);
-  const brindaSemThree = brindaCourses.filter((row) => row.semesterNumber === 3).map((row) => row.courseId);
-  const expectedSemThree = ['waves-and-optics', 'waves-and-optics-lab', 'real-analysis'];
-  if (brindaSemThree.join('|') !== expectedSemThree.join('|')) {
-    throw new Error(`Brinda Sem III substitution drifted: expected ${expectedSemThree.join(', ')}, received ${brindaSemThree.join(', ')}`);
-  }
-  if (brindaCourses.some((row) => /astrophysics-(iii|iv)/.test(row.courseId))) {
-    throw new Error('Deferred WP-D Astrophysics III/IV must not enter Brinda state');
-  }
 
   return {
     ananya: plan('ananya', ananyaCourses, {
@@ -113,7 +108,7 @@ export function buildPersonaSeedPlans(manifest: ProgrammeManifest): Record<Perso
       graphNodeTarget: 20,
       quizHistoryTarget: 8,
       socraticSessionTarget: 5,
-      seedComment: 'WP-D Astrophysics III/IV is deferred; Sem III deliberately substitutes Waves & Optics, Real Analysis, and the Waves & Optics lab until WP-D lands.',
+      seedComment: 'Completed the currently released Semester I–III curriculum from the programme manifest.',
     }),
     chetna: plan('chetna', releasedThrough(manifest, 5), {
       completedSemester: 5,

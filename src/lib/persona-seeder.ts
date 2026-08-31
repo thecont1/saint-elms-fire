@@ -30,6 +30,21 @@ async function replaceStudentDocuments(collectionName: string, studentId: string
   await commit();
 }
 
+async function batchSetDocuments(collectionName: string, documents: Array<{ id: string }>): Promise<void> {
+  let batch = db.batch();
+  let operations = 0;
+  for (const document of documents) {
+    batch.set(db.collection(collectionName).doc(document.id), document);
+    operations += 1;
+    if (operations === 400) {
+      await batch.commit();
+      batch = db.batch();
+      operations = 0;
+    }
+  }
+  if (operations) await batch.commit();
+}
+
 async function loadCorpus(): Promise<PersonaCorpus> {
   const [coursesSnap, modulesSnap, lessonsSnap] = await Promise.all([
     db.collection('courses').get(), db.collection('modules').get(), db.collection('lessons').get(),
@@ -66,8 +81,9 @@ export async function seedPersonas(manifestPath = 'content/programme-manifest.ya
     counts[studentId] = Object.values(writes).reduce((sum, documents) => sum + documents.length, 1);
   }
 
-  for (const item of fixtures.flatMap((fixture) => fixture.libraryItems)) {
-    await db.collection('library_items').doc(item.id).set(item);
-  }
+  const libraryItems = [...new Map(
+    fixtures.flatMap((fixture) => fixture.libraryItems).map((item) => [item.id, item]),
+  ).values()];
+  await batchSetDocuments('library_items', libraryItems);
   return { fixtures, counts };
 }

@@ -15,14 +15,14 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function publicState(config: Awaited<ReturnType<typeof modelRoutingStore.get>>) {
+function publicState(config: Awaited<ReturnType<typeof modelRoutingStore.get>>, includeUpdatedBy = false) {
   const routedModels = new Set([
     config.primary,
     config.fallback,
     ...Object.values(config.overrides).filter((value): value is string => Boolean(value)),
   ]);
   return {
-    config,
+    config: includeUpdatedBy ? config : (({ updatedBy: _updatedBy, ...publicConfig }) => publicConfig)(config),
     resolved: {
       chat: modelsForCapability(config, 'chat'),
       embed: modelsForCapability(config, 'embed'),
@@ -35,8 +35,8 @@ function publicState(config: Awaited<ReturnType<typeof modelRoutingStore.get>>) 
 /** Any authenticated principal may inspect current routing and breaker state. */
 export async function GET(req: Request) {
   try {
-    resolveRequestIdentity(req);
-    return NextResponse.json(publicState(await modelRoutingStore.get()));
+    const identity = resolveRequestIdentity(req);
+    return NextResponse.json(publicState(await modelRoutingStore.get(), identity.role === 'admin'));
   } catch (error: unknown) {
     const auth = authorizationResponse(error);
     if (auth) return auth;
@@ -51,7 +51,7 @@ export async function PUT(req: Request) {
     const identity = requireAdmin(resolveRequestIdentity(req));
     const body = ModelRoutingWriteSchema.parse(await req.json());
     const config = await modelRoutingStore.put(body, identity.userId);
-    return NextResponse.json(publicState(config));
+    return NextResponse.json(publicState(config, true));
   } catch (error: unknown) {
     const auth = authorizationResponse(error);
     if (auth) return auth;

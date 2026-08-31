@@ -598,19 +598,22 @@ function CourseGroup({
 
                   const handleQuiz = (e: React.MouseEvent) => {
                     e.stopPropagation();
-                    if (!isReleased || !onOpenQuiz) return;
-                    if (fullLesson) {
-                      onOpenQuiz(fullLesson);
-                    } else if (onSelectProgrammeLesson) {
-                      // Load the lesson first, then open quiz after course loads
-                      onSelectProgrammeLesson(lesson);
-                    }
+                    if (isReleased && onOpenQuiz && fullLesson) onOpenQuiz(fullLesson);
+                  };
+
+                  const handleKeyDown = (e: React.KeyboardEvent) => {
+                    if (!isReleased || (e.key !== 'Enter' && e.key !== ' ')) return;
+                    e.preventDefault();
+                    handleClick();
                   };
 
                   return (
                     <div
                       key={lesson.id}
                       onClick={handleClick}
+                      onKeyDown={handleKeyDown}
+                      role={isReleased ? 'button' : undefined}
+                      tabIndex={isReleased ? 0 : -1}
                       className={`px-3 py-2 flex items-center justify-between text-xs transition ${
                         !isReleased
                           ? 'cursor-not-allowed'
@@ -629,7 +632,7 @@ function CourseGroup({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {isReleased && onOpenQuiz && (
+                        {isReleased && onOpenQuiz && fullLesson && (
                           <button
                             onClick={handleQuiz}
                             className="px-2 py-0.5 rounded-full bg-white hover:bg-beacon-50 text-[10px] text-beacon-700 font-bold border border-beacon-200 transition"

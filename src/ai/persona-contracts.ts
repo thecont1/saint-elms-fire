@@ -9,16 +9,23 @@ const ACADEMIC_PATTERNS = [
   /\bwhat\s+is\s+(?:the\s+)?(?:cap theorem|newton(?:'s)? second law|derivative|integral|wave equation)\b/i,
 ];
 
+const ACADEMIC_REQUEST_PATTERN = /^(?:please\s+)?(?:explain|derive|solve|calculate|prove|define|compare)\b/i;
+const SUPPORT_TOPIC_PATTERN = /\b(?:fee|fees|deadline|timetable|calendar|office|policy|policies|registration|admission|scholarship|hostel|library|support)\b/i;
+
 const PII_PATTERNS = [
   /\b(?:classmate|student|roommate|teacher|professor|someone(?:'s)?)\b[\s\S]{0,48}\b(?:phone|mobile|email|address|aadhaar|bank account|password|contact (?:info|information|details))\b/i,
   /\b(?:phone|mobile|email|address|aadhaar|bank account|password|contact (?:info|information|details))\b[\s\S]{0,48}\b(?:classmate|student|roommate|teacher|professor|someone)\b/i,
   /\b(?:give|share|tell|find|what(?:'s| is))\b[\s\S]{0,32}\b(?:their|his|her|classmate(?:'s)?|student(?:'s)?)\b[\s\S]{0,24}\b(?:number|email|address|contact)\b/i,
+  /\b(?:give|share|tell|find|show|send)\b[\s\S]{0,32}\b[\p{L}-]+['’]s\b[\s\S]{0,24}\b(?:phone|mobile|number|email|address|contact)\b/iu,
 ];
 
 export function classifyFriendQuestion(question: string): FriendQuestionLane {
   const normalized = question.trim();
   if (PII_PATTERNS.some((pattern) => pattern.test(normalized))) return 'pii';
-  if (ACADEMIC_PATTERNS.some((pattern) => pattern.test(normalized))) return 'academic';
+  if (
+    ACADEMIC_PATTERNS.some((pattern) => pattern.test(normalized))
+    || (ACADEMIC_REQUEST_PATTERN.test(normalized) && !SUPPORT_TOPIC_PATTERN.test(normalized))
+  ) return 'academic';
   return 'support';
 }
 
@@ -69,5 +76,5 @@ export interface BreakModeState {
 }
 
 export function shouldUseBreakMode(state: BreakModeState): boolean {
-  return state.breakMode && state.completedSemester >= 5 && state.pendingReleaseCount === 0;
+  return state.breakMode && state.completedSemester === 5 && state.pendingReleaseCount === 0;
 }

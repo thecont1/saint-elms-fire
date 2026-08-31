@@ -139,7 +139,9 @@ function defaultDeps(): ArtifactPipelineDeps {
         lessonId: job.payload.lessonId,
         studentId: job.payload.studentId,
         formatType,
-        persona: job.payload.persona || undefined,
+        persona: ['guide', 'philosopher', 'friend'].includes(job.payload.persona)
+          ? job.payload.persona as 'guide' | 'philosopher' | 'friend'
+          : undefined,
         corpusScope: (job.payload.corpusScope as 'lesson' | 'second_brain') || 'second_brain',
       });
       if (!result.content) throw new Error('empty generation');

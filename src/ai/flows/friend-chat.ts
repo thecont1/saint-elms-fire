@@ -99,20 +99,22 @@ IMPORTANT RULES:
     if (!output) throw new Error('model returned no structured answer');
     const generated = GeneratedAnswerSchema.parse(output);
 
+    const safeSources = safeFriendSources(
+      generated.groundedSources.map((source) => ({
+        lessonId: source.lessonId, lessonTitle: source.lessonTitle, concept: source.concept, summary: source.summary,
+      })),
+      new Map(chunks.map((chunk) => [chunk.lessonId, {
+        lessonId: chunk.lessonId,
+        lessonTitle: chunk.lessonTitle || chunk.lessonId,
+        concept: chunk.lessonTitle || chunk.lessonId,
+        summary: String(chunk.content || '').slice(0, 220),
+      }])),
+    );
+
     return {
       answer: generated.answer,
-      isGrounded: generated.isGrounded,
-      groundedSources: safeFriendSources(
-        generated.groundedSources.map((source) => ({
-          lessonId: source.lessonId, lessonTitle: source.lessonTitle, concept: source.concept, summary: source.summary,
-        })),
-        new Map(chunks.map((chunk) => [chunk.lessonId, {
-          lessonId: chunk.lessonId,
-          lessonTitle: chunk.lessonTitle || chunk.lessonId,
-          concept: chunk.lessonTitle || chunk.lessonId,
-          summary: String(chunk.content || '').slice(0, 220),
-        }])),
-      ),
+      isGrounded: safeSources.length > 0,
+      groundedSources: safeSources,
       confidence: generated.confidence,
       retrievedChunkCount: chunks.length,
       servedBy,

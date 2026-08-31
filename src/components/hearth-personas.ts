@@ -1,7 +1,8 @@
 import { Flame, Navigation, Telescope } from 'lucide-react';
 import type { ComponentType } from 'react';
+import type { HearthPersona } from '@/lib/ai-contracts';
 
-export type HearthPersona = 'guide' | 'philosopher' | 'friend';
+export type { HearthPersona } from '@/lib/ai-contracts';
 
 export interface HearthPersonaConfig {
   id: HearthPersona;

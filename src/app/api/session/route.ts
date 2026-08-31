@@ -8,9 +8,11 @@ import {
   DEMO_PERSONAS,
 } from '@/lib/demo-session';
 
-const SessionWriteSchema = z.object({
-  persona: z.enum(['admin', 'ananya', 'brinda', 'chetna']),
-}).strict();
+const personaIds = DEMO_PERSONAS.map((persona) => persona.id) as [
+  (typeof DEMO_PERSONAS)[number]['id'],
+  ...(typeof DEMO_PERSONAS)[number]['id'][],
+];
+const SessionWriteSchema = z.object({ persona: z.enum(personaIds) }).strict();
 
 function unavailable(): NextResponse {
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -29,7 +31,10 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'persona must be admin, ananya, brinda, or chetna' }, { status: 400 });
   }
-  const selected = getDemoPersona(parsed.data.persona)!;
+  const selected = getDemoPersona(parsed.data.persona);
+  if (!selected) {
+    return NextResponse.json({ error: 'Unknown demo persona' }, { status: 400 });
+  }
   const response = NextResponse.json({ selected });
   response.headers.set('Set-Cookie', createDemoSessionCookie(selected.id));
   return response;

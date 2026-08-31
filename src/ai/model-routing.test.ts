@@ -37,6 +37,12 @@ describe('ModelRoutingWriteSchema', () => {
       primary: 'x', fallback: 'y', overrides: {}, updatedBy: 'forged-admin', updatedAt: 'forged',
     }).success).toBe(false);
   });
+
+  test('rejects unsupported TTS overrides before persistence', () => {
+    expect(ModelRoutingWriteSchema.safeParse({
+      primary: 'gemini-primary', fallback: 'sarvam-fallback', overrides: { tts: 'gemini-chat' },
+    }).success).toBe(false);
+  });
 });
 
 describe('capability routing', () => {
@@ -210,5 +216,22 @@ describe('routeModelCall', () => {
     });
     expect(called).toEqual(['fallback']);
     expect(result.servedBy).toEqual({ model: 'fallback', role: 'fallback', attemptCount: 1 });
+  });
+
+  test('advances to fallback after schema-invalid model output without opening the breaker', async () => {
+    const breakers = new CircuitBreakerRegistry({ failureThreshold: 1, cooldownMs: 120_000, now: () => 0 });
+    const calls: string[] = [];
+    const result = await routeModelCall({
+      primary: 'primary', fallback: 'fallback', maxRetries: 2, breakers,
+      call: async (model) => {
+        calls.push(model);
+        if (model === 'primary') throw new Error('Model returned schema-invalid output');
+        return 'ok';
+      },
+      sleep: async () => {}, random: () => 0,
+    });
+    expect(calls).toEqual(['primary', 'fallback']);
+    expect(result.servedBy).toEqual({ model: 'fallback', role: 'fallback', attemptCount: 2 });
+    expect(breakers.getState('primary')).toMatchObject({ state: 'closed', consecutiveFailures: 0 });
   });
 });

@@ -1,3 +1,5 @@
+import type { HearthPersona, ServedBy } from '@/lib/ai-contracts';
+
 export type UserRole = 'admin' | 'student';
 
 export interface UserProfile {
@@ -248,12 +250,8 @@ export interface GeneratedFormat {
   formatType: 'structured_notes' | 'podcast_dialogue' | 'video_lecture_script';
   title: string;
   content: string; // Markdown or script
-  persona?: string;
-  servedBy?: {
-    model: string;
-    role: 'primary' | 'fallback';
-    attemptCount: number;
-  };
+  persona?: HearthPersona;
+  servedBy?: ServedBy;
   createdAt: string;
 }
 
@@ -301,7 +299,7 @@ export interface SocraticSession {
 export interface ChatMessage {
   id: string;
   sender: 'student' | 'tutor' | 'system';
-  persona?: 'guide' | 'philosopher' | 'friend';
+  persona?: HearthPersona;
   content: string;
   timestamp: string;
   groundedSources?: Array<{
@@ -310,9 +308,5 @@ export interface ChatMessage {
     concept: string;
   }>;
   isGrounded: boolean;
-  servedBy?: {
-    model: string;
-    role: 'primary' | 'fallback';
-    attemptCount: number;
-  };
+  servedBy?: ServedBy;
 }
