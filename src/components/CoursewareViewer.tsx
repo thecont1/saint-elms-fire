@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Lock, CheckCircle2, ChevronRight, ChevronDown, FileText, Sparkles, Compass, Layers } from 'lucide-react';
 import { InfoIcon } from '@/components/InfoIcon';
 import type { CourseModule, Lesson, ProgrammeOutline, ProgrammeOutlineLesson } from '@/lib/types';
@@ -23,6 +23,65 @@ interface CoursewareViewerProps {
    * in a different course than the currently loaded one). */
   onSelectProgrammeLesson?: (lesson: ProgrammeOutlineLesson) => void;
   onOpenQuiz?: (lesson: Lesson) => void;
+}
+
+// ── Persistence helpers ─────────────────────────────────────────────────
+
+const STORAGE_KEY_EXPANSION = 'sef-courseware-expansion';
+
+type ExpansionState = {
+  semesters: Record<string, boolean>;
+  courses: Record<string, boolean>;
+};
+
+function loadExpansionState(): ExpansionState | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_EXPANSION);
+    if (!raw) return null;
+    return JSON.parse(raw) as ExpansionState;
+  } catch {
+    return null;
+  }
+}
+
+function saveExpansionState(state: ExpansionState) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY_EXPANSION, JSON.stringify(state));
+  } catch {
+    // ignore quota errors
+  }
+}
+
+/** Determine the latest semester that has at least one released lesson. */
+function findLatestSailingSemester(
+  outline: ProgrammeOutline,
+  releasedLessonIds: Set<string>,
+  releasedModuleIds: Set<string>,
+): string | null {
+  let latestId: string | null = null;
+  let latestOrder = -1;
+  for (const sem of outline.semesters) {
+    let hasReleased = false;
+    for (const c of sem.courses) {
+      for (const mod of c.modules) {
+        for (const l of mod.lessons) {
+          if (releasedLessonIds.has(l.id) || releasedModuleIds.has(l.moduleId)) {
+            hasReleased = true;
+            break;
+          }
+        }
+        if (hasReleased) break;
+      }
+      if (hasReleased) break;
+    }
+    if (hasReleased && sem.order > latestOrder) {
+      latestOrder = sem.order;
+      latestId = sem.id;
+    }
+  }
+  return latestId;
 }
 
 export function CoursewareViewer({
@@ -229,6 +288,44 @@ function ProgrammeTree({
 
   const programmePercent = Math.round((releasedCount / Math.max(1, totalLessons)) * 100);
 
+  // ── Expansion state with persistence ──
+  // Default: only the latest sailing semester is expanded; all others
+  // collapsed. Within the expanded semester, all courses are collapsed.
+  const latestSailingSemId = React.useMemo(
+    () => findLatestSailingSemester(outline, releasedLessonIds, releasedModuleIds),
+    [outline, releasedLessonIds, releasedModuleIds],
+  );
+
+  const [expansionState, setExpansionState] = useState<ExpansionState>(() => {
+    const saved = loadExpansionState();
+    if (saved) return saved;
+    // Compute default: latest sailing semester expanded, rest collapsed
+    const semesters: Record<string, boolean> = {};
+    for (const sem of outline.semesters) {
+      semesters[sem.id] = sem.id === latestSailingSemId;
+    }
+    return { semesters, courses: {} };
+  });
+
+  // Persist on every change
+  useEffect(() => {
+    saveExpansionState(expansionState);
+  }, [expansionState]);
+
+  const toggleSemester = useCallback((semId: string) => {
+    setExpansionState((prev) => ({
+      ...prev,
+      semesters: { ...prev.semesters, [semId]: !prev.semesters[semId] },
+    }));
+  }, []);
+
+  const toggleCourse = useCallback((courseId: string) => {
+    setExpansionState((prev) => ({
+      ...prev,
+      courses: { ...prev.courses, [courseId]: !prev.courses[courseId] },
+    }));
+  }, []);
+
   return (
     <div className="chart-card overflow-hidden flex flex-col h-full">
       {/* Header — programme-wide view */}
@@ -266,6 +363,10 @@ function ProgrammeTree({
             onSelectLesson={onSelectLesson}
             currentLessons={currentLessons}
             onOpenQuiz={onOpenQuiz}
+            expanded={expansionState.semesters[sem.id] ?? false}
+            onToggleSemester={() => toggleSemester(sem.id)}
+            courseExpansion={expansionState.courses}
+            onToggleCourse={toggleCourse}
           />
         ))}
 
@@ -286,6 +387,10 @@ function ProgrammeTree({
             onSelectLesson={onSelectLesson}
             currentLessons={currentLessons}
             onOpenQuiz={onOpenQuiz}
+            expanded={expansionState.semesters['orphan'] ?? false}
+            onToggleSemester={() => toggleSemester('orphan')}
+            courseExpansion={expansionState.courses}
+            onToggleCourse={toggleCourse}
           />
         )}
       </div>
@@ -302,6 +407,10 @@ interface SemesterGroupProps {
   onSelectLesson: (lesson: Lesson) => void;
   currentLessons: Lesson[];
   onOpenQuiz?: (lesson: Lesson) => void;
+  expanded: boolean;
+  onToggleSemester: () => void;
+  courseExpansion: Record<string, boolean>;
+  onToggleCourse: (courseId: string) => void;
 }
 
 function SemesterGroup({
@@ -313,9 +422,11 @@ function SemesterGroup({
   onSelectLesson,
   currentLessons,
   onOpenQuiz,
+  expanded,
+  onToggleSemester,
+  courseExpansion,
+  onToggleCourse,
 }: SemesterGroupProps) {
-  const [expanded, setExpanded] = useState(true);
-
   // Count released lessons in this semester
   let semTotal = 0;
   let semReleased = 0;
@@ -333,7 +444,7 @@ function SemesterGroup({
     <div className="rounded-xl border border-beacon-200 bg-white overflow-hidden">
       {/* Semester Header */}
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={onToggleSemester}
         className="w-full p-3 bg-beacon-50/70 border-b border-beacon-100 flex items-center justify-between gap-2 text-left hover:bg-beacon-50 transition"
         aria-expanded={expanded}
       >
@@ -372,6 +483,7 @@ function SemesterGroup({
           {semester.courses.map(({ course, modules }) => (
             <CourseGroup
               key={course.id}
+              courseId={course.id}
               courseTitle={course.title}
               courseCode={course.code}
               modules={modules}
@@ -382,6 +494,8 @@ function SemesterGroup({
               onSelectLesson={onSelectLesson}
               currentLessons={currentLessons}
               onOpenQuiz={onOpenQuiz}
+              expanded={courseExpansion[course.id] ?? false}
+              onToggle={() => onToggleCourse(course.id)}
             />
           ))}
         </div>
@@ -391,6 +505,7 @@ function SemesterGroup({
 }
 
 interface CourseGroupProps {
+  courseId: string;
   courseTitle: string;
   courseCode?: string;
   modules: ProgrammeOutline['semesters'][number]['courses'][number]['modules'];
@@ -401,9 +516,12 @@ interface CourseGroupProps {
   onSelectLesson: (lesson: Lesson) => void;
   currentLessons: Lesson[];
   onOpenQuiz?: (lesson: Lesson) => void;
+  expanded: boolean;
+  onToggle: () => void;
 }
 
 function CourseGroup({
+  courseId,
   courseTitle,
   courseCode,
   modules,
@@ -414,14 +532,14 @@ function CourseGroup({
   onSelectLesson,
   currentLessons,
   onOpenQuiz,
+  expanded,
+  onToggle,
 }: CourseGroupProps) {
-  const [expanded, setExpanded] = useState(true);
-
   return (
     <div className="rounded-lg border border-beacon-100 bg-beacon-50/30 overflow-hidden">
       {/* Course Header */}
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={onToggle}
         className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-beacon-50/60 transition"
         aria-expanded={expanded}
       >

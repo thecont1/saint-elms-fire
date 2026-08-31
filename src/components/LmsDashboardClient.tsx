@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   GraduationCap,
   Network,
@@ -77,6 +77,58 @@ export function LmsDashboardClient({
   const [isBooming, setIsBooming] = useState(false);
   const [constellationCollapsed, setConstellationCollapsed] = useState(false);
   const [readerCollapsed, setReaderCollapsed] = useState(false);
+
+  // ── Resizable sidebar ──
+  // Persisted in localStorage; defaults to 25% of the 12-col grid (3/12).
+  const SIDEBAR_STORAGE_KEY = 'sef-sidebar-width';
+  const [sidebarWidth, setSidebarWidth] = useState<number>(300);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (saved) {
+      const w = parseInt(saved, 10);
+      if (!isNaN(w) && w >= 220 && w <= 600) setSidebarWidth(w);
+    }
+  }, []);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = sidebarWidth;
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const handleMove = (e: MouseEvent) => {
+      const delta = e.clientX - resizeStartX.current;
+      const newWidth = Math.max(220, Math.min(600, resizeStartWidth.current + delta));
+      setSidebarWidth(newWidth);
+    };
+    const handleUp = () => {
+      setIsResizing(false);
+      setSidebarWidth((w) => {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(w));
+        }
+        return w;
+      });
+    };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    return () => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
 
   // Toggle the admin theme from the server-resolved principal.
   useEffect(() => {
@@ -335,9 +387,12 @@ export function LmsDashboardClient({
       <main className="flex-1 max-w-[1600px] w-full mx-auto pt-2 sm:pt-3 lg:pt-4 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8">
         {/* STUDENT EXPERIENCE: 3 STRUCTURED COLUMNS */}
         {role === 'student' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* COLUMN 1: LEFT CURRICULUM & NAVIGATION RAIL (3 cols) */}
-            <aside className="lg:col-span-3 space-y-4 lg:sticky lg:top-20 self-start">
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start">
+            {/* COLUMN 1: LEFT CURRICULUM & NAVIGATION RAIL — resizable */}
+            <aside
+              className="space-y-4 lg:sticky lg:top-20 self-start shrink-0 hidden lg:block"
+              style={{ width: `${sidebarWidth}px` }}
+            >
               {/* Course Overview Widget */}
               {selectedCourse && (
                 <div className="chart-card p-5 space-y-3">
@@ -390,8 +445,68 @@ export function LmsDashboardClient({
               </div>
             </aside>
 
-            {/* COLUMN 2: CENTER PRIMARY KNOWLEDGE & SECOND BRAIN CANVAS (9 cols) */}
-            <section className="lg:col-span-9 space-y-5">
+            {/* Mobile-only sidebar (not resizable, shown below) */}
+            <aside className="lg:hidden space-y-4 w-full">
+              {selectedCourse && (
+                <div className="chart-card p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="chart-annotation text-beacon-600">
+                      {selectedCourse.code || 'Course'}
+                    </span>
+                    <span className="chart-annotation flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-beacon-500" /> Lead course
+                    </span>
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-marine-900 leading-snug">
+                    {selectedCourse.title}
+                  </h3>
+                  <p className="text-xs text-marine-700 leading-relaxed line-clamp-2">{selectedCourse.description}</p>
+                  <div className="pt-1">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="chart-annotation">Voyage progress</span>
+                      <span className="text-xs font-bold text-beacon-600">{completionPercentage}%</span>
+                    </div>
+                    <div className="w-full bg-beacon-100 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-beacon-500 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="h-[600px]">
+                <CoursewareViewer
+                  modules={modules}
+                  lessons={lessons}
+                  releasedLessons={releasedLessons}
+                  programmeOutline={programmeOutline}
+                  releasedLessonIds={releasedLessonIds.lessonIds}
+                  releasedModuleIds={releasedLessonIds.moduleIds}
+                  selectedLessonId={selectedLesson?.id || null}
+                  onSelectLesson={(lesson) => {
+                    setSelectedLesson(lesson);
+                    setReaderCollapsed(false);
+                  }}
+                  onSelectProgrammeLesson={handleProgrammeLessonSelect}
+                  onOpenQuiz={(lesson) => setQuizModalLesson(lesson)}
+                />
+              </div>
+            </aside>
+
+            {/* Drag handle — between sidebar and main content */}
+            <div
+              onMouseDown={handleResizeStart}
+              className="hidden lg:flex w-1.5 cursor-col-resize hover:bg-beacon-300 active:bg-beacon-500 transition-colors self-stretch rounded-full shrink-0"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize sidebar"
+              tabIndex={0}
+              style={{ minHeight: '600px' }}
+            />
+
+            {/* COLUMN 2: CENTER PRIMARY KNOWLEDGE & SECOND BRAIN CANVAS */}
+            <section className="flex-1 min-w-0 space-y-5">
               {/* The Knowledge Reader Card */}
               <div className="chart-card overflow-hidden">
                 <button
