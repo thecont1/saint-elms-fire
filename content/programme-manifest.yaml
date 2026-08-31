@@ -2,8 +2,8 @@
 # Christ University, Bangalore
 # Programme manifest (source of truth for course and lesson metadata)
 #
-# 71 PDF rows transcribed. 35 rows currently have authored courseware under content/.
-# 37 rows remain (planned, external, or in authoring) per the action plan dated 2026-08-31.
+# 71 PDF rows transcribed. 37 rows currently have authored courseware under content/.
+# 35 rows remain (planned, external, or in authoring) per the action plan dated 2026-08-31.
 #
 # Status legend:
 #   released       — Authored courseware present in content/ and QA-approved.
@@ -18,9 +18,9 @@ programmeName: B.Sc. Physics & Mathematics with minor in Astrophysics
 institution: Christ University, Bangalore
 sourcePdfs:
   - BScPM_Astropysics2024_20241109100918.pdf
-manifestVersion: "2026-08-31.2"
+manifestVersion: "2026-08-31.3"
 totalPdfRows: 71
-releasedRows: 35
+releasedRows: 37
 authoringRows: 37
 
 # ===========================================================================
@@ -459,8 +459,9 @@ semester-3:
       optionGroup: null
       deliveryMode: authored-courseware
       prerequisites: [astrophysics-ii, waves-and-optics]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory
+      contentPath: content/semester-3/astrophysics/astrophysics-iii/
       notes: Stellar properties/spectra, stellar structure/evolution, distance indicators, photometry, observational/data-analysis component.
 
     - rowId: sem3-row-05
@@ -649,8 +650,9 @@ semester-4:
       optionGroup: null
       deliveryMode: authored-courseware
       prerequisites: [astrophysics-iii]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory
+      contentPath: content/semester-4/astrophysics/astrophysics-iv/
       notes: Galaxies, cosmology, compact objects, high-energy phenomena, observational surveys, capstone data exercise.
 
     - rowId: sem4-row-09

@@ -5,8 +5,8 @@ institution: Christ University, Bangalore
 batch: 2023–2027
 generatedAt: 2026-08-31
 totalSemesters: 6
-totalCourses: 36
-totalLessons: 263
+totalCourses: 38
+totalLessons: 281
 sourceType: authored-courseware
 ---
 
@@ -25,7 +25,7 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 |-----------|-------------|-----------|---------|---------|
 | physics | Physics | 1–6 | 24 | 161 |
 | mathematics | Mathematics | 1–5 | 8 | 69 |
-| astrophysics | Astrophysics (minor) | 1–2 | 2 | 18 |
+| astrophysics | Astrophysics (minor) | 1–4 | 4 | 36 |
 | computational-methods | Computational Methods | 4 | 1 | 9 |
 | university-support | University Support and Student Information | all | 1 | 6 |
 
@@ -147,6 +147,15 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 2 | physics | Thermal Physics and Statistical Mechanics Lab | Thermometry, Calorimetry, and Heat Transfer | Thermal Conductivity and Lee's Disc | thermal-physics-lab-m1-l4 | foundation | 50 |
 | 2 | physics | Thermal Physics and Statistical Mechanics Lab | Thermometry, Calorimetry, and Heat Transfer | Verification of the Gas Laws and the Universal Gas Constant | thermal-physics-lab-m1-l5 | foundation | 55 |
 | 2 | physics | Thermal Physics and Statistical Mechanics Lab | Thermometry, Calorimetry, and Heat Transfer | Mechanical Equivalent of Heat, Report Writing, and the Viva | thermal-physics-lab-m1-l6 | foundation | 60 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Properties and Spectra | Magnitudes, Brightness and Stellar Distances | astrophysics-iii-m1-l1 | advanced | 50 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Properties and Spectra | Stellar Spectra and Spectral Classification | astrophysics-iii-m1-l2 | advanced | 50 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Properties and Spectra | The Hertzsprung–Russell Diagram | astrophysics-iii-m1-l3 | advanced | 50 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Structure and Energy | Hydrostatic Equilibrium and Energy Transport | astrophysics-iii-m2-l4 | advanced | 55 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Structure and Energy | Nuclear Burning — the pp Chain and the CNO Cycle | astrophysics-iii-m2-l5 | advanced | 55 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Structure and Energy | The Main Sequence and the Mass–Luminosity Relation | astrophysics-iii-m2-l6 | advanced | 50 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Evolution and Distance Indicators | Post-Main-Sequence Evolution — Giants, Helium Burning and Planetary Nebulae | astrophysics-iii-m3-l7 | advanced | 55 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Evolution and Distance Indicators | Stellar Remnants — White Dwarfs, the Chandrasekhar Limit and Type Ia Supernovae | astrophysics-iii-m3-l8 | advanced | 55 |
+| 3 | astrophysics | Astrophysics III — Stars and Stellar Evolution | Stellar Evolution and Distance Indicators | Star Clusters, Isochrones and a Photometry Exercise | astrophysics-iii-m3-l9 | advanced | 55 |
 | 3 | mathematics | Real Analysis | Sequences and Series | The Real Number System and ε–N | real-analysis-m1-l1 | foundation | 50 |
 | 3 | mathematics | Real Analysis | Sequences and Series | Convergence of Sequences | real-analysis-m1-l2 | intermediate | 55 |
 | 3 | mathematics | Real Analysis | Sequences and Series | Series, Convergence Tests | real-analysis-m1-l3 | intermediate | 55 |
@@ -171,6 +180,15 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 3 | physics | Waves and Optics Lab | Oscillations, Geometrical Optics, and Wave Optics | Diffraction, Gratings, and the Spectrometer | waves-and-optics-lab-m1-l4 | intermediate | 50 |
 | 3 | physics | Waves and Optics Lab | Oscillations, Geometrical Optics, and Wave Optics | Polarisation, Malus's Law, and Brewster's Angle | waves-and-optics-lab-m1-l5 | intermediate | 50 |
 | 3 | physics | Waves and Optics Lab | Oscillations, Geometrical Optics, and Wave Optics | Uncertainty, Report Writing, and the Viva | waves-and-optics-lab-m1-l6 | intermediate | 55 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | The Milky Way and Galaxies | The Structure of the Milky Way | astrophysics-iv-m1-l1 | advanced | 50 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | The Milky Way and Galaxies | The Hubble Sequence and Galaxy Scaling Relations | astrophysics-iv-m1-l2 | advanced | 50 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | The Milky Way and Galaxies | Active Galactic Nuclei and Quasars | astrophysics-iv-m1-l3 | advanced | 55 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | Cosmology | The Expanding Universe and the Hubble–Lemaître Law | astrophysics-iv-m2-l4 | advanced | 55 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | Cosmology | The Big Bang, Primordial Nucleosynthesis and the CMB | astrophysics-iv-m2-l5 | advanced | 55 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | Cosmology | Dark Matter, Dark Energy and the ΛCDM Model | astrophysics-iv-m2-l6 | advanced | 55 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | Compact Objects and the Evolving Universe | Neutron Stars and Pulsars | astrophysics-iv-m3-l7 | advanced | 55 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | Compact Objects and the Evolving Universe | Black Holes and Gravitational Waves | astrophysics-iv-m3-l8 | advanced | 55 |
+| 4 | astrophysics | Astrophysics IV — Galaxies, Cosmology and Compact Objects | Compact Objects and the Evolving Universe | Observational Surveys and the Cosmic Distance Ladder — Capstone Data Exercise | astrophysics-iv-m3-l9 | advanced | 55 |
 | 4 | computational-methods | Numerical Methods | Root-Finding and Interpolation | Bisection and Newton–Raphson Methods | numerical-methods-m1-l1 | foundation | 50 |
 | 4 | computational-methods | Numerical Methods | Root-Finding and Interpolation | Interpolation — Lagrange and Newton's Divided Differences | numerical-methods-m1-l2 | foundation | 55 |
 | 4 | computational-methods | Numerical Methods | Root-Finding and Interpolation | Splines and Piecewise Approximation | numerical-methods-m1-l3 | intermediate | 55 |
