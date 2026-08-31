@@ -13,7 +13,7 @@ lessonId: introduction-to-quantum-mechanics-m1-l3
 lessonName: Bohr Model, de Broglie and Wave–Particle Duality
 lessonNumber: 3
 moduleNumber: 1
-semesterNumber: 1
+semesterNumber: 4
 difficulty: foundation
 estimatedStudyMinutes: 55
 releaseOrder: 3

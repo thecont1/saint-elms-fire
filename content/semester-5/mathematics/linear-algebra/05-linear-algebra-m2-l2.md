@@ -13,7 +13,7 @@ lessonId: linear-algebra-m2-l2
 lessonName: Inner Product, Norms and Orthogonality
 lessonNumber: 5
 moduleNumber: 2
-semesterNumber: 2
+semesterNumber: 5
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 5

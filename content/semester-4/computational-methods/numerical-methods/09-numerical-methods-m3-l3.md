@@ -13,7 +13,7 @@ lessonId: numerical-methods-m3-l3
 lessonName: Numerical ODEs — Euler and Runge–Kutta
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 9

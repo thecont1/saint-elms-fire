@@ -13,7 +13,7 @@ lessonId: solid-state-physics-m3-l2
 lessonName: Bloch's Theorem and Energy Bands
 lessonNumber: 8
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 5
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 8

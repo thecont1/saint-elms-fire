@@ -13,7 +13,7 @@ lessonId: introduction-to-quantum-mechanics-m3-l3
 lessonName: Spin, Pauli Principle and Multi-electron Atoms
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 60
 releaseOrder: 9

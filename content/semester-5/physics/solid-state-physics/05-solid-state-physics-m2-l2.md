@@ -13,7 +13,7 @@ lessonId: solid-state-physics-m2-l2
 lessonName: Specific Heat — Einstein and Debye Models
 lessonNumber: 5
 moduleNumber: 2
-semesterNumber: 2
+semesterNumber: 5
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 5

@@ -13,7 +13,7 @@ lessonId: abstract-algebra-m1-l3
 lessonName: Permutation Groups and Cayley Tables
 lessonNumber: 3
 moduleNumber: 1
-semesterNumber: 3
+semesterNumber: 4
 difficulty: foundation
 estimatedStudyMinutes: 55
 releaseOrder: 3

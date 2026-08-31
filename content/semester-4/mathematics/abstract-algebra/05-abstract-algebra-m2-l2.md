@@ -13,7 +13,7 @@ lessonId: abstract-algebra-m2-l2
 lessonName: Cosets, Lagrange's Theorem and Index
 lessonNumber: 5
 moduleNumber: 2
-semesterNumber: 2
+semesterNumber: 4
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 5

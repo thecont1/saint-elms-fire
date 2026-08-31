@@ -13,7 +13,7 @@ lessonId: solid-state-physics-m3-l3
 lessonName: Semiconductors, Insulators and Doping
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 5
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 9

@@ -13,7 +13,7 @@ lessonId: numerical-methods-m1-l3
 lessonName: Splines and Piecewise Approximation
 lessonNumber: 3
 moduleNumber: 1
-semesterNumber: 3
+semesterNumber: 4
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 3
