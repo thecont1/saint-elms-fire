@@ -167,22 +167,7 @@ where $\tilde{x}_i^{(k+1)}$ is the Gauss–Seidel update. The parameter $\omega$
 ## Worked Examples
 **Example 1 — Jacobi.** $A = \begin{pmatrix} 4 & 1 \\ 2 & 3 \end{pmatrix}$, $b = (1, 2)$. Diagonal $D = \text{diag}(4, 3)$. $D^{-1} (b - (A - D) x) = ((1 - x_2)/4, (2 - 2 x_1)/3)$. Start $x = (0, 0)$: $x^{(1)} = (1/4, 2/3) = (0.25, 0.667)$. $x^{(2)} = ((1 - 0.667)/4, (2 - 0.5)/3) = (0.083, 0.5)$. $x^{(3)} = ((1 - 0.5)/4, (2 - 0.167)/3) = (0.125, 0.611)$. The iteration oscillates and slowly converges to the true $x = (1/10, 8/10) = (0.1, 0.8)$.
 
-**Example 2 — Gauss–Seidel.** Same system $A x = b$ with $A = \begin{pmatrix} 4 & 1 \\ 2 & 3 \end{pmatrix}$, $b = (1, 2)$. The Gauss–Seidel update equations are
-
-$$x_1^{(k+1)} = \frac{1 - x_2^{(k)}}{4}, \qquad x_2^{(k+1)} = \frac{2 - 2 x_1^{(k+1)}}{3}.$$
-
-(Note that $x_2^{(k+1)}$ uses the just-updated $x_1^{(k+1)}$, which is the defining feature of Gauss–Seidel.) Starting from $x^{(0)} = (0, 0)$:
-
-| $k$ | $x_1^{(k)}$ | $x_2^{(k)}$ | residual $\|b - A x^{(k)}\|$ |
-|---:|---:|---:|---:|
-| 0 | 0.0000 | 0.0000 | 2.2361 |
-| 1 | 0.2500 | 0.5000 | 0.7071 |
-| 2 | 0.1250 | 0.5833 | 0.1179 |
-| 3 | 0.1042 | 0.5972 | 0.0244 |
-| 4 | 0.1007 | 0.5995 | 0.0050 |
-| 5 | 0.1001 | 0.5999 | 0.0010 |
-
-The iteration converges monotonically (after the first overshoot) to the true solution $x = (0.1, 0.6)$, which satisfies $4(0.1) + 0.6 = 1$ and $2(0.1) + 3(0.6) = 2$. Compared to the Jacobi iteration (Example 1), Gauss–Seidel converges in about half as many steps for the same tolerance.
+**Example 2 — Gauss–Seidel.** Same system. $x_1^{(k+1)} = (1 - x_2^{(k)})/4$, $x_2^{(k+1)} = (2 - 2 x_1^{(k+1)})/3$. Start $(0, 0)$: $x^{(1)} = (0.25, 0.5)$. $x^{(2)} = ((1 - 0.5)/4, (2 - 0.5)/3) = (0.125, 0.5)$. Hmm, $x_2$ is staying at $0.5$? Let me recompute. $x_2^{(2)} = (2 - 2 \cdot 0.125)/3 = (2 - 0.25)/3 = 0.583$. $x^{(2)} = (0.125, 0.583)$. $x^{(3)} = ((1 - 0.583)/4, (2 - 0.25)/3) = (0.104, 0.583)$. $x^{(4)} = (0.104, 0.597)$. Converging to $(0.1, 0.6)$? Wait, the true solution is $x = (0.1, 0.6)$ — yes, $4(0.1) + 0.6 = 1$, $2(0.1) + 3(0.6) = 2$. ✓
 
 **Example 3 — Spectral radius.** $A = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}$. Jacobi: $G_J = -D^{-1} (L + U) = \begin{pmatrix} 0 & -1/2 \\ -1/2 & 0 \end{pmatrix}$. Eigenvalues $\pm 1/2$. $\rho = 1/2 < 1$, so Jacobi converges.
 

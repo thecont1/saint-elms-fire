@@ -209,11 +209,7 @@ A *basis* of a vector space is a linearly independent spanning set. Every vector
 
 **Example 4 — Dimension of polynomial subspace.** $W = \{p \in \mathbb{R}[x] : p(0) = p(1) = 0\}$. $W$ is the kernel of the linear map $p \mapsto (p(0), p(1)) : \mathbb{R}[x]_{\le n} \to \mathbb{R}^2$. The map is surjective for $n \ge 1$ (any $(a, b)$ is $(a, b)$ at $x = 0, 1$). So $\dim W = (n + 1) - 2 = n - 1$ for $n \ge 1$. A basis: $\{(x)(x - 1) q(x) : q \in \mathbb{R}[x]_{\le n-2}\}$, i.e., $x (x - 1), x^2 (x - 1), \ldots, x^{n-1} (x - 1)$.
 
-**Example 5 — Basis of $W = \text{span}\{v_1, v_2, v_3\}$ with $v_1 = (1, 2, 3), v_2 = (4, 5, 6), v_3 = (7, 8, 9)$.** These are in arithmetic progression. Form the differences $v_2 - v_1 = (3, 3, 3) = 3(1, 1, 1)$ and $v_3 - v_1 = (6, 6, 6) = 6(1, 1, 1)$. Both differences lie on the single line $\mathbb{R}(1, 1, 1)$, so the three vectors are linearly dependent: $v_2 = v_1 + 3(1,1,1)$ and $v_3 = v_1 + 6(1,1,1)$. The span is therefore
-
-$$W = \text{span}\{v_1, v_2, v_3\} = \mathbb{R}(1, 1, 1),$$
-
-a one-dimensional subspace. A basis is $\{(1, 1, 1)\}$, and $\dim W = 1$.
+**Example 5 — Basis of $W = \text{span}\{(1, 2, 3), (4, 5, 6), (7, 8, 9)\}$.** These are in arithmetic progression; the third minus twice the first is $(5, 4, 3) \cdot$ no wait, $2 (1, 2, 3) = (2, 4, 6)$, $(7, 8, 9) - (2, 4, 6) = (5, 4, 3)$. And $(4, 5, 6) - 2(1, 2, 3) = (2, 1, 0)$. So the third is $(2, 1, 0) + (5, 4, 3) = (7, 5, 3)$ — but we said it was $(7, 8, 9)$. Let me recheck: $v_3 - v_1 = (6, 6, 6) = 6 (1, 1, 1)$. And $v_2 - v_1 = (3, 3, 3) = 3 (1, 1, 1)$. So $v_2 - v_1$ and $v_3 - v_1$ are both proportional to $(1, 1, 1)$, so $v_1, v_2, v_3$ are linearly dependent. The span is the line $\mathbb{R} (1, 1, 1)$, one-dimensional. Basis: $\{(1, 1, 1)\}$.
 
 ## Common Misconceptions
 - **"A basis is unique."** No — there are many bases.

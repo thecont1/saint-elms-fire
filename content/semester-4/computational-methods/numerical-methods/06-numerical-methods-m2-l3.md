@@ -162,25 +162,9 @@ Gaussian quadrature is much more efficient.
 ## Worked Examples
 **Example 1 — 2-point Gauss–Legendre.** $I = \int_{-1}^1 e^x dx = e - e^{-1} \approx 2.3504$. $I_2 = 1 \cdot e^{-1/\sqrt{3}} + 1 \cdot e^{1/\sqrt{3}} = 2 e^{1/\sqrt{3}} \approx 2.3427$. Error: $0.008$.
 
-**Example 2 — 3-point Gauss–Legendre.** With $n = 3$ nodes $x_0 = 0$, $x_{\pm 1} = \pm\sqrt{3/5}$ and weights $w_0 = 8/9$, $w_{\pm 1} = 5/9$:
+**Example 2 — 3-point Gauss–Legendre.** $I_3 = (5/9) e^{-\sqrt{3/5}} + (8/9) e^0 + (5/9) e^{\sqrt{3/5}} = (5/9)(0.6988) + (8/9)(1) + (5/9)(1.4311) = 0.3883 + 0.8889 + 0.7951 = 2.0723$. Wait, this is much less accurate than 2-point. Let me recompute: $e^{-\sqrt{3/5}} = e^{-0.7746} = 0.4610$, $e^{\sqrt{3/5}} = e^{0.7746} = 2.1696$. $I_3 = (5/9)(0.4610) + (8/9)(1) + (5/9)(2.1696) = 0.2561 + 0.8889 + 1.2053 = 2.3503$. Error: $0.0001$. Excellent! ✓ (I had a wrong value for $e^{-\sqrt{3/5}}$ earlier.)
 
-$$I_3 = \tfrac{5}{9}\, e^{-\sqrt{3/5}} + \tfrac{8}{9}\, e^{0} + \tfrac{5}{9}\, e^{\sqrt{3/5}}.$$
-
-Numerically, $e^{-\sqrt{3/5}} = e^{-0.7746} \approx 0.4610$ and $e^{\sqrt{3/5}} = e^{+0.7746} \approx 2.1696$, so
-
-$$I_3 = \tfrac{5}{9}(0.4610) + \tfrac{8}{9}(1.0000) + \tfrac{5}{9}(2.1696) \approx 0.2561 + 0.8889 + 1.2053 = 2.3503.$$
-
-The exact value is $e - e^{-1} = 2.35034\ldots$, so the error is $|2.3503 - 2.35034| \approx 4 \times 10^{-5}$ — about $10^{-5}$, an order of magnitude better than the 2-point rule.
-
-**Example 3 — Gauss–Hermite.** Convention: $\int_{-\infty}^{\infty} e^{-x^2}\, f(x)\, dx \approx \sum_{i=1}^{n} w_i\, f(x_i)$, where the nodes are the roots of the Hermite polynomial $H_n(x)$ and the weights are chosen to make the rule exact for polynomials of degree up to $2n - 1$. For $n = 2$:
-
-$$x_1 = -\tfrac{1}{\sqrt{2}}, \quad x_2 = +\tfrac{1}{\sqrt{2}}, \quad w_1 = w_2 = \tfrac{\sqrt{\pi}}{2}.$$
-
-Take $f(x) = 1$ (so $I = \int_{-\infty}^{\infty} e^{-x^2}\, dx = \sqrt{\pi}$). Then
-
-$$I_2 = \tfrac{\sqrt{\pi}}{2}\, f(x_1) + \tfrac{\sqrt{\pi}}{2}\, f(x_2) = \tfrac{\sqrt{\pi}}{2}(1) + \tfrac{\sqrt{\pi}}{2}(1) = \sqrt{\pi}.$$
-
-Exact, as expected: 2-point Gauss–Hermite is exact for polynomials up to degree $3$, and the constant function $f(x) = 1$ is a polynomial of degree $0$.
+**Example 3 — Gauss–Hermite.** $I = \int_{-\infty}^\infty e^{-x^2} dx = \sqrt{\pi}$. 2-point Gauss–Hermite: $I_2 = (1) e^{-(-\sqrt{1/2})^2} + (1) e^{-(\sqrt{1/2})^2}$... wait, the formula is $I \approx w_1 f(x_1) + w_2 f(x_2)$ with $x_1 = -1/\sqrt{2}$, $x_2 = 1/\sqrt{2}$, $w_1 = w_2 = \sqrt{\pi}/2$? Actually for Gauss–Hermite, the rule is $\int e^{-x^2} f(x) dx \approx \sum w_i f(x_i)$ with the standard $w_i$. For $n = 2$: $x = \pm 1/\sqrt{2}$, $w = \sqrt{\pi}/2$ each. So $I_2 = (\sqrt{\pi}/2)(2) = \sqrt{\pi}$. Exact! (Hermite quadrature with $n$ points is exact for polynomials of degree $2n - 1$.)
 
 **Example 4 — Gauss–Laguerre.** $I = \int_0^\infty e^{-x} \cos x\, dx = 1/2$. 2-point Gauss–Laguerre: $x_1 \approx 0.5858$, $x_2 \approx 3.4142$, $w_1 \approx 0.8536$, $w_2 \approx 0.1464$. $I_2 = 0.8536 \cos(0.5858) + 0.1464 \cos(3.4142) = 0.8536 \times 0.8344 + 0.1464 \times (-0.9550) = 0.7123 - 0.1398 = 0.5725$. Hmm, expected $0.5$, error $0.07$. With more points, much more accurate.
 

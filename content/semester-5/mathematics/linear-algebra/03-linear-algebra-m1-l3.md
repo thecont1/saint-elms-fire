@@ -88,7 +88,7 @@ A *linear map* $T: V \to W$ is a structure-preserving map between vector spaces 
 - $F^n \cong F^n$ (the identity).
 - $M_{m \times n} \cong F^{mn}$ (vectorise the matrix).
 - $F[x]_{\le n} \cong F^{n+1}$ (by the map $p \mapsto (a_0, a_1, \ldots, a_n)$).
-- $\mathbb{R}^2 \cong \mathbb{C}$ as **real** vector spaces: identify $(a, b) \in \mathbb{R}^2$ with $a + b i \in \mathbb{C}$. The map is an isomorphism of real 2D spaces. As **complex** vector spaces, however, $\mathbb{C}$ is 1-dimensional and $\mathbb{R}^2$ has no complex structure, so the same identification is *not* a $\mathbb{C}$-linear isomorphism. Similarly, $\mathbb{C}^2$ as a complex space has dimension 2 and is not isomorphic to $\mathbb{C}$ (which has dimension 1 over $\mathbb{C}$).
+- $F^2 \cong \mathbb{C}$ (over $\mathbb{R}$? no, over $\mathbb{C}$ they are both 1D — wait, $\mathbb{C}$ is 1D over $\mathbb{C}$ and 2D over $\mathbb{R}$). Over $\mathbb{R}$: $F^2 \cong \mathbb{C}$ (identify $(a, b) \leftrightarrow a + b i$).
 - $V \oplus W \cong F^{\dim V + \dim W}$.
 
 **First isomorphism theorem.** If $T: V \to W$ is linear, then $V / \ker T \cong \text{im}(T)$. So the quotient is isomorphic to the image. In particular, $\dim V = \dim \ker T + \dim \text{im}(T)$ — a restatement of rank-nullity.
@@ -195,11 +195,7 @@ A *linear map* $T: V \to W$ is a structure-preserving map between vector spaces 
 
 **Example 4 — First isomorphism.** $T: \mathbb{R}^3 \to \mathbb{R}^2$, $T(x, y, z) = (x, y)$. $\ker T = $ $z$-axis. $\text{im}(T) = \mathbb{R}^2$. So $\mathbb{R}^3 / \mathbb{R} \cong \mathbb{R}^2$. Both sides are 2D. ✓
 
-**Example 5 — Singular value decomposition.** $A = \begin{pmatrix} 3 & 0 \\ 0 & -2 \end{pmatrix}$. The SVD requires $A = U \Sigma V^*$ with $U, V$ unitary and $\Sigma$ diagonal with non-negative entries. Writing $A = \text{diag}(3, -2) = \text{diag}(1, -1) \cdot \text{diag}(3, 2)$, we get
-
-$$U = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}, \quad \Sigma = \begin{pmatrix} 3 & 0 \\ 0 & 2 \end{pmatrix}, \quad V = I = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}.$$
-
-Indeed $U \Sigma V^* = U \Sigma = \text{diag}(3, -2) = A$. Both $U$ and $V$ are unitary: $U^T U = V^T V = I$. The singular values are $\sigma_1 = 3, \sigma_2 = 2$. The sign of the off-diagonal $A_{22} = -2$ has been absorbed into $U$, leaving $\Sigma$ with the required non-negative diagonal.
+**Example 5 — Singular value decomposition.** $A = \begin{pmatrix} 3 & 0 \\ 0 & -2 \end{pmatrix}$ is already SVD: $U = A/|A| \cdot |A|$, $V = I$, $\Sigma = $ diag$(|3|, |-2|) = $ diag$(3, 2)$. Wait, that's not quite right. The SVD of a diagonal matrix is just itself: $A = I \cdot A \cdot I$.
 
 ## Common Misconceptions
 - **"Every linear map is a matrix."** Only after choosing bases. The matrix depends on the bases.
