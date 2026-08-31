@@ -42,7 +42,7 @@ which needs a `src/` branch, not this one.
 ### 3.1 WP-G: Catalog regeneration + manifest status + release-verified import (1 task, no authoring)
 
 **Goal:** Make the existing lessons actually usable in Elms.
-**Status (2026-08-31): DONE, except one flap-gated release re-verification.**
+**Status (2026-09-01): DONE — release verification passed.**
 
 Executed findings and steps:
 
@@ -62,16 +62,18 @@ Executed findings and steps:
 5. **Import complete:** `scripts/import-content-tree.ts` (idempotent; matches courses by
    `code`, modules by marker, skips complete courses) imported all 263 lessons / 36
    courses into the live service via the admin API.
-6. **Release check flap-gated:** `bridge-physics-m1-l1` → `student-wpg-import` reached
-   parsing/chunking/embedding/vector_write (21/21 vectors) but failed at `graph_write`
-   with `graph_extraction_failed` — Gemini 3.7 Flash was 503-ing environment-wide at the
-   time (verified by direct probe). Re-run when Gemini is healthy:
-   `bun run scripts/import-content-tree.ts` (imports skip; release check retries itself).
-   **Retry (2026-09-01):** re-run imported all 60 new WP-D/C/E lessons — Astrophysics III,
+6. **Release check passed (after Gemini flap gate):** `bridge-physics-m1-l1` →
+   `student-wpg-import` initially reached parsing/chunking/embedding/vector_write
+   (21/21 vectors) but failed at `graph_write` with `graph_extraction_failed` while
+   Gemini 3.7 Flash was 503-ing environment-wide (verified by direct probe).
+   **Retry 1 (2026-09-01):** re-run imported all 60 new WP-D/C/E lessons — Astrophysics III,
    Astrophysics IV, Mathematics Lab using Python II and III, Electronic Instrumentation
    Lab, Advanced Quantum Mechanics Lab, Number Theory, Operations Research — into the
    live service; the release check itself failed again, 3/3 retries, terminal state
-   `failed`. Release verification still flap-gated; imports are complete and idempotent.
+   `failed` (Gemini still flapping).
+   **Retry 2 (2026-09-01, healthy window):** release `AaEFAhbWFiGt2zS3IVEY` reached
+   terminal state `released` on the first attempt, 0 retries. Imports are complete and
+   idempotent; WP-G is now fully release-verified. Gate closed.
 7. **Do not** revert the revert (`5ef5a303`) — history stays; restoration rides forward.
 
 ---
@@ -244,7 +246,7 @@ Each lesson file:
 - [x] `git checkout main && git pull`
 - [x] `git checkout -b content/wp-fdg` (fresh branch from main)
 - [x] **Step 0:** verify `***` frontmatter acceptance — ACCEPTED (no parser; YAML rides chunk 0)
-- [x] WP-G: catalog + status + release-verified import — done except flap-gated release re-verification
+- [x] WP-G: catalog + status + release-verified import — fully done; release check passed 2026-09-01
 - [x] WP-F: university-support corpus (6 lessons) → run `ingest-friend-corpus.ts` (corpus pre-existed on `main`)
 - [x] WP-D: Astrophysics III + IV (18 lessons)
 - [x] WP-C leftovers (22 lessons) — 4 lab courses complete; manifest flipped to released; catalog at 303 lessons / 41 courses
@@ -252,4 +254,4 @@ Each lesson file:
 - [x] Open PR per work package; merge when verified — PR #9 opened and merged 2026-09-01
 - [x] Never touch `src/` in this branch — content-only throughout
 - [ ] Remaining scope per §3.6: 15 authorable courses (3 lab/practical with module plans), internship workflow, 13 external rows awaiting provider confirmation
-- [ ] WP-G release check re-run in a healthy Gemini window (§3.1 item 6)
+- [x] WP-G release check re-run in a healthy Gemini window (§3.1 item 6) — passed 2026-09-01, release `released` on first attempt
