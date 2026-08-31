@@ -31,9 +31,9 @@ scroll into it and it pins — the frame never moves while you converse.
 4. **Expected:** every substantive line begins `[course]` or `[web]` —
    courseware and Google-Search grounding are never blended unattributed —
    and the answer **ends with exactly one** `Trailhead: …?` question pushing
-   past the syllabus. (WP-D note: Brinda's Sem III state substitutes Waves &
-   Optics + Real Analysis + labs until Astrophysics III/IV land; nothing in
-   her world references courses outside the 71-row manifest.)
+   past the syllabus. Brinda's Sem III state follows every released course in
+   the canonical 71-row manifest, including Astrophysics III now that WP-D has
+   landed; nothing in her world references courses outside that manifest.
 
 ## Beat 3 — Chetna keeps the fire banked (break mode)
 
