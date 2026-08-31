@@ -13,7 +13,7 @@ lessonId: linear-algebra-m3-l2
 lessonName: Singular Value Decomposition and Applications
 lessonNumber: 8
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 5
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 8

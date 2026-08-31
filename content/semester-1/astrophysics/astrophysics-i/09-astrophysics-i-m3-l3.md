@@ -13,7 +13,7 @@ lessonId: astrophysics-i-m3-l3
 lessonName: Observing from the Ground and from Space
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 1
 difficulty: foundation
 estimatedStudyMinutes: 45
 releaseOrder: 9

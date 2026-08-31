@@ -13,7 +13,7 @@ lessonId: numerical-methods-m3-l2
 lessonName: Iterative Methods — Jacobi, Gauss–Seidel
 lessonNumber: 8
 moduleNumber: 3
-semesterNumber: 2
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 8

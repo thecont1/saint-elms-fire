@@ -13,7 +13,7 @@ lessonId: introduction-to-quantum-mechanics-m2-l2
 lessonName: Infinite and Finite Square Wells
 lessonNumber: 5
 moduleNumber: 2
-semesterNumber: 2
+semesterNumber: 4
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 5

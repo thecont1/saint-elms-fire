@@ -13,7 +13,7 @@ lessonId: abstract-algebra-m3-l2
 lessonName: Ideals, Quotient Rings and Homomorphisms
 lessonNumber: 8
 moduleNumber: 3
-semesterNumber: 2
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 8

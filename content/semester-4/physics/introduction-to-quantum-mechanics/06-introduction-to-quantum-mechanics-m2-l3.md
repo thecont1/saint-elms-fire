@@ -13,7 +13,7 @@ lessonId: introduction-to-quantum-mechanics-m2-l3
 lessonName: Tunnelling and the Harmonic Oscillator
 lessonNumber: 6
 moduleNumber: 2
-semesterNumber: 3
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 60
 releaseOrder: 6

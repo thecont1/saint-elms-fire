@@ -13,7 +13,7 @@ lessonId: astrophysics-i-m2-l3
 lessonName: Precession, Nutation and the Changing Sky
 lessonNumber: 6
 moduleNumber: 2
-semesterNumber: 2
+semesterNumber: 1
 difficulty: intermediate
 estimatedStudyMinutes: 45
 releaseOrder: 6

@@ -13,7 +13,7 @@ lessonId: linear-algebra-m1-l3
 lessonName: Linear Maps, Isomorphisms and Dimension
 lessonNumber: 3
 moduleNumber: 1
-semesterNumber: 3
+semesterNumber: 5
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 3

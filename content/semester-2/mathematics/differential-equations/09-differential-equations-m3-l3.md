@@ -13,7 +13,7 @@ lessonId: differential-equations-m3-l3
 lessonName: Modelling with ODEs — RC, RL and Population
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 2
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 9

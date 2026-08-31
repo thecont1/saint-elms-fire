@@ -13,7 +13,7 @@ lessonId: differential-calculus-m3-l3
 lessonName: L'Hôpital's Rule and Indeterminate Forms
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 1
 difficulty: intermediate
 estimatedStudyMinutes: 45
 releaseOrder: 9

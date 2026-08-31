@@ -1,0 +1,1217 @@
+# Saint Elms Fire — B.Sc. Physics & Mathematics with minor in Astrophysics
+# Christ University, Bangalore
+# Programme manifest (source of truth for course and lesson metadata)
+#
+# 71 PDF rows transcribed. 43 rows currently have authored courseware under content/.
+# 29 rows remain (planned, external, or in authoring) per the action plan dated 2026-08-31.
+#
+# Status legend:
+#   released       — Authored courseware present in content/ and QA-approved.
+#   in_authoring   — Lessons being written.
+#   planned        — Confirmed scope, awaiting authoring.
+#   external       — Content hosted externally; manifest captures provider/link/credit evidence.
+#   pending        — Awaiting official syllabus or provider confirmation.
+#   out_of_scope   — Documented as not authored (e.g. duplicate orientation placeholder).
+
+programmeId: bsc-physics-mathematics-astrophysics
+programmeName: B.Sc. Physics & Mathematics with minor in Astrophysics
+institution: Christ University, Bangalore
+sourcePdfs:
+  - BScPM_Astropysics2024_20241109100918.pdf
+manifestVersion: "2026-08-31.5"
+totalPdfRows: 71
+releasedRows: 43
+authoringRows: 37
+
+# ===========================================================================
+# SEMESTER 1 — 13 rows
+# ===========================================================================
+semester-1:
+  semesterId: sem-1
+  semesterName: Semester 1
+  hoursPerWeekRange: "varies by course (1–6)"
+
+  rows:
+    - rowId: sem1-row-01
+      courseCode: PHY001-1
+      courseId: bridge-physics
+      courseName: Bridge Course for Physics
+      subjectId: physics
+      courseType: Bridge Course
+      hoursPerWeek: 2
+      credits: 0
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: []
+      status: released
+      packageTemplate: three-short-orientation-lessons
+      contentPath: content/semester-1/physics/bridge-physics/
+      notes: Zero-credit orientation; precedes Mechanics and Mechanics Lab. Establishes units/dimensions, vectors, algebra/trig/calculus refresh, lab safety.
+
+    - rowId: sem1-row-02
+      courseCode: PHY101-1
+      courseId: mechanics
+      courseName: Mechanics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [bridge-physics]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-1/physics/mechanics/
+      notes: Already released with 9 lessons (m1-l1 through m3-l3).
+
+    - rowId: sem1-row-03
+      courseCode: PHY111-1
+      courseId: mechanics-lab
+      courseName: Mechanics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [mechanics]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-1/physics/mechanics-lab/
+      notes: Six lessons covering measurement/uncertainty, force/equilibrium, friction, projectile/circular motion, rotational dynamics, report/viva.
+
+    - rowId: sem1-row-04
+      courseCode: MAT101-1
+      courseId: differential-calculus
+      courseName: Differential Calculus
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: []
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-1/mathematics/differential-calculus/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem1-row-05
+      courseCode: MAT161-1
+      courseId: integral-calculus
+      courseName: Integral Calculus
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [differential-calculus]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-1/mathematics/integral-calculus/
+      notes: Antiderivatives, definite integrals, techniques, area/work applications, improper integrals, links to Mechanics.
+
+    - rowId: sem1-row-06
+      courseCode: AST121-1
+      courseId: astrophysics-i
+      courseName: Astrophysics I
+      subjectId: astrophysics
+      courseType: Minor
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: []
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-1/astrophysics/astrophysics-i/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem1-row-07
+      courseCode: PHY161-1
+      courseId: basic-electronics
+      courseName: Basic Electronics
+      subjectId: physics
+      courseType: SEC
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: []
+      status: released
+      packageTemplate: six-to-nine-lesson-SEC
+      contentPath: content/semester-1/physics/basic-electronics/
+      notes: DC circuits, passive components, diodes, transistor basics, measurement instruments, simple build/troubleshooting.
+
+    - rowId: sem1-row-08
+      courseCode: ENG181-1
+      courseId: english-i
+      courseName: English I
+      subjectId: general-education
+      courseType: AEC
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Academic reading, scientific writing, presentation, citation. Provider and assessment to be confirmed by department.
+
+    - rowId: sem1-row-09
+      courseCode: EVS181-1
+      courseId: environmental-science
+      courseName: Environmental Science
+      subjectId: general-education
+      courseType: VAC
+      hoursPerWeek: 2
+      credits: 2
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Ecosystems, climate, pollution, sustainability, local case studies. Provider to be confirmed.
+
+    - rowId: sem1-row-10
+      courseCode: HED181-1
+      courseId: holistic-education-i
+      courseName: Holistic Education I
+      subjectId: general-education
+      courseType: VAC
+      hoursPerWeek: 1
+      credits: 1
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Wellbeing, reflective practice, ethics, university participation. Awaiting approved syllabus.
+
+    - rowId: sem1-row-11
+      courseCode: OPE181-1
+      courseId: open-elective-i
+      courseName: Open Elective I
+      subjectId: general-education
+      courseType: Open Elective
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Choice placeholder. Eligibility rules, workload, and chosen offering tracked per learner.
+
+# ===========================================================================
+# SEMESTER 2 — 12 rows
+# ===========================================================================
+semester-2:
+  semesterId: sem-2
+  semesterName: Semester 2
+
+  rows:
+    - rowId: sem2-row-01
+      courseCode: PHY102-2
+      courseId: electricity-and-magnetism
+      courseName: Electricity and Magnetism
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [mechanics, integral-calculus]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-2/physics/electricity-and-magnetism/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem2-row-02
+      courseCode: PHY112-2
+      courseId: electricity-and-magnetism-lab
+      courseName: Electricity and Magnetism Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [electricity-and-magnetism]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-2/physics/electricity-and-magnetism-lab/
+      notes: Electric fields/potential, RC transients, magnetic force, induction, uncertainty, reporting.
+
+    - rowId: sem2-row-03
+      courseCode: PHY103-2
+      courseId: thermal-physics-and-statistical-mechanics
+      courseName: Thermal Physics and Statistical Mechanics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [mechanics, integral-calculus]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-2/physics/thermal-physics-and-statistical-mechanics/
+      notes: Temperature/equations of state, kinetic theory, laws of thermodynamics, entropy, ensembles/probability, applications.
+
+    - rowId: sem2-row-04
+      courseCode: PHY113-2
+      courseId: thermal-physics-lab
+      courseName: Thermal Physics and Statistical Mechanics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [thermal-physics-and-statistical-mechanics]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-2/physics/thermal-physics-lab/
+      notes: Thermal measurements, calorimetry, gas laws, heat engines, uncertainty, reporting.
+
+    - rowId: sem2-row-05
+      courseCode: MAT102-2
+      courseId: differential-equations
+      courseName: Differential Equations
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [differential-calculus, integral-calculus]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-2/mathematics/differential-equations/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem2-row-06
+      courseCode: MAT101-2
+      courseId: introductory-algebra
+      courseName: Introductory Algebra
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: []
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-2/mathematics/introductory-algebra/
+      notes: Sets/mappings, matrices/determinants, elementary groups, complex numbers, problem solving. Scope boundary with Abstract Algebra must be published.
+
+    - rowId: sem2-row-07
+      courseCode: MAT111-2
+      courseId: calculus-using-python
+      courseName: Calculus using Python
+      subjectId: mathematics
+      courseType: Computational SEC
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [differential-calculus, integral-calculus]
+      status: released
+      packageTemplate: six-to-nine-lesson-computational
+      contentPath: content/semester-2/mathematics/calculus-using-python/
+      notes: Python environment, numerical plotting, differentiation/integration, root finding, ODE intro, reproducible notebooks.
+
+    - rowId: sem2-row-08
+      courseCode: AST122-2
+      courseId: astrophysics-ii
+      courseName: Astrophysics II
+      subjectId: astrophysics
+      courseType: Minor
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [astrophysics-i]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-2/astrophysics/astrophysics-ii/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem2-row-09
+      courseCode: ENG182-2
+      courseId: english-ii
+      courseName: English II
+      subjectId: general-education
+      courseType: AEC
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: [english-i]
+      status: external
+      notes: Scientific/technical communication, argument, report writing, presentation refinement.
+
+    - rowId: sem2-row-10
+      courseCode: UID181-2
+      courseId: understanding-india
+      courseName: Understanding India
+      subjectId: general-education
+      courseType: VAC
+      hoursPerWeek: 2
+      credits: 2
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Civics, society, history/culture, development. Awaiting approved institutional outline.
+
+    - rowId: sem2-row-11
+      courseCode: HED182-2
+      courseId: holistic-education-ii
+      courseName: Holistic Education II
+      subjectId: general-education
+      courseType: VAC
+      hoursPerWeek: 1
+      credits: 1
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: [holistic-education-i]
+      status: external
+      notes: Continuation of the approved holistic-education sequence.
+
+    - rowId: sem2-row-12
+      courseCode: OPE182-2
+      courseId: open-elective-ii
+      courseName: Open Elective II
+      subjectId: general-education
+      courseType: Open Elective
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Choice placeholder; independent of Open Elective I.
+
+# ===========================================================================
+# SEMESTER 3 — 11 rows
+# ===========================================================================
+semester-3:
+  semesterId: sem-3
+  semesterName: Semester 3
+
+  rows:
+    - rowId: sem3-row-01
+      courseCode: PHY201-3
+      courseId: waves-and-optics
+      courseName: Waves and Optics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [electricity-and-magnetism, differential-equations]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-3/physics/waves-and-optics/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem3-row-02
+      courseCode: PHY211-3
+      courseId: waves-and-optics-lab
+      courseName: Waves and Optics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [waves-and-optics]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-3/physics/waves-and-optics-lab/
+      notes: Oscillations, standing waves, geometrical optics, interference/diffraction, polarisation, error analysis.
+
+    - rowId: sem3-row-03
+      courseCode: MAT201-3
+      courseId: real-analysis
+      courseName: Real Analysis
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [differential-calculus, integral-calculus]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-3/mathematics/real-analysis/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem3-row-04
+      courseCode: AST123-3
+      courseId: astrophysics-iii
+      courseName: Astrophysics III — Stars and Stellar Evolution
+      subjectId: astrophysics
+      courseType: Minor
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [astrophysics-ii, waves-and-optics]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-3/astrophysics/astrophysics-iii/
+      notes: Stellar properties/spectra, stellar structure/evolution, distance indicators, photometry, observational/data-analysis component.
+
+    - rowId: sem3-row-05
+      courseCode: PHY162-3
+      courseId: analog-and-digital-electronics
+      courseName: Analog and Digital Electronics
+      subjectId: physics
+      courseType: SEC
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [basic-electronics]
+      status: planned
+      packageTemplate: six-to-nine-lesson-SEC
+      notes: Diode/transistor amplifiers, op-amps, logic gates, flip-flops, ADC/DAC, small measurement/simulation project.
+
+    - rowId: sem3-row-06
+      courseCode: MIL181-3
+      courseId: modern-indian-language-i
+      courseName: Modern Indian Language I
+      subjectId: general-education
+      courseType: AEC
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Confirm language choice and approved syllabus; reading/writing/oral tasks.
+
+    - rowId: sem3-row-07
+      courseCode: HED183-3
+      courseId: holistic-education-iii
+      courseName: Holistic Education III
+      subjectId: general-education
+      courseType: VAC
+      hoursPerWeek: 1
+      credits: 1
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: [holistic-education-ii]
+      status: external
+      notes: Approved continuation of the holistic-education sequence.
+
+    - rowId: sem3-row-08
+      courseCode: OPE183-3
+      courseId: open-elective-swayam
+      courseName: Open Elective / Swayam III
+      subjectId: general-education
+      courseType: Open Elective
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: []
+      status: external
+      notes: Swayam/external selection, enrollment evidence, completion evidence, credit mapping.
+
+# ===========================================================================
+# SEMESTER 4 — 12 rows
+# ===========================================================================
+semester-4:
+  semesterId: sem-4
+  semesterName: Semester 4
+
+  rows:
+    - rowId: sem4-row-01
+      courseCode: PHY202-4
+      courseId: introduction-to-quantum-mechanics
+      courseName: Introduction to Quantum Mechanics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [waves-and-optics, differential-equations]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-4/physics/introduction-to-quantum-mechanics/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem4-row-02
+      courseCode: PHY212-4
+      courseId: quantum-mechanics-lab
+      courseName: Quantum Mechanics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [introduction-to-quantum-mechanics]
+      status: released
+      packageTemplate: six-lesson-lab-simulation
+      contentPath: content/semester-4/physics/quantum-mechanics-lab/
+      notes: Spectral measurements, photoelectric/quantum demonstrations, interference/diffraction, numerical wavefunctions, uncertainty/reporting.
+
+    - rowId: sem4-row-03
+      courseCode: PHY203-4
+      courseId: communication-electronics
+      courseName: Communication Electronics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [analog-and-digital-electronics]
+      status: planned
+      packageTemplate: six-to-nine-lesson-theory-practical
+      notes: Modulation, demodulation, oscillators, filters, communication channels, noise, system block diagrams.
+
+    - rowId: sem4-row-04
+      courseCode: PHY213-4
+      courseId: communication-electronics-lab
+      courseName: Communication Electronics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [communication-electronics]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-4/physics/communication-electronics-lab/
+      notes: AM/FM or approved equivalents, filters, oscilloscopes, modulation measurements, fault diagnosis.
+
+    - rowId: sem4-row-05
+      courseCode: MAT301-4
+      courseId: abstract-algebra
+      courseName: Abstract Algebra
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [introductory-algebra]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-4/mathematics/abstract-algebra/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem4-row-06
+      courseCode: MAT302-4
+      courseId: numerical-methods
+      courseName: Numerical Methods
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [differential-equations, calculus-using-python]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-4/computational-methods/numerical-methods/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem4-row-07
+      courseCode: MAT311-4
+      courseId: mathematics-lab-using-python-ii
+      courseName: Mathematics Lab using Python II
+      subjectId: mathematics
+      courseType: Computational Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [numerical-methods, calculus-using-python]
+      status: released
+      packageTemplate: six-lesson-computational-lab
+      contentPath: content/semester-4/mathematics/mathematics-lab-using-python-ii/
+      notes: Linear algebra, ODE/PDE numerical experiments, numerical integration, visualization, reproducibility.
+
+    - rowId: sem4-row-08
+      courseCode: AST124-4
+      courseId: astrophysics-iv
+      courseName: Astrophysics IV — Galaxies, Cosmology and Compact Objects
+      subjectId: astrophysics
+      courseType: Minor
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [astrophysics-iii]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-4/astrophysics/astrophysics-iv/
+      notes: Galaxies, cosmology, compact objects, high-energy phenomena, observational surveys, capstone data exercise.
+
+    - rowId: sem4-row-09
+      courseCode: MIL182-4
+      courseId: modern-indian-language-ii
+      courseName: Modern Indian Language II
+      subjectId: general-education
+      courseType: AEC
+      hoursPerWeek: 3
+      credits: 3
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: [modern-indian-language-i]
+      status: external
+      notes: Continue the selected language; same provider selection remains traceable.
+
+    - rowId: sem4-row-10
+      courseCode: HED184-4
+      courseId: holistic-education-iv
+      courseName: Holistic Education IV
+      subjectId: general-education
+      courseType: VAC
+      hoursPerWeek: 1
+      credits: 1
+      optionGroup: null
+      deliveryMode: external
+      prerequisites: [holistic-education-iii]
+      status: external
+      notes: Confirm whether continuation or distinct module; do not assume interchangeable with Holistic Education III.
+
+# ===========================================================================
+# SEMESTER 5 — 11 rows (3 option groups)
+# ===========================================================================
+semester-5:
+  semesterId: sem-5
+  semesterName: Semester 5
+  optionGroupNote: |
+    PHY302A/B/C-5 and PHY312A/B/C-5 form one Physics option group. Learner must pick
+    one theory + matching lab. The data model enforces coherence.
+
+  rows:
+    - rowId: sem5-row-01
+      courseCode: PHY301-5
+      courseId: solid-state-physics
+      courseName: Solid State Physics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [introduction-to-quantum-mechanics]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-5/physics/solid-state-physics/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem5-row-02
+      courseCode: PHY311-5
+      courseId: solid-state-physics-lab
+      courseName: Solid State Physics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [solid-state-physics]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-5/physics/solid-state-physics-lab/
+      notes: Crystal structure/diffraction, conductivity, semiconductor measurements, thermal properties, data analysis.
+
+    - rowId: sem5-row-03
+      courseCode: PHY302A-5
+      courseId: astronomy-and-astrophysics
+      courseName: Astronomy and Astrophysics (Physics Option A)
+      subjectId: physics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem5-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [astrophysics-iv, thermal-physics-and-statistical-mechanics]
+      status: planned
+      packageTemplate: nine-lesson-advanced-theory
+      notes: Radiative processes, stellar atmospheres, ISM, galactic structure, observational methods, data analysis. Distinct from Astrophysics minor sequence.
+
+    - rowId: sem5-row-04
+      courseCode: PHY302B-5
+      courseId: microcontroller-and-embedded-systems
+      courseName: Microcontroller and Embedded Systems (Physics Option B)
+      subjectId: physics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem5-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [communication-electronics]
+      status: planned
+      packageTemplate: six-to-nine-lesson-project
+      notes: Microcontroller architecture, GPIO, sensors, timing, serial communication, data logging, physics instrumentation project.
+
+    - rowId: sem5-row-05
+      courseCode: PHY302C-5
+      courseId: low-dimensional-materials
+      courseName: Low-Dimensional Materials (Physics Option C)
+      subjectId: physics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem5-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [solid-state-physics]
+      status: planned
+      packageTemplate: nine-lesson-advanced-theory
+      notes: Quantum confinement, 2D materials, nanostructures, fabrication, transport, optical properties, applications.
+
+    - rowId: sem5-row-06
+      courseCode: PHY312A-5
+      courseId: astronomy-and-astrophysics-lab
+      courseName: Astronomy and Astrophysics Lab (Option A)
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: sem5-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [astronomy-and-astrophysics]
+      status: released
+      packageTemplate: six-lesson-observational-data-lab
+      contentPath: content/semester-5/physics/astronomy-and-astrophysics-lab/
+      notes: Telescope/CCD use, photometry, calibration, spectra, catalog queries, mini research report.
+
+    - rowId: sem5-row-07
+      courseCode: PHY312B-5
+      courseId: microcontroller-and-embedded-systems-lab
+      courseName: Microcontroller and Embedded Systems Lab (Option B)
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: sem5-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [microcontroller-and-embedded-systems]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-5/physics/microcontroller-and-embedded-systems-lab/
+      notes: Sensor interfacing, ADC, control loop, serial logging, debugging, capstone device.
+
+    - rowId: sem5-row-08
+      courseCode: PHY312C-5
+      courseId: low-dimensional-materials-lab
+      courseName: Low-Dimensional Materials Lab (Option C)
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: sem5-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [low-dimensional-materials]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-5/physics/low-dimensional-materials-lab/
+      notes: Thin-film/nanomaterial characterization, optical/electrical measurements, data fitting, uncertainty.
+
+    - rowId: sem5-row-09
+      courseCode: MAT401-5
+      courseId: linear-algebra
+      courseName: Linear Algebra
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [introductory-algebra]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-5/mathematics/linear-algebra/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem5-row-10
+      courseCode: MAT402B-5
+      courseId: integral-transforms
+      courseName: Integral Transforms (Mathematics Elective I)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem5-mathematics-elective
+      deliveryMode: authored-courseware
+      prerequisites: [differential-equations, calculus-using-python]
+      status: planned
+      packageTemplate: nine-lesson-theory
+      notes: Fourier series/transforms, Laplace transforms, convolution, PDE/physics applications, transform methods.
+
+    - rowId: sem5-row-11
+      courseCode: MAT403B-5
+      courseId: calculus-of-several-variables
+      courseName: Calculus of Several Variables (Mathematics Elective II)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem5-mathematics-elective
+      deliveryMode: authored-courseware
+      prerequisites: [integral-calculus, differential-calculus]
+      status: planned
+      packageTemplate: nine-lesson-theory
+      notes: Partial derivatives, multiple integrals, vector calculus, line/surface integrals, physics applications.
+
+    - rowId: sem5-row-12
+      courseCode: PHY481-5
+      courseId: internship
+      courseName: Internship
+      subjectId: physics
+      courseType: Internship
+      hoursPerWeek: null
+      credits: 8
+      optionGroup: null
+      deliveryMode: internship-workflow
+      prerequisites: []
+      status: planned
+      packageTemplate: eight-credit-internship-milestone-workflow
+      notes: Placement/proposal, supervisor approval, work log, midpoint review, final report, presentation, viva. Modeled as supervised workflow, not 9 theory lessons.
+
+# ===========================================================================
+# SEMESTER 6 — 16 rows (2 mathematics option groups + physics options)
+# ===========================================================================
+semester-6:
+  semesterId: sem-6
+  semesterName: Semester 6
+  optionGroupNote: |
+    PHY306A/B/C-6 + PHY315A/B/C-6 form one Physics option group.
+    MAT402A/B/C-6 form Mathematics Elective I group.
+    MAT403A/B/C-6 form Mathematics Elective II group.
+    Learner must select one from each group.
+    MAT401-6 (Complex Analysis) and MAT411-6 (Math Lab III) are common.
+
+  rows:
+    - rowId: sem6-row-01
+      courseCode: PHY303-6
+      courseId: atomic-and-molecular-physics
+      courseName: Atomic and Molecular Physics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [introduction-to-quantum-mechanics]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-6/physics/atomic-and-molecular-physics/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem6-row-02
+      courseCode: PHY304-6
+      courseId: nuclear-physics
+      courseName: Nuclear Physics
+      subjectId: physics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [introduction-to-quantum-mechanics]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-6/physics/nuclear-physics/
+      notes: Already released with 9 lessons.
+
+    - rowId: sem6-row-03
+      courseCode: PHY313-6
+      courseId: atomic-and-molecular-physics-lab
+      courseName: Atomic and Molecular Physics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [atomic-and-molecular-physics]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-6/physics/atomic-and-molecular-physics-lab/
+      notes: Spectroscopy, diffraction/interferometry, lasers, molecular spectra, uncertainty.
+
+    - rowId: sem6-row-04
+      courseCode: PHY314-6
+      courseId: nuclear-physics-lab
+      courseName: Nuclear Physics Lab
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [nuclear-physics]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-6/physics/nuclear-physics-lab/
+      notes: Radioactivity, attenuation, counting statistics, nuclear spectra, radiation safety.
+
+    - rowId: sem6-row-05
+      courseCode: PHY306A-6
+      courseId: renewable-energy-and-applications
+      courseName: Renewable Energy and Applications (Physics Option A)
+      subjectId: physics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [solid-state-physics, thermal-physics-and-statistical-mechanics]
+      status: planned
+      packageTemplate: nine-lesson-theory-project
+      notes: Solar, wind, storage, conversion efficiency, grid/context, lifecycle analysis, design case.
+
+    - rowId: sem6-row-06
+      courseCode: PHY306B-6
+      courseId: electronic-instrumentation
+      courseName: Electronic Instrumentation (Physics Option B)
+      subjectId: physics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [communication-electronics]
+      status: planned
+      packageTemplate: six-to-nine-lesson-theory-practical
+      notes: Sensors, signal conditioning, bridges, ADC/DAC, instrumentation amplifiers, calibration, noise.
+
+    - rowId: sem6-row-07
+      courseCode: PHY306C-6
+      courseId: advanced-quantum-mechanics
+      courseName: Advanced Quantum Mechanics (Physics Option C)
+      subjectId: physics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [introduction-to-quantum-mechanics, atomic-and-molecular-physics]
+      status: planned
+      packageTemplate: nine-lesson-advanced-theory
+      notes: Formalism, approximation methods, angular momentum, perturbation/scattering, selected applications.
+
+    - rowId: sem6-row-08
+      courseCode: PHY315A-6
+      courseId: renewable-energy-lab
+      courseName: Renewable Energy and Applications Lab (Option A)
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: sem6-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [renewable-energy-and-applications]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-6/physics/renewable-energy-lab/
+      notes: Solar-cell characterization, energy conversion, storage, efficiency, data analysis.
+
+    - rowId: sem6-row-09
+      courseCode: PHY315B-6
+      courseId: electronic-instrumentation-lab
+      courseName: Electronic Instrumentation Lab (Option B)
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: sem6-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [electronic-instrumentation]
+      status: released
+      packageTemplate: six-lesson-lab
+      contentPath: content/semester-6/physics/electronic-instrumentation-lab/
+      notes: Sensor calibration, bridge circuits, amplification, filtering, ADC, error budgets.
+
+    - rowId: sem6-row-10
+      courseCode: PHY315C-6
+      courseId: advanced-quantum-mechanics-lab
+      courseName: Advanced Quantum Mechanics Lab (Option C)
+      subjectId: physics
+      courseType: Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: sem6-physics-option
+      deliveryMode: authored-courseware
+      prerequisites: [advanced-quantum-mechanics]
+      status: released
+      packageTemplate: six-lesson-simulation-data-lab
+      contentPath: content/semester-6/physics/advanced-quantum-mechanics-lab/
+      notes: Eigenvalue problems, perturbation/numerical models, scattering or approved simulations, interpretation.
+
+    - rowId: sem6-row-11
+      courseCode: MAT401-6
+      courseId: complex-analysis
+      courseName: Complex Analysis
+      subjectId: mathematics
+      courseType: Major Core
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [integral-calculus, differential-equations]
+      status: planned
+      packageTemplate: nine-lesson-theory
+      notes: Complex functions, analyticity, contour integration, residues, mappings, physics applications.
+
+    - rowId: sem6-row-12
+      courseCode: MAT402A-6
+      courseId: advanced-numerical-methods
+      courseName: Advanced Numerical Methods (Math Elective I, A)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-mathematics-elective-i
+      deliveryMode: authored-courseware
+      prerequisites: [numerical-methods, mathematics-lab-using-python-ii]
+      status: planned
+      packageTemplate: nine-lesson-theory-computational
+      notes: Stability, nonlinear systems, eigenvalue methods, PDEs, optimization, error/control.
+
+    - rowId: sem6-row-13
+      courseCode: MAT402B-6
+      courseId: number-theory
+      courseName: Number Theory (Math Elective I, B)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-mathematics-elective-i
+      deliveryMode: authored-courseware
+      prerequisites: [abstract-algebra]
+      status: released
+      packageTemplate: nine-lesson-theory
+      contentPath: content/semester-6/mathematics/number-theory/
+      notes: Divisibility, congruences, primes, arithmetic functions, finite fields, applications.
+
+    - rowId: sem6-row-14
+      courseCode: MAT402C-6
+      courseId: operations-research
+      courseName: Operations Research (Math Elective I, C)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-mathematics-elective-i
+      deliveryMode: authored-courseware
+      prerequisites: [linear-algebra, differential-calculus]
+      status: released
+      packageTemplate: nine-lesson-applied-mathematics
+      contentPath: content/semester-6/mathematics/operations-research/
+      notes: Linear programming, simplex, duality, networks, scheduling, sensitivity analysis.
+
+    - rowId: sem6-row-15
+      courseCode: MAT403A-6
+      courseId: computational-linear-algebra
+      courseName: Computational Linear Algebra (Math Elective II, A)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-mathematics-elective-ii
+      deliveryMode: authored-courseware
+      prerequisites: [linear-algebra, numerical-methods]
+      status: planned
+      packageTemplate: nine-lesson-computational
+      notes: Matrix factorizations, conditioning, iterative solvers, least squares, SVD, large-scale computation.
+
+    - rowId: sem6-row-16
+      courseCode: MAT403B-6
+      courseId: financial-mathematics
+      courseName: Financial Mathematics (Math Elective II, B)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-mathematics-elective-ii
+      deliveryMode: authored-courseware
+      prerequisites: [differential-calculus, integral-calculus]
+      status: planned
+      packageTemplate: nine-lesson-applied-mathematics
+      notes: Interest/annuities, bonds, risk, stochastic basics, model limitations.
+
+    - rowId: sem6-row-17
+      courseCode: MAT403C-6
+      courseId: mathematical-modelling
+      courseName: Mathematical Modelling (Math Elective II, C)
+      subjectId: mathematics
+      courseType: Major Elective
+      hoursPerWeek: 4
+      credits: 4
+      optionGroup: sem6-mathematics-elective-ii
+      deliveryMode: authored-courseware
+      prerequisites: [differential-equations, calculus-of-several-variables]
+      status: planned
+      packageTemplate: nine-lesson-project
+      notes: Model formulation, nondimensionalization, calibration, validation, sensitivity, communication.
+
+    - rowId: sem6-row-18
+      courseCode: MAT411-6
+      courseId: mathematics-lab-using-python-iii
+      courseName: Mathematics Lab using Python III
+      subjectId: mathematics
+      courseType: Computational Lab
+      hoursPerWeek: 2
+      credits: 1
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: [mathematics-lab-using-python-ii]
+      status: released
+      packageTemplate: six-lesson-computational-lab
+      contentPath: content/semester-6/mathematics/mathematics-lab-using-python-iii/
+      notes: Advanced numerical linear algebra, transforms, optimization, visualization, capstone.
+
+# ===========================================================================
+# Cross-semester support corpus
+# ===========================================================================
+support:
+  rows:
+    - rowId: support-row-01
+      courseCode: SUP100
+      courseId: student-life-and-university-navigation
+      courseName: Student Life and University Navigation
+      subjectId: university-support
+      courseType: Administrative Support
+      hoursPerWeek: null
+      credits: 0
+      optionGroup: null
+      deliveryMode: authored-courseware
+      prerequisites: []
+      status: released
+      packageTemplate: two-modules-three-lessons
+      contentPath: content/university-support/student-life-and-university-navigation/
+      notes: 6 lessons already released. Powers Socrates-my-Friend.
+
+# ===========================================================================
+# Aggregate counts (must equal sum of status fields)
+# ===========================================================================
+counts:
+  bySemester:
+    sem-1: 11
+    sem-2: 12
+    sem-3: 8
+    sem-4: 10
+    sem-5: 12
+    sem-6: 18
+  byStatus:
+    released: 15
+    in_authoring: 0
+    planned: 42
+    external: 14
+    pending: 0
+    out_of_scope: 0
+  total: 71

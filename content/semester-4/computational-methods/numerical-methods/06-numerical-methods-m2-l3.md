@@ -13,7 +13,7 @@ lessonId: numerical-methods-m2-l3
 lessonName: Gaussian Quadrature and Composite Rules
 lessonNumber: 6
 moduleNumber: 2
-semesterNumber: 3
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 6

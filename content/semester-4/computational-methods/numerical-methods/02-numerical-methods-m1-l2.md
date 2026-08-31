@@ -13,7 +13,7 @@ lessonId: numerical-methods-m1-l2
 lessonName: Interpolation — Lagrange and Newton's Divided Differences
 lessonNumber: 2
 moduleNumber: 1
-semesterNumber: 2
+semesterNumber: 4
 difficulty: foundation
 estimatedStudyMinutes: 55
 releaseOrder: 2

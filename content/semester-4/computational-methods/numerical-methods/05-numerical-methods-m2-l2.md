@@ -13,7 +13,7 @@ lessonId: numerical-methods-m2-l2
 lessonName: Numerical Integration — Trapezoidal and Simpson's Rules
 lessonNumber: 5
 moduleNumber: 2
-semesterNumber: 2
+semesterNumber: 4
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 5
