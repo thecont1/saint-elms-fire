@@ -24,6 +24,7 @@ import { InfoIcon } from '@/components/InfoIcon';
 import { WikiPageView } from '@/components/WikiPageView';
 import { ModelHelmPanel } from '@/components/ModelHelmPanel';
 import type { Course, CourseModule, Lesson, ReleaseEvent, KnowledgeNode, KnowledgeEdge, SocraticSession } from '@/lib/types';
+import type { DemoPersona, DemoPersonaId } from '@/lib/demo-session';
 
 interface LmsDashboardClientProps {
   initialCourse: Course | null;
@@ -32,6 +33,8 @@ interface LmsDashboardClientProps {
   initialReleases: ReleaseEvent[];
   initialGraph: { nodes: KnowledgeNode[]; edges: KnowledgeEdge[] };
   initialSocraticSession: SocraticSession | null;
+  identity: { userId: string; role: 'admin' | 'student' };
+  demoSession?: { selected: DemoPersona; personas: readonly DemoPersona[] };
 }
 
 /**
@@ -51,9 +54,12 @@ export function LmsDashboardClient({
   initialReleases = [],
   initialGraph = { nodes: [], edges: [] },
   initialSocraticSession,
+  identity,
+  demoSession,
 }: LmsDashboardClientProps) {
-  const [role, setRole] = useState<'admin' | 'student'>('student');
-  const [studentId, setStudentId] = useState('student-alex');
+  const role = identity.role;
+  const studentId = identity.role === 'admin' ? 'student-ananya' : identity.userId;
+  const [isChangingPersona, setIsChangingPersona] = useState(false);
 
   // Core Data States initialized with server-loaded data
   const [courses, setCourses] = useState<Course[]>(initialCourse ? [initialCourse] : []);
@@ -78,18 +84,29 @@ export function LmsDashboardClient({
   const [constellationCollapsed, setConstellationCollapsed] = useState(false);
   const [readerCollapsed, setReaderCollapsed] = useState(false);
 
-  // Toggle admin theme class on <html>; scroll to top on role switch (not initial mount)
-  const isFirstRender = useRef(true);
+  // Toggle the admin theme from the server-resolved principal.
   useEffect(() => {
     const root = document.documentElement;
     if (role === 'admin') root.classList.add('admin-theme');
     else root.classList.remove('admin-theme');
-    if (!isFirstRender.current) {
-      window.scrollTo(0, 0);
-    }
-    isFirstRender.current = false;
     return () => root.classList.remove('admin-theme');
   }, [role]);
+
+  const handlePersonaChange = async (persona: DemoPersonaId) => {
+    setIsChangingPersona(true);
+    try {
+      const response = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ persona }),
+      });
+      if (!response.ok) throw new Error(`Session switch failed: ${response.status}`);
+      window.location.assign('/');
+    } catch (error) {
+      console.error(error);
+      setIsChangingPersona(false);
+    }
+  };
 
   // Compute released lessons and keep selectedLesson within release eligibility
   useEffect(() => {
@@ -163,21 +180,14 @@ export function LmsDashboardClient({
   };
 
   const handleBoom = async () => {
-    if (!confirm('This will permanently delete ALL data (courses, modules, lessons, releases, graph, quizzes, sessions). Are you sure?')) return;
+    if (!confirm('Restore Ananya, Brinda, and Chetna to the canonical Phase 9 demo states? Programme courseware is preserved.')) return;
     setIsBooming(true);
     try {
-      await fetch('/api/flush', { method: 'POST' });
-      setCourses([]);
-      setSelectedCourse(null);
-      setModules([]);
-      setLessons([]);
-      setReleases([]);
-      setReleasedLessons([]);
-      setGraphData({ nodes: [], edges: [] });
-      setSelectedLesson(null);
+      const response = await fetch('/api/flush', { method: 'POST' });
+      if (!response.ok) throw new Error(`Persona restore failed: ${response.status}`);
+      window.location.reload();
     } catch (err) {
       console.error('Boom failed:', err);
-    } finally {
       setIsBooming(false);
     }
   };
@@ -193,10 +203,13 @@ export function LmsDashboardClient({
       {/* 1. TOP HEADER / APP NAVIGATION */}
       <Navigation
         currentRole={role}
-        onRoleChange={setRole}
+        currentPersona={demoSession?.selected}
+        personas={demoSession?.personas}
+        onPersonaChange={demoSession ? handlePersonaChange : undefined}
+        isChangingPersona={isChangingPersona}
         onSync={refreshAllData}
         isSyncing={isSyncing}
-        onBoom={handleBoom}
+        onBoom={role === 'admin' ? handleBoom : undefined}
         isBooming={isBooming}
         controlsHidden={!heroExpanded}
       />

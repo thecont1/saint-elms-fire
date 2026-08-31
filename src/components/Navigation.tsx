@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Shield, User } from 'lucide-react';
+import type { DemoPersona, DemoPersonaId } from '@/lib/demo-session';
 
 function RefreshIcon({ className = 'w-3.5 h-3.5', spin = false }: { className?: string; spin?: boolean }) {
   return (
@@ -187,7 +188,10 @@ export function ModelStatusLights() {
 
 interface NavigationProps {
   currentRole: 'admin' | 'student';
-  onRoleChange: (role: 'admin' | 'student') => void;
+  currentPersona?: DemoPersona;
+  personas?: readonly DemoPersona[];
+  onPersonaChange?: (persona: DemoPersonaId) => void;
+  isChangingPersona?: boolean;
   /** Optional: renders a Sync button to the right of the role switcher. */
   onSync?: () => void;
   isSyncing?: boolean;
@@ -229,7 +233,10 @@ export function CoronaMark({ className = 'w-6 h-6' }: { className?: string }) {
 
 export function Navigation({
   currentRole,
-  onRoleChange,
+  currentPersona,
+  personas,
+  onPersonaChange,
+  isChangingPersona = false,
   onSync,
   isSyncing = false,
   onBoom,
@@ -283,34 +290,36 @@ export function Navigation({
             </div>
           </div>
 
-          {/* Role Switcher + Sync */}
+          {/* Demo identity + data controls */}
           {!controlsHidden && (
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-1 rounded-full border border-beacon-200 bg-beacon-50 p-1">
-                <button
-                  onClick={() => onRoleChange('admin')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                    currentRole === 'admin'
-                      ? 'bg-white text-beacon-700 shadow-sm border border-beacon-200'
-                      : 'text-marine-500 hover:text-marine-800'
-                  }`}
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>Admin</span>
-                </button>
+              {currentPersona && personas && onPersonaChange && (
+                <label className="relative flex min-h-11 items-center gap-2 rounded-full border border-beacon-200 bg-beacon-50 px-3 text-xs font-semibold text-marine-700">
+                  {currentRole === 'admin' ? <Shield className="h-4 w-4 text-beacon-700" /> : <User className="h-4 w-4 text-beacon-700" />}
+                  <span className="sr-only">Demo identity</span>
+                  <select
+                    aria-label="Demo identity"
+                    value={currentPersona.id}
+                    disabled={isChangingPersona}
+                    onChange={(event) => onPersonaChange(event.target.value as DemoPersonaId)}
+                    className="min-h-11 max-w-[15rem] cursor-pointer appearance-none bg-transparent pr-5 text-xs font-semibold text-marine-800 outline-none disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {personas.map((persona) => (
+                      <option key={persona.id} value={persona.id}>
+                        {persona.id === 'admin' ? 'Admin' : `${persona.label} · ${persona.stage}`}
+                      </option>
+                    ))}
+                  </select>
+                  <span aria-hidden="true" className="pointer-events-none absolute right-3">⌄</span>
+                </label>
+              )}
 
-                <button
-                  onClick={() => onRoleChange('student')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                    currentRole === 'student'
-                      ? 'bg-beacon-600 text-white shadow-sm'
-                      : 'text-marine-500 hover:text-marine-800'
-                  }`}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  <span>Student · Alex</span>
-                </button>
-              </div>
+              {!currentPersona && (
+                <span className="flex min-h-11 items-center gap-2 rounded-full border border-beacon-200 bg-beacon-50 px-3 text-xs font-semibold text-marine-700">
+                  {currentRole === 'admin' ? <Shield className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                  {currentRole === 'admin' ? 'Admin' : 'Student'}
+                </span>
+              )}
 
               {onSync && (
                 <button

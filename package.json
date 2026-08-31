@@ -10,6 +10,7 @@
     "start": "next start",
     "genkit:dev": "genkit start -- tsx watch src/ai/dev.ts",
     "typecheck": "tsc --noEmit",
+    "seed:personas": "bun run scripts/seed-personas.ts",
     "smoke-test": "bun run scripts/smoke-test.ts"
   },
   "dependencies": {

@@ -1,11 +1,10 @@
-import { DataService } from '@/lib/data-service';
 import { LmsDashboardClient } from '@/components/LmsDashboardClient';
+import { loadDashboardPageData } from '@/lib/dashboard-page-data';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const seeded = await DataService.ensureSeededData('student-alex');
-
+  const { seeded, identity, demoSession } = await loadDashboardPageData();
   return (
     <LmsDashboardClient
       initialCourse={seeded.course}
@@ -14,6 +13,8 @@ export default async function HomePage() {
       initialReleases={seeded.releases}
       initialGraph={seeded.graph}
       initialSocraticSession={seeded.activeSocraticSession}
+      identity={identity}
+      demoSession={demoSession}
     />
   );
 }
