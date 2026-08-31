@@ -53,7 +53,7 @@ The transistor is the active device at the heart of modern electronics. The less
 
 - **What you should already know**: the diode of Lesson m2-l1; the passive components of Lesson m1-l2; the DC circuit analysis of Lesson m1-l1; the basic concepts of semiconductors.
 - **What this lesson adds**: the structure and operation of the BJT and MOSFET; the three amplifier configurations; the small-signal model; the bias networks; the use as a switch.
-- **What later lessons this will unlock**: the measurement instruments of Lesson m2-l3; the build project of Lesson m3-1; the AC analysis and op-amps in the next module.
+- **What later lessons this will unlock**: the measurement instruments of Lesson m2-l3; the build project of Lesson m3-l1; the AC analysis and op-amps in the next module.
 
 ## Core Explanation
 
@@ -85,7 +85,7 @@ The input impedance is approximately $r_\pi = \beta / g_m$, of order $1$–$10\ 
 
 ### Common-collector (CC) amplifier (BJT) — emitter follower
 
-The **common-collector** (or **emitter follower**) has the collector at AC ground, the input at the base, and the output at the emitter. The voltage gain is approximately $1$ (the emitter "follows" the base, with a $V_{BE}$ offset of about $0.7$ V). The input impedance is approximately $\beta (R_E \| r_\pi)$, of order $100\ \text{k}\Omega$–$1\ \text{M}\Omega$. The output impedance is approximately $R_E / \beta$, of order $10$–$100\ \Omega$.
+The **common-collector** (or **emitter follower**) has the collector at AC ground, the input at the base, and the output at the emitter. The voltage gain is approximately $1$ (the emitter "follows" the base, with a $V_{BE}$ offset of about $0.7$ V). The input impedance is approximately $r_\pi + (\beta + 1)(R_E \| R_L)$, which simplifies to $r_\pi + (\beta + 1) R_E$ without a load, of order $100\ \text{k}\Omega$–$1\ \text{M}\Omega$. The output impedance is approximately $R_E / \beta$, of order $10$–$100\ \Omega$.
 
 The emitter follower is used as a **buffer**: a high-impedance source drives a low-impedance load without loss of signal. The unity voltage gain is offset by the high input impedance and the low output impedance.
 

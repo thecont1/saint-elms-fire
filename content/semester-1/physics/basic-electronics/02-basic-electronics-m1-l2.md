@@ -53,7 +53,7 @@ Passive components are the building blocks of every electronic circuit: resistor
 
 - **What you should already know**: DC circuit analysis (Lesson m1-l1); the basic concepts of current, voltage, and resistance; the calculus of derivatives and integrals.
 - **What this lesson adds**: the physical principles of capacitors and inductors; the practical types and packages; the analysis of RC and RL transients; a preview of the frequency response.
-- **What later lessons this will unlock**: diodes in Lesson m2-l1; transistors in Lesson m2-l2; the measurement instruments in Lesson m2-l3; the build project in Lesson m3-1; the AC analysis in the next module.
+- **What later lessons this will unlock**: diodes in Lesson m2-l1; transistors in Lesson m2-l2; the measurement instruments in Lesson m2-l3; the build project in Lesson m3-l1; the AC analysis in the next module.
 
 ## Core Explanation
 

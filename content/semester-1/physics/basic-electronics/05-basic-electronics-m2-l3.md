@@ -53,7 +53,7 @@ Three instruments are the workhorses of every electronics laboratory: the digita
 
 - **What you should already know**: the DC circuit analysis of Lesson m1-l1; the passive components of Lesson m1-l2; the diode of Lesson m2-l1; the transistor of Lesson m2-l2; the basic concepts of AC circuits.
 - **What this lesson adds**: the operation of the DMM, the oscilloscope, and the function generator; the typical measurements; the pitfalls; the safe handling.
-- **What later lessons this will unlock**: the build project of Lesson m3-1; the laboratory work in every subsequent course; the application of measurement techniques in research.
+- **What later lessons this will unlock**: the build project of Lesson m3-l1; the laboratory work in every subsequent course; the application of measurement techniques in research.
 
 ## Core Explanation
 
@@ -110,7 +110,7 @@ The oscilloscope displays the waveform; the user extracts numerical information 
 - **Bandwidth**: the scope's bandwidth must be at least $5\times$ the highest frequency in the signal; otherwise, the displayed waveform is distorted.
 - **Aliasing**: if the sample rate is too low (less than $2\times$ the highest frequency, per the Nyquist criterion), the displayed waveform shows a false low-frequency component. Modern scopes have anti-aliasing filters.
 - **Loading**: the scope's input impedance ($1\ \text{M}\Omega$ / $10$–$25$ pF) loads the circuit, especially at high frequencies. Use a $10\times$ probe to reduce the loading.
-- **Ground loops**: connecting the scope's ground clip to a point in the circuit that is not at the same potential as the scope's ground can create a ground loop, which appears as noise or a DC offset on the display. Use the ground clip at a single point (typically the circuit's ground) and avoid using multiple grounds.
+- **Ground loops**: a typical bench oscilloscope's ground clip is referenced to protective earth. Connecting it to a non-ground node in the circuit can short that node to earth, damaging equipment or creating a mains shock hazard. Use the ground clip only at the circuit's earth-referenced ground, and for non-earth-referenced or mains-connected nodes use a differential or isolated probe.
 
 ### The function generator
 
@@ -173,7 +173,7 @@ A $1$ kHz sine wave is displayed on the oscilloscope. The vertical scale is $1$ 
 
 A function generator is set to a $1$ kHz sine wave, $1$ V amplitude, $50\ \Omega$ output impedance. The load is a $50\ \Omega$ resistor. Find the voltage across the load.
 
-**Solution.** The output is a Thevenin equivalent with $V_\text{th} = 1$ V (specified amplitude) and $R_\text{th} = 50\ \Omega$. The load voltage is $V_\text{load} = V_\text{th} \cdot R_L / (R_\text{th} + R_L) = 1 \cdot 50 / 100 = 0.5$ V. (The function generator specifies the open-circuit voltage; the loaded voltage is half.) If the load is high impedance (e.g. $1\ \text{M}\Omega$), $V_\text{load} \approx 1$ V. To get $1$ V into a $50\ \Omega$ load, set the function generator to $2$ V (open-circuit); the loaded voltage is then $1$ V.
+**Solution.** The function generator's $1$ V amplitude is specified across a $50\ \Omega$ load. The Thevenin equivalent has $R_\text{th} = 50\ \Omega$ and an open-circuit voltage $V_\text{th} = 2$ V (twice the loaded amplitude). With a $50\ \Omega$ load, the load voltage is $V_\text{load} = V_\text{th} \cdot R_L / (R_\text{th} + R_L) = 2 \cdot 50 / 100 = 1$ V, as specified. If the load is high impedance (e.g. $1\ \text{M}\Omega$), $V_\text{load} \approx V_\text{th} = 2$ V; use a $50\ \Omega$ terminator at the generator output to obtain the specified $1$ V into the high-impedance input.
 
 ### Common pitfalls
 

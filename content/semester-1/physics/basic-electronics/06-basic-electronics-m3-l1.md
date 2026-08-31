@@ -61,7 +61,7 @@ The capstone of the Basic Electronics sequence is a build-and-test project. The 
 
 A **schematic** is a symbolic representation of a circuit. The standard symbols:
 
-- **Resistor**: a rectangle (American) or a zig-zag (European). The value is written next to the symbol (e.g. "1 k$\Omega$").
+- **Resistor**: a zig-zag (American/IEEE) or a rectangle (European/IEC). The value is written next to the symbol (e.g. "1 k$\Omega$").
 - **Capacitor**: two parallel lines (non-polarised) or a line and a curved line (polarised). The value is written next to the symbol (e.g. "100 nF" or "10 $\mu$F").
 - **Inductor**: a series of loops. The value is written next to the symbol (e.g. "10 mH").
 - **Diode**: a triangle with a line at the cathode. The cathode is the line; the anode is the triangle. The part number is written next to the symbol (e.g. "1N4148").
@@ -178,11 +178,10 @@ The documentation is the record of the work, not the work itself. A well-documen
 
 ### Safety considerations
 
-The build project may involve mains voltage (110 V or 220 V AC). The mains is dangerous: it can cause electrical shock, burns, and death. The safety practices:
+The build project must be a low-voltage project only (battery or a low-voltage bench supply). Work on $110/220$ V mains circuits is theory-only in this course, or must be performed under the supervision of qualified staff. The mains is dangerous: it can cause electrical shock, burns, and death. The safety practices:
 
 - **Never work on a live circuit**: disconnect the power before making or breaking connections.
-- **Use an isolation transformer**: an isolation transformer separates the circuit from the mains ground, reducing the risk of shock.
-- **Use a GFCI**: a ground-fault circuit interrupter (GFCI) cuts the power if a current imbalance is detected, reducing the risk of shock.
+- **Low-voltage only**: keep the build project on a battery or a current-limited low-voltage bench supply. An isolation transformer or GFCI does not make mains work safe; they are additional precautions, not a substitute for qualified supervision.
 - **Check the wiring**: use a multimeter to check the wiring before applying power.
 - **Don't work alone**: have someone nearby in case of an accident.
 - **Know the emergency procedures**: know how to disconnect the power, how to perform CPR, and how to call for help.
@@ -199,7 +198,7 @@ A common-emitter amplifier does not produce an output signal. The supply is on, 
 
 An LED is dim. The supply is $5$ V, the current-limiting resistor is $330\ \Omega$, and the LED forward voltage is supposed to be $2$ V.
 
-**Solution.** The expected current is $I = (5 - 2) / 330 = 9$ mA. Measure the voltage across the LED with a DMM. If it is much less than $2$ V, the LED is faulty (high resistance). If it is much more than $2$ V, the LED is open (no current flow). If the LED is dim but the voltage is correct, the LED is at the end of its life (reduced efficiency).
+**Solution.** The expected current is $I = (5 - 2) / 330 = 9$ mA. Measure the voltage across the LED with a DMM. If it is much less than $2$ V, the LED is shorted (low resistance). If it is much more than $2$ V (close to the supply), the LED is open (no current flow). If the LED is dim but the voltage is correct, the LED is at the end of its life (reduced efficiency).
 
 **Example 3 — Grounding problem.**
 
@@ -220,7 +219,7 @@ An amplifier has a $50$ Hz hum on the output. The signal source is connected to 
 - A breadboard is a reusable platform for prototyping; learn to use it.
 - Systematic troubleshooting: check the power, the connections, the components, the signal. Use half-splitting to narrow the fault.
 - Documentation: schematic, bill of materials, test procedure, test results, analysis.
-- Safety: disconnect the power before connecting, use an isolation transformer, don't work alone.
+- Safety: disconnect the power before connecting, keep the build low-voltage, don't work alone.
 
 ## Worked Examples
 
@@ -272,4 +271,4 @@ Measure the $-3$ dB frequency of an RC low-pass filter with $R = 1\ \text{k}\Ome
 - A breadboard is for prototyping; solder for permanent circuits.
 - Systematic troubleshooting: check the power, the connections, the components, the signal. Use half-splitting.
 - Documentation is essential; record the schematic, the bill of materials, the test procedure, the test results.
-- Safety: disconnect the power before connecting, use an isolation transformer, don't work alone.
+- Safety: disconnect the power before connecting, keep the build low-voltage, don't work alone.

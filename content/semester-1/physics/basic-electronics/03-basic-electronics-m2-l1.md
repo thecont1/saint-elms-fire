@@ -53,7 +53,7 @@ The semiconductor diode is the simplest non-linear device in electronics: it con
 
 - **What you should already know**: the DC circuit analysis of Lesson m1-l1; the capacitor and inductor of Lesson m1-l2; the basic concepts of semiconductors (optional).
 - **What this lesson adds**: the I-V characteristic of a diode; the half-wave and full-wave rectifier circuits; the Zener diode as a voltage regulator; the LED as an indicator; practical guidance on diode selection.
-- **What later lessons this will unlock**: transistors in Lesson m2-l2; measurement instruments in Lesson m2-l3; the build project in Lesson m3-1; the AC analysis in the next module.
+- **What later lessons this will unlock**: transistors in Lesson m2-l2; measurement instruments in Lesson m2-l3; the build project in Lesson m3-l1; the AC analysis in the next module.
 
 ## Core Explanation
 
@@ -87,7 +87,7 @@ Several specialised diode types are in common use:
 
 The **half-wave rectifier** uses a single diode to convert AC to pulsating DC. The diode conducts during the positive half-cycle of the input and blocks during the negative half-cycle. The output is a series of positive half-cycles, separated by gaps.
 
-The peak output voltage is $V_\text{out,peak} = V_\text{in,peak} - V_D$, where $V_D \approx 0.7$ V is the diode forward voltage drop. The average output voltage is $V_\text{out,avg} = V_\text{out,peak} / \pi$. The ripple factor is $r = \sqrt{(\pi^2 / 8) - 1} \approx 1.21$, indicating large ripple.
+The peak output voltage is $V_\text{out,peak} = V_\text{in,peak} - V_D$, where $V_D \approx 0.7$ V is the diode forward voltage drop. The average output voltage is $V_\text{out,avg} = V_\text{out,peak} / \pi$. The ripple factor is $r = \sqrt{(\pi^2 / 4) - 1} \approx 1.21$, indicating large ripple.
 
 A smoothing capacitor across the output reduces the ripple. The capacitor charges to the peak voltage during the diode's conduction and discharges through the load between the conduction intervals. The ripple voltage is approximately $V_\text{ripple} = I_\text{load} / (f C)$, where $f$ is the frequency of the input.
 
@@ -95,7 +95,7 @@ A smoothing capacitor across the output reduces the ripple. The capacitor charge
 
 The **full-wave rectifier** uses four diodes in a bridge configuration to convert both halves of the AC cycle to positive output. The output is a series of positive half-cycles at twice the input frequency.
 
-The peak output voltage is $V_\text{out,peak} = V_\text{in,peak} - 2 V_D$ (two diodes in series during each half-cycle). The average output voltage is $V_\text{out,avg} = 2 V_\text{out,peak} / \pi$. The ripple factor is $r = \sqrt{(\pi^2 / 8) - 1} / 2 \approx 0.48$, half that of the half-wave rectifier (because the ripple frequency is twice as high).
+The peak output voltage is $V_\text{out,peak} = V_\text{in,peak} - 2 V_D$ (two diodes in series during each half-cycle). The average output voltage is $V_\text{out,avg} = 2 V_\text{out,peak} / \pi$. The ripple factor is $r = \sqrt{(\pi^2 / 8) - 1} \approx 0.48$, lower than the half-wave rectifier (because the ripple frequency is twice as high).
 
 A centre-tapped transformer with two diodes can also produce full-wave rectification; the peak output is $V_\text{out,peak} = V_\text{in,peak} - V_D$ (only one diode in series), but the transformer is more complex.
 
@@ -182,7 +182,7 @@ Design a full-wave bridge rectifier for a $12$ V RMS, $50$ Hz input, delivering 
 
 A $5.1$ V Zener regulator has a $9$ V input and a $100\ \Omega$ series resistor. The load current varies from $5$ mA to $30$ mA. Find the Zener current at both extremes.
 
-**Solution.** At $I_\text{load} = 5$ mA: $I_R = 39$ mA (constant), $I_Z = 39 - 5 = 34$ mA. At $I_\text{load} = 30$ mA: $I_Z = 39 - 30 = 9$ mA. The Zener current varies from $9$ mA to $34$ mA; the Zener must have $I_{ZK} < 9$ mA and $I_{ZM} > 34$ mA.
+**Solution.** At $I_\text{load} = 5$ mA (minimum load): $I_R = 39$ mA (constant), $I_Z = 39 - 5 = 34$ mA (maximum Zener current). At $I_\text{load} = 30$ mA (maximum load): $I_Z = 39 - 30 = 9$ mA (minimum Zener current). The Zener current varies from $9$ mA to $34$ mA. The Zener must satisfy $I_{ZK} < 9$ mA (checked at maximum load current, where $I_Z$ is minimum) and $I_{ZM} > 34$ mA (checked at minimum load current — and in general with maximum $V_\text{in}$ — where $I_Z$ is maximum).
 
 ### Example 3 — LED with PWM dimming
 
