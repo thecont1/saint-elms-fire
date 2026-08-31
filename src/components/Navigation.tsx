@@ -308,7 +308,7 @@ export function Navigation({
                   >
                     {personas.map((persona) => (
                       <option key={persona.id} value={persona.id}>
-                        {persona.id === 'admin' ? 'Admin' : `${persona.label} · ${persona.stage}`}
+                        {persona.id === 'admin' ? 'Admin' : persona.label}
                       </option>
                     ))}
                   </select>
