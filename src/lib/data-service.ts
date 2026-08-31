@@ -33,6 +33,7 @@ import {
 import { ARTIFACTS_PER_DAY, ArtifactQuotaError } from './quotas';
 import { buildPendingJob, type JobRecord, type JobStore, type JobErrorCategory } from './job-queue';
 import type { LibraryItem, LibraryItemInput } from './library-catalog';
+import type { PersonaState } from './persona-state';
 import type { RecommendedReading } from './reading-recommendation';
 import type { SharedItem, SharedItemInput } from './shared-items';
 import { SHARES_PER_DAY, ShareLimitError } from './shared-items';
@@ -227,7 +228,20 @@ export const DataService = {
     return sanitizeDoc<Lesson>(doc);
   },
 
-  async createLesson(lesson: Omit<Lesson, 'id' | 'createdAt'>): Promise<Lesson> {
+  async getLessonTitles(): Promise<Array<{ id: string; title: string }>> {
+    // Metadata-only listing for release-policy guards — never loads markdownContent.
+    const snap = await db.collection('lessons').select('title').get();
+    return snap.docs
+      .map(doc => ({ id: doc.id, title: String(doc.data().title || '') }))
+      .filter(item => item.title);
+  },
+
+  async getPersonaState(studentId: string): Promise<PersonaState | null> {
+    const doc = await db.collection('persona_states').doc(studentId).get();
+    return doc.exists ? sanitizeDoc<PersonaState>(doc) : null;
+  },
+
+  async createLesson(lesson: Omit<Lesson, 'id' | 'createdAt'> & { id?: string }): Promise<Lesson> {
     const ref = db.collection('lessons').doc();
     const newLesson: Lesson = {
       id: ref.id,

@@ -4,6 +4,8 @@ import { embedWithRouting } from '../embed-router';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { filterReleasedRetrievedChunks } from '../../lib/courseware-rag';
+import { findMentionedUnreleasedTitle } from '../persona-contracts';
+import { buildGuideRefusal } from '../persona-responses';
 
 export const ChatHistoryMessageSchema = z.object({
   role: z.enum(['student', 'tutor', 'user', 'model', 'system']),
@@ -73,6 +75,16 @@ export const ragChat = ai.defineFlow(
     if (!vector?.length) throw new Error('Gemini returned no query embedding');
 
     const releasedIds = new Set(releasedLessons.map((lesson) => lesson.id));
+
+    // Deterministic preflight: if the question explicitly names a course/lesson
+    // that is NOT in the student's released set, refuse before any retrieval.
+    const allLessonTitles = await DataService.getLessonTitles();
+    const releasedTitleSet = new Set(releasedLessons.map(l => l.title.toLowerCase()));
+    const unreleasedNames = allLessonTitles
+      .filter(t => !releasedTitleSet.has(t.title.toLowerCase()))
+      .map(t => t.title);
+    const mentioned = findMentionedUnreleasedTitle(question, unreleasedNames);
+    if (mentioned) return buildGuideRefusal();
     const rawChunks = await DataService.retrieveCoursewareChunks(
       vector,
       [...releasedIds],

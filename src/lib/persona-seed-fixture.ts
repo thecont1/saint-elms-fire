@@ -2,6 +2,7 @@ import type { Course, CourseModule, KnowledgeEdge, KnowledgeNode, Lesson, QuizSu
 import type { RecommendedReading } from './reading-recommendation';
 import type { PersonaSeedPlan } from './persona-seed-plan';
 import type { LibraryItem } from './library-catalog';
+import type { PersonaState } from './persona-state';
 import { INGESTION_STAGES } from './release-integrity';
 
 export interface PersonaCorpus {
@@ -11,17 +12,7 @@ export interface PersonaCorpus {
 }
 
 export interface PersonaSeedFixture {
-  state: {
-    id: string;
-    studentId: string;
-    personaId: PersonaSeedPlan['personaId'];
-    completedSemester: number;
-    breakMode: boolean;
-    stage: string;
-    seedVersion: string;
-    seedComment: string;
-    seededAt: string;
-  };
+  state: PersonaState;
   releases: ReleaseEvent[];
   nodes: KnowledgeNode[];
   edges: KnowledgeEdge[];

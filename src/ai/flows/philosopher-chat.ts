@@ -4,6 +4,7 @@ import { embedWithRouting } from '../embed-router';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { filterReleasedRetrievedChunks } from '../../lib/courseware-rag';
+import { findMentionedUnreleasedTitle, validatePhilosopherAnswer } from '../persona-contracts';
 
 export const ChatHistoryMessageSchema = z.object({
   role: z.enum(['student', 'tutor', 'user', 'model', 'system']),
@@ -95,6 +96,19 @@ IMPORTANT RULES:
 
     if (!output) throw new Error('model returned no structured RAG answer');
     const generated = GeneratedAnswerSchema.parse(output);
+
+    // Post-hoc contract validation: every claim line must carry [course] or [web],
+    // the response must end with exactly one Trailhead question, and no unreleased
+    // title may appear — even if it leaked through web grounding.
+    const allTitles = await DataService.getLessonTitles();
+    const releasedTitleSet = new Set(releasedLessons.map(l => l.title.toLowerCase()));
+    const unreleasedNames = allTitles
+      .filter(t => !releasedTitleSet.has(t.title.toLowerCase()))
+      .map(t => t.title);
+    const validation = validatePhilosopherAnswer(generated.answer, unreleasedNames);
+    if (!validation.ok) {
+      throw new Error(`Philosopher contract violation: ${validation.reason}`);
+    }
 
     const safeSources = generated.groundedSources.filter((source) => releasedIds.has(source.lessonId));
     const defaultSources = chunks.map((chunk) => ({

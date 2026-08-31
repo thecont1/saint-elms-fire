@@ -3,6 +3,8 @@ import { ai } from '../genkit';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { selectProactiveTarget } from '../../lib/courseware-rag';
+import { shouldUseBreakMode } from '../persona-contracts';
+import { buildBreakModeChallenge } from '../persona-responses';
 
 export const ProactiveTutorInputSchema = z.object({
   studentId: z.string().trim().min(1),
@@ -64,11 +66,41 @@ export const proactiveTutor = ai.defineFlow(
       };
     }
 
-    const [quizHistory, graph, activeReleases] = await Promise.all([
+    const [quizHistory, graph, activeReleases, personaState, recommendations, libraryItems] = await Promise.all([
       DataService.getQuizHistory(studentId),
       DataService.getStudentKnowledgeGraph(studentId),
       DataService.getReleasesForStudent(studentId),
+      DataService.getPersonaState(studentId),
+      DataService.getRecommendedReadingsForStudent(studentId),
+      DataService.getLibraryItems(),
     ]);
+
+    // Chetna break mode: all released through Sem V, no pending releases, and seeded
+    // recommend-readings. Switch from quiz-weak-spot challenges to spaced revisitation.
+    const pendingCount = activeReleases.filter(r => r.status === 'pending' || r.status === 'scheduled').length;
+    if (personaState && shouldUseBreakMode({
+      breakMode: personaState.breakMode,
+      completedSemester: personaState.completedSemester,
+      pendingReleaseCount: pendingCount,
+    })) {
+      const reading = recommendations[0];
+      const book = libraryItems.find(item => item.id === reading?.libraryItemId);
+      const node = graph.nodes.find(n => n.id === reading?.nodeId) ?? graph.nodes[0];
+      if (node && book) {
+        const challenge = buildBreakModeChallenge({
+          studentId, sessionId: '', concept: node.concept, lessonTitle: node.lessonId, readingTitle: book.title,
+        });
+        const session = await DataService.createSocraticSession({
+          studentId,
+          triggerReason: challenge.triggerReason,
+          socraticQuestion: challenge.socraticQuestion,
+          targetConcept: node.concept,
+          relatedLessonId: node.lessonId,
+          status: 'pending',
+        });
+        return { ...challenge, sessionId: session.id, relatedLessonTitle: node.lessonId };
+      }
+    }
     const target = selectProactiveTarget({
       releasedLessons,
       activeReleases,

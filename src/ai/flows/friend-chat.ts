@@ -4,6 +4,8 @@ import { embedWithRouting } from '../embed-router';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { db } from '../../lib/firestore';
+import { classifyFriendQuestion, FRIEND_ACADEMIC_REDIRECT, FRIEND_PRIVACY_ANSWER } from '../persona-contracts';
+import { safeFriendSources } from '../persona-responses';
 
 export const FriendChatInputSchema = z.object({
   studentId: z.string().trim().min(1),
@@ -48,9 +50,15 @@ export const friendChatFlow = ai.defineFlow(
     outputSchema: FriendChatOutputSchema,
   },
   async ({ studentId, question, history = [], topK = 6 }) => {
-    // Quick heuristic: If it's a physics/academic question, we can try to deflect it, or rely on LLM system prompt.
-    // The prompt says: "RED tests: physics question to Friend -> redirect to Guide"
-    // Let's rely on the LLM system prompt.
+    // Deterministic preflight: academic or PII questions are intercepted before
+    // any embedding or model call — no retrieval on the wrong lane.
+    const lane = classifyFriendQuestion(question);
+    if (lane === 'academic') {
+      return { answer: FRIEND_ACADEMIC_REDIRECT, isGrounded: false, groundedSources: [], confidence: 1, retrievedChunkCount: 0 };
+    }
+    if (lane === 'pii') {
+      return { answer: FRIEND_PRIVACY_ANSWER, isGrounded: false, groundedSources: [], confidence: 1, retrievedChunkCount: 0 };
+    }
 
     const queryEmbedding = await embedWithRouting({
       content: question,
@@ -94,7 +102,17 @@ IMPORTANT RULES:
     return {
       answer: generated.answer,
       isGrounded: generated.isGrounded,
-      groundedSources: generated.groundedSources,
+      groundedSources: safeFriendSources(
+        generated.groundedSources.map((source) => ({
+          lessonId: source.lessonId, lessonTitle: source.lessonTitle, concept: source.concept, summary: source.summary,
+        })),
+        new Map(chunks.map((chunk) => [chunk.lessonId, {
+          lessonId: chunk.lessonId,
+          lessonTitle: chunk.lessonTitle || chunk.lessonId,
+          concept: chunk.lessonTitle || chunk.lessonId,
+          summary: String(chunk.content || '').slice(0, 220),
+        }])),
+      ),
       confidence: generated.confidence,
       retrievedChunkCount: chunks.length,
       servedBy,
