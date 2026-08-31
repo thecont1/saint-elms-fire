@@ -5,13 +5,26 @@
  * `pending` with no live job. Pure orchestration over an injected store so
  * the policy is unit-testable without Firestore.
  */
-import type { JobRecord, JobErrorCategory } from './job-queue';
+import type { JobRecord, JobErrorCategory, JobKind } from './job-queue';
 import type { GeneratedArtifact, ArtifactErrorCategory } from './artifacts';
 
 /** Above the worst-case bounded job duration (75s generation + 120s TTS +
  *  30s storage ≈ 225s) so a legitimately slow job is never reclaimed. */
 export const JOB_LEASE_MS = 5 * 60_000;
 export const MAX_JOB_ATTEMPTS = 3;
+
+/** Wall-clock dead-letter ceilings measured from createdAt. They MUST sit
+ *  above each pipeline's own bounded worst case (podcast ≈ 75s generation +
+ *  120s TTS + 30s storage ≈ 225s; PDF ≈ 75s + render + 30s ≈ 110s): a
+ *  legitimately running job always reaches a terminal state by its own
+ *  deadlines before the watchdog may fire. A lower ceiling kills in-flight
+ *  work — the artifacts list endpoint sweeps on every UI poll, so an
+ *  under-sized ceiling fails legitimate jobs while users watch. */
+export const JOB_TIMEOUT_MS: Record<JobKind, number> = {
+  podcast_audio: 4 * 60_000,
+  notes_pdf: 2 * 60_000,
+  reading_recommendation: 2 * 60_000,
+};
 /** Client gives up waiting at ~4min (Track A4); the watchdog owns the fate
  *  of anything still pending after this. */
 export const ARTIFACT_PENDING_DEADLINE_MS = 6 * 60_000;
@@ -45,8 +58,7 @@ export async function sweepStaleWork(store: WatchdogStore, now = Date.now()): Pr
 
   const leaseCutoff = new Date(now - JOB_LEASE_MS).toISOString();
   for (const job of await store.listActiveJobs()) {
-    const isTimeout =
-      now - Date.parse(job.createdAt) > (job.kind === 'podcast_audio' ? 120_000 : 60_000);
+    const isTimeout = now - Date.parse(job.createdAt) > JOB_TIMEOUT_MS[job.kind];
 
     if (isTimeout) {
       await store.failJob(job, 'timeout');

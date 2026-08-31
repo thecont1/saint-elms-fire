@@ -33,6 +33,22 @@ after the 202 response. The harness verifies the runtime contract
    flap from a runtime-contract failure. The silent window applies only to
    the first attempt.
 
+### Watchdog ceiling fix (found during this phase)
+
+The golden-path runs landed podcasts at 133–143s, and the old watchdog
+ceiling would have killed them: `sweepStaleWork` dead-letters any active job
+older than a wall-clock ceiling measured from `createdAt` (60s notes / 120s
+podcast — well UNDER the pipelines' own bounded worst case of ~225s). The
+runs only survived because the harnesses poll endpoints that don't sweep;
+`GET /api/artifacts` (the list route the UI polls) sweeps on every request,
+so with the artifact panel open a slow-window podcast crossing 120s would be
+failed `timeout` within ~30s — on camera. Ceilings raised to sit above the
+bounded budgets (`JOB_TIMEOUT_MS` in `src/lib/job-watchdog.ts`):
+`notes_pdf`/`reading_recommendation` 120s, `podcast_audio` 240s. A
+legitimately progressing job now always reaches a terminal state by its own
+deadlines before the watchdog may fire; the watchdog stays a safety net for
+crashed/orphaned jobs. Regression guards: `src/lib/job-watchdog.test.ts`.
+
 ## Run
 
 ```bash

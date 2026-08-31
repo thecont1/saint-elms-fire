@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { sweepStaleWork, JOB_LEASE_MS, MAX_JOB_ATTEMPTS, ARTIFACT_PENDING_DEADLINE_MS, type WatchdogStore } from './job-watchdog';
+import { sweepStaleWork, JOB_LEASE_MS, JOB_TIMEOUT_MS, MAX_JOB_ATTEMPTS, ARTIFACT_PENDING_DEADLINE_MS, type WatchdogStore } from './job-watchdog';
 import type { JobRecord } from './job-queue';
 import type { GeneratedArtifact } from './artifacts';
 
@@ -108,11 +108,11 @@ describe('sweepStaleWork', () => {
     expect(calls).toEqual(['failArtifact:art-1']);
   });
 
-  test('fails a stuck job due to overall timeout', async () => {
+  test('fails a stuck podcast past its overall timeout ceiling', async () => {
     const now = Date.now();
     const stuck = job({
-      createdAt: new Date(now - 121_000).toISOString(),
-      startedAt: new Date(now - 121_000).toISOString(),
+      createdAt: new Date(now - (JOB_TIMEOUT_MS.podcast_audio + 1000)).toISOString(),
+      startedAt: new Date(now - (JOB_TIMEOUT_MS.podcast_audio + 1000)).toISOString(),
       status: 'running',
       kind: 'podcast_audio',
     });
@@ -121,6 +121,38 @@ describe('sweepStaleWork', () => {
     expect(result).toEqual({ reclaimed: 0, deadLettered: 1, orphanedArtifacts: 0 });
     expect(calls).toEqual(['failJob:job-1', 'failArtifact:art-1']);
   });
+
+  test('leaves a legitimately slow podcast alone inside its bounded budget', async () => {
+    // The artifacts list endpoint sweeps on every UI poll: a podcast at 200s
+    // is still inside its ~225s bounded worst case and must NOT be
+    // dead-lettered while it is visibly making progress.
+    const now = Date.now();
+    const slow = job({
+      createdAt: new Date(now - 200_000).toISOString(),
+      startedAt: new Date(now - 200_000).toISOString(),
+      status: 'running',
+      kind: 'podcast_audio',
+    });
+    const { store, calls } = makeStore({ jobs: [slow], artifacts: [] });
+    const result = await sweepStaleWork(store, now);
+    expect(result).toEqual({ reclaimed: 0, deadLettered: 0, orphanedArtifacts: 0 });
+    expect(calls).toEqual([]);
+  });
+
+  test('fails a stuck notes_pdf job past its 2-minute ceiling', async () => {
+    const now = Date.now();
+    const stuck = job({
+      createdAt: new Date(now - (JOB_TIMEOUT_MS.notes_pdf + 1000)).toISOString(),
+      startedAt: new Date(now - (JOB_TIMEOUT_MS.notes_pdf + 1000)).toISOString(),
+      status: 'running',
+      kind: 'notes_pdf',
+    });
+    const { store, calls } = makeStore({ jobs: [stuck], artifacts: [] });
+    const result = await sweepStaleWork(store, now);
+    expect(result).toEqual({ reclaimed: 0, deadLettered: 1, orphanedArtifacts: 0 });
+    expect(calls).toEqual(['failJob:job-1', 'failArtifact:art-1']);
+  });
+
   test('leaves a pending artifact with a live job alone', async () => {
     const now = Date.now();
     const live = job({ status: 'running', startedAt: new Date(now - 1000).toISOString() });
