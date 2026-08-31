@@ -67,6 +67,11 @@ Executed findings and steps:
    with `graph_extraction_failed` — Gemini 3.7 Flash was 503-ing environment-wide at the
    time (verified by direct probe). Re-run when Gemini is healthy:
    `bun run scripts/import-content-tree.ts` (imports skip; release check retries itself).
+   **Retry (2026-09-01):** re-run imported all 60 new WP-D/C/E lessons — Astrophysics III,
+   Astrophysics IV, Mathematics Lab using Python II and III, Electronic Instrumentation
+   Lab, Advanced Quantum Mechanics Lab, Number Theory, Operations Research — into the
+   live service; the release check itself failed again, 3/3 retries, terminal state
+   `failed`. Release verification still flap-gated; imports are complete and idempotent.
 7. **Do not** revert the revert (`5ef5a303`) — history stays; restoration rides forward.
 
 ---
