@@ -125,7 +125,12 @@ This is the *electron-density map*, which directly reveals atomic positions.
 
 **Laue condition in 3D.** For arbitrary $\vec{k}_\text{in}$ and $\vec{k}_\text{out}$ (with $|\vec{k}_\text{in}| = |\vec{k}_\text{out}|$ for elastic scattering), the difference $\vec{k}_\text{out} - \vec{k}_\text{in}$ must equal a reciprocal lattice vector. For a single crystal with a monochromatic beam, this happens only for specific orientations (rotating-crystal method) or only in specific directions (Laue method with a polychromatic beam).
 
-**Structure factor for bcc.** Atoms at $(0, 0, 0)$ and $(1/2, 1/2, 1/2)$: $F = f (1 + e^{-i \pi (h + k + l)})$. This is $0$ when $h + k + l$ is odd, $2 f$ when even. So bcc has systematic absences: $(100), (111), (210), (211), (300), \ldots$ are absent. Allowed: $(110), (200), (211)$ (wait, $2 + 1 + 1 = 4$ even, allowed), $(220)$, etc.
+**Structure factor for bcc.** Atoms at $(0, 0, 0)$ and $(1/2, 1/2, 1/2)$: $F = f \left(1 + e^{-i \pi (h + k + l)}\right)$. The phase factor equals $-1$ when $h + k + l$ is odd and $+1$ when even, so $F = 0$ for odd $h + k + l$ and $F = 2 f$ for even $h + k + l$. The selection rule is therefore:
+
+- **Allowed** ($F = 2f$): $(h, k, l)$ with $h + k + l$ even — e.g. $(110), (200), (211), (220), (310), (222), (321), \ldots$
+- **Absent** ($F = 0$): $(h, k, l)$ with $h + k + l$ odd — e.g. $(100), (111), (210), (300), (311), \ldots$
+
+So in a bcc diffraction pattern the $(211)$ reflection is *allowed* because $2 + 1 + 1 = 4$ is even; only the odd-sum reflections are missing.
 
 **Structure factor for fcc.** Atoms at $(0, 0, 0), (1/2, 1/2, 0), (1/2, 0, 1/2), (0, 1/2, 1/2)$: $F = f (1 + e^{-i \pi (h + k)} + e^{-i \pi (h + l)} + e^{-i \pi (k + l)})$. $F = 0$ when $h, k, l$ are mixed parity (some even, some odd). Allowed only when all even or all odd. So $(100), (110), (210), (211), (300), (221), \ldots$ are absent. Allowed: $(111), (200), (220), (311), (222), \ldots$
 

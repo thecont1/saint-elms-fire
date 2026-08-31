@@ -119,7 +119,15 @@ The equivalence class of $g$ is $g H$ (left coset). So the left cosets partition
 
 **Example 2 — $S_3 / A_3$.** $A_3 = \{e, (1 2 3), (1 3 2)\}$ is the alternating group of order $3$. Cosets: $A_3$ (the even permutations) and $(1 2) A_3 = \{(1 2), (1 3), (2 3)\}$ (the odd permutations). Two cosets, index $2$, $S_3 / A_3 \cong \mathbb{Z}_2$.
 
-**Example 3 — Class equation of $D_6$.** $D_6$ has 6 rotations $\{e, r, r^2, r^3, r^4, r^5\}$ and 6 reflections. Centre is trivial. Conjugacy classes: $\{e\}$, $\{r, r^5\}$, $\{r^2, r^4\}$, $\{r^3\}$, three reflections through vertices, three reflections through edges. Sizes: $1, 2, 2, 1, 3, 3$. Sum: $1 + 2 + 2 + 1 + 3 + 3 = 12$. ✓ $|Z(D_6)| = 2$ (only $\{e, r^3\}$ commutes with everything — wait, that gives $|Z| = 2$).
+**Example 3 — Class equation of $D_6$.** Here $D_6$ denotes the dihedral group of order $12$, i.e. the symmetry group of a regular hexagon. It has 6 rotations $\{e, r, r^2, r^3, r^4, r^5\}$ and 6 reflections. The conjugacy classes are
+
+$$\{e\},\ \{r, r^5\},\ \{r^2, r^4\},\ \{r^3\},\ \{\text{3 reflections through opposite vertices}\},\ \{\text{3 reflections through midpoints of opposite edges}\},$$
+
+with sizes $1, 2, 2, 1, 3, 3$ summing to $12 = |D_6|$. The centre is $Z(D_6) = \{e, r^3\}$, because $r^3$ is a $180°$ rotation and commutes with every element; all other non-identity elements do not. So $|Z(D_6)| = 2$, consistent with the class equation
+
+$$|D_6| = |Z(D_6)| + \sum [G : C_G(g_i)] \;\Longrightarrow\; 12 = 2 + 2 + 2 + 1 + 3 + 3 - 1,$$
+
+where the sum runs over the non-central conjugacy classes and we subtract the central-element count once. (Equivalently: $12 = 1 + 1 + 2 + 2 + 3 + 3$, where the first two singletons are the central elements and the rest are the non-central classes.)
 
 **Example 4 — Cauchy's theorem.** $|S_3| = 6 = 2 \cdot 3$. By Cauchy's theorem, $S_3$ has a subgroup of order $2$ (the transpositions) and a subgroup of order $3$ ($A_3$). ✓
 

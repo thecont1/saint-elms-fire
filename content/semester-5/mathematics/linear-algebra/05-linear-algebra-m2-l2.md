@@ -207,11 +207,35 @@ Each $u_k$ is the component of $v_k$ orthogonal to the previous $u_i$'s, normali
 
 **Example 2 — Gram–Schmidt.** $v_1 = (1, 1, 0)$, $v_2 = (1, 0, 1)$, $v_3 = (0, 1, 1)$. $u_1 = (1, 1, 0)/\sqrt{2}$. $u_2 = (v_2 - \langle u_1, v_2 \rangle u_1)/\|v_2 - \langle u_1, v_2 \rangle u_1\|$. $\langle u_1, v_2 \rangle = 1/\sqrt{2}$. $v_2 - (1/\sqrt{2}) u_1 = (1, 0, 1) - (1/2)(1, 1, 0) = (1/2, -1/2, 1)$. Norm: $\sqrt{1/4 + 1/4 + 1} = \sqrt{3/2}$. $u_2 = (1/2, -1/2, 1)/\sqrt{3/2} = (1, -1, 2)/\sqrt{6}$. And $u_3$ involves the third vector; the calculation continues.
 
-**Example 3 — Projection.** $V = \mathbb{R}^3$, $W = \text{span}\{(1, 1, 0), (1, 0, 1)\}$. Find the projection of $v = (1, 2, 3)$ onto $W$. Orthogonalise: $u_1 = (1, 1, 0)/\sqrt{2}$. $u_2 = (1, -1, 2)/\sqrt{6}$. $P_W(v) = \langle u_1, v \rangle u_1 + \langle u_2, v \rangle u_2 = (3/\sqrt{2}) u_1 + (-1/\sqrt{6}) u_2 = (3/2, 3/2, 0) - (1/6, -1/6, 2/6) = (3/2 - 1/6, 3/2 + 1/6, -1/3) = (8/6, 10/6, -2/6) = (4/3, 5/3, -1/3)$. Check: $v - P_W(v) = (1 - 4/3, 2 - 5/3, 3 - (-1/3)) = (-1/3, 1/3, 10/3)$. Is this orthogonal to $W$? $\langle (1, 1, 0), (-1/3, 1/3, 10/3) \rangle = -1/3 + 1/3 + 0 = 0$ ✓. $\langle (1, 0, 1), (-1/3, 1/3, 10/3) \rangle = -1/3 + 0 + 10/3 = 9/3 = 3 \ne 0$ — hmm, something wrong. Let me recompute.
+**Example 3 — Projection.** $V = \mathbb{R}^3$, $W = \text{span}\{(1, 1, 0), (1, 0, 1)\}$. Find the projection of $v = (1, 2, 3)$ onto $W$.
 
-Let me redo $u_2$: $v_2 = (1, 0, 1)$, $u_1 = (1, 1, 0)/\sqrt{2}$. $\langle u_1, v_2 \rangle = 1/\sqrt{2}$. $v_2 - (1/\sqrt{2}) u_1 = (1, 0, 1) - (1/2)(1, 1, 0) = (1/2, -1/2, 1)$. $\|(1/2, -1/2, 1)\| = \sqrt{1/4 + 1/4 + 1} = \sqrt{3/2}$. $u_2 = (1/2, -1/2, 1)/\sqrt{3/2} = (1, -1, 2)/\sqrt{6}$. ✓
+**Step 1 — Gram–Schmidt to an orthonormal basis of $W$.**
 
-Now $\langle u_2, v_3 \rangle = \langle u_2, (0, 1, 1) \rangle = (0 - 1 + 2)/\sqrt{6} = 1/\sqrt{6}$. Hmm, I was computing $P_W(v)$. Let me redo. $v = (1, 2, 3)$. $\langle u_1, v \rangle = (1 + 2 + 0)/\sqrt{2} = 3/\sqrt{2}$. $\langle u_2, v \rangle = (1 - 2 + 6)/\sqrt{6} = 5/\sqrt{6}$. $P_W(v) = (3/\sqrt{2}) u_1 + (5/\sqrt{6}) u_2 = (3/2, 3/2, 0) + (5/6)(-1, 1, -2)$... wait, $u_2 = (1, -1, 2)/\sqrt{6}$, so $(5/\sqrt{6}) u_2 = (5/6, -5/6, 10/6)$. Sum: $(3/2 + 5/6, 3/2 - 5/6, 0 + 10/6) = (9/6 + 5/6, 9/6 - 5/6, 10/6) = (14/6, 4/6, 10/6) = (7/3, 2/3, 5/3)$. Check orthogonality: $v - P_W(v) = (1 - 7/3, 2 - 2/3, 3 - 5/3) = (-4/3, 4/3, 4/3)$. $\langle (1, 1, 0), (-4/3, 4/3, 4/3) \rangle = -4/3 + 4/3 + 0 = 0$ ✓. $\langle (1, 0, 1), (-4/3, 4/3, 4/3) \rangle = -4/3 + 0 + 4/3 = 0$ ✓. Good, the projection is correct.
+$$u_1 = \frac{1}{\sqrt{2}}(1, 1, 0), \quad u_2 = \frac{1}{\sqrt{6}}(1, -1, 2).$$
+
+(Verification: $u_2$ comes from subtracting $\langle u_1, v_2 \rangle u_1 = (1/\sqrt{2}) u_1$ from $v_2 = (1, 0, 1)$, giving $(1/2, -1/2, 1)$, which has norm $\sqrt{3/2}$, hence $u_2 = (1, -1, 2)/\sqrt{6}$.)
+
+**Step 2 — Compute the inner products.**
+
+$$\langle u_1, v \rangle = \frac{1 + 2 + 0}{\sqrt{2}} = \frac{3}{\sqrt{2}},$$
+
+$$\langle u_2, v \rangle = \frac{1 - 2 + 6}{\sqrt{6}} = \frac{5}{\sqrt{6}}.$$
+
+**Step 3 — Combine.**
+
+$$P_W(v) = \frac{3}{\sqrt{2}}\, u_1 + \frac{5}{\sqrt{6}}\, u_2 = \left(\tfrac{3}{2}, \tfrac{3}{2}, 0\right) + \left(\tfrac{5}{6}, -\tfrac{5}{6}, \tfrac{10}{6}\right) = \left(\tfrac{14}{6}, \tfrac{4}{6}, \tfrac{10}{6}\right) = \left(\tfrac{7}{3}, \tfrac{2}{3}, \tfrac{5}{3}\right).$$
+
+**Step 4 — Verify orthogonality of the residual.**
+
+$$v - P_W(v) = \left(-\tfrac{4}{3}, \tfrac{4}{3}, \tfrac{4}{3}\right).$$
+
+Check against both spanning vectors:
+
+$$\langle (1, 1, 0), (-\tfrac{4}{3}, \tfrac{4}{3}, \tfrac{4}{3}) \rangle = -\tfrac{4}{3} + \tfrac{4}{3} + 0 = 0,$$
+
+$$\langle (1, 0, 1), (-\tfrac{4}{3}, \tfrac{4}{3}, \tfrac{4}{3}) \rangle = -\tfrac{4}{3} + 0 + \tfrac{4}{3} = 0.$$
+
+Both vanish, so the projection is correct.
 
 **Example 4 — Spectral theorem.** $A = \begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}$ (the Pauli matrix $\sigma_y$). Self-adjoint? $A^* = \begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix} = A$. Yes. Eigenvalues: $\pm 1$. Eigenvectors: $(1, i)^T$ for $1$, $(1, -i)^T$ for $-1$. Spectral theorem: $A = U D U^*$ with $U = (1/\sqrt{2}) \begin{pmatrix} 1 & 1 \\ i & -i \end{pmatrix}$, $D = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}$. Verify: $U U^* = I$ (unitary). ✓
 

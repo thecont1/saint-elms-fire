@@ -160,7 +160,23 @@ A *field* is a commutative ring in which every non-zero element has a multiplica
 
 **Example 3 — Splitting field of $x^4 - 5$ over $\mathbb{Q}$.** Roots: $\pm 5^{1/4}, \pm i \cdot 5^{1/4}$. Splitting field: $\mathbb{Q}(5^{1/4}, i)$. Degree: $[\mathbb{Q}(5^{1/4}) : \mathbb{Q}] = 4$ (since $x^4 - 5$ is irreducible). $[\mathbb{Q}(5^{1/4}, i) : \mathbb{Q}(5^{1/4})] = 2$ (adjoining $i$). Total: $[\mathbb{Q}(5^{1/4}, i) : \mathbb{Q}] = 8$.
 
-**Example 4 — Trace in $\mathbb{F}_{p^2}$.** For $\alpha \in \mathbb{F}_{p^2}$, $T(\alpha) = \alpha + \alpha^p \in \mathbb{F}_p$. If $\alpha = a + b i$ with $a, b \in \mathbb{F}_p$ and $i^2 = -1$ (i.e. $i$ is a root of $x^2 + 1$, if it exists over $\mathbb{F}_p$), then $\alpha^p = a^p + b^p i^p = a + b i^p$. For $p = 2$: $i^2 = i + 1$ (if $x^2 + x + 1$ is the irreducible). For $p$ odd with $i^2 = -1$: $i^p = i \cdot i^{p-1} = i (i^2)^{(p-1)/2} = i \cdot (-1)^{(p-1)/2}$. If $p \equiv 1 \pmod 4$: $i^p = i$, so $T(\alpha) = 2 a$. If $p \equiv 3 \pmod 4$: $i^p = -i$, so $T(\alpha) = 2 b i$... wait this should be in $\mathbb{F}_p$. Let me redo for $p = 5$: $x^2 + 1 \equiv (x - 2)(x + 2) \pmod 5$, so $i \in \mathbb{F}_5$, and we don't get a quadratic extension this way. For $p = 3$: $x^2 + 1 \equiv x^2 + 1$ over $\mathbb{F}_3$, no roots, so $i \notin \mathbb{F}_3$; we get $\mathbb{F}_9 = \mathbb{F}_3[i]/(i^2 + 1)$. Then $i^3 = -i$, so $i^p = i^3 = -i$, and $T(\alpha) = \alpha + \alpha^3 = 2 a \in \mathbb{F}_3$.
+**Example 4 — Trace in $\mathbb{F}_{p^2}$.** For $\alpha \in \mathbb{F}_{p^2}$, $T(\alpha) = \alpha + \alpha^p \in \mathbb{F}_p$. The result depends on whether $x^2 + 1$ is irreducible over $\mathbb{F}_p$.
+
+**Case A: $p \equiv 3 \pmod 4$.** Then $x^2 + 1$ is irreducible over $\mathbb{F}_p$, and $\mathbb{F}_{p^2} = \mathbb{F}_p[i]/(i^2 + 1)$. Every $\alpha$ can be written $\alpha = a + b i$ with $a, b \in \mathbb{F}_p$. Since $i^p = i \cdot (i^2)^{(p-1)/2} = i \cdot (-1)^{(p-1)/2} = i \cdot (-1) = -i$ (because $(p-1)/2$ is odd when $p \equiv 3 \pmod 4$), we have
+
+$$\alpha^p = a^p + b^p i^p = a + b(-i) = a - b i,$$
+
+using $a^p = a$ and $b^p = b$ in $\mathbb{F}_p$. Therefore
+
+$$T(\alpha) = \alpha + \alpha^p = (a + b i) + (a - b i) = 2a \in \mathbb{F}_p.$$
+
+**Case B: $p \equiv 1 \pmod 4$.** Then $x^2 + 1$ splits over $\mathbb{F}_p$ (since $-1$ is a square), and the construction $\mathbb{F}_p[i]/(i^2+1)$ does not produce the degree-2 extension. The quadratic extension must be built from a different irreducible, e.g. a root of $x^2 + x + 1$ or $x^2 - r$ for some non-square $r \in \mathbb{F}_p$.
+
+**Case C: $p = 2$.** The construction $\mathbb{F}_2[i]/(i^2 + 1) = \mathbb{F}_2$ is degenerate. The quadratic extension is $\mathbb{F}_4 = \mathbb{F}_2[i]/(i^2 + i + 1)$ with $i^2 = i + 1$. Writing $\alpha = a + b i$ with $a, b \in \mathbb{F}_2$, the Frobenius sends $i \mapsto i^2 = i + 1$, so $\alpha^2 = a^2 + b^2(i+1) = a + b + b i$, and
+
+$$T(\alpha) = \alpha + \alpha^2 = (a + b i) + (a + b + b i) = b \in \mathbb{F}_2.$$
+
+This is the $\mathbb{F}_2$-trace of $\alpha$, taking values in $\{0, 1\}$ as expected.
 
 ## Common Misconceptions
 - **"$\mathbb{R}$ is the largest field."** No — $\mathbb{C}$ is bigger. And neither is algebraically closed (well, $\mathbb{C}$ is, by the fundamental theorem of algebra).

@@ -134,8 +134,33 @@ In particular, the interpolation error is $O(h^4)$ — better than the $O(h^2)$ 
 ## Worked Examples
 **Example 1 — Piecewise linear.** Data $(0, 0), (1, 1), (2, 4)$. The piecewise linear interpolant is $y = x$ on $[0, 1]$ and $y = 3x - 2$ on $[1, 2]$. Continuous, but the derivative jumps from $1$ to $3$ at $x = 1$.
 
-**Example 2 — Natural cubic spline.** Data $(0, 0), (1, 1), (2, 0)$, with $h_0 = h_1 = 1$. Tridiagonal: $2(1 + 1) M_1 = 6((0 - 1)/1 - (1 - 0)/1) = -12$, so $M_1 = -3$. $M_0 = M_2 = 0$. The spline pieces:
-- On $[0, 1]$: $S(x) = M_0 (1 - x)^3/6 + M_1 x (x - 1)(x - 2)/(-2) + \ldots = -3/(-2) \cdot x(x-1)(x-2)/6 = (x^3 - 3 x^2 + 2 x)/4$ — wait, let me redo. The formula is more complex; the point is that the spline is the unique cubic interpolant with the natural boundary conditions.
+**Example 2 — Natural cubic spline.** Data $(0, 0), (1, 1), (2, 0)$, with $h_0 = h_1 = 1$. The natural boundary conditions force $M_0 = M_2 = 0$. The single interior equation for $M_1$ is
+
+$$2(h_0 + h_1) M_1 = 6\left(\frac{y_2 - y_1}{h_1} - \frac{y_1 - y_0}{h_0}\right) = 6\left(\frac{0 - 1}{1} - \frac{1 - 0}{1}\right) = -12,$$
+
+so $M_1 = -3$.
+
+Using the standard cubic-spline expression in terms of the second derivatives,
+
+$$S_i(x) = \frac{M_i (x_{i+1} - x)^3}{6 h_i} + \frac{M_{i+1} (x - x_i)^3}{6 h_i} + \left(\frac{y_i}{h_i} - \frac{M_i h_i}{6}\right)(x_{i+1} - x) + \left(\frac{y_{i+1}}{h_i} - \frac{M_{i+1} h_i}{6}\right)(x - x_i),$$
+
+the two pieces are:
+
+- On $[0, 1]$ (with $i = 0$, $M_0 = 0$, $M_1 = -3$):
+
+$$S_0(x) = 0 + \frac{(-3) x^3}{6} + \left(\frac{0}{1} - 0\right)(1 - x) + \left(\frac{1}{1} - \frac{(-3)(1)}{6}\right) x = -\frac{x^3}{2} + \frac{3x}{2} = \frac{3x - x^3}{2}.$$
+
+Wait, that gives $S_0'(0) = 3/2 \ne 1$ (the piecewise slope between $(0,0)$ and $(1,1)$ is $1$). The correct form, using the textbook convention with $M_0 = 0$ and $M_1 = -3$ on $h = 1$:
+
+$$S_0(x) = \tfrac{3}{2} x - \tfrac{1}{2} x^3, \quad 0 \le x \le 1.$$
+
+Check: $S_0(0) = 0$, $S_0(1) = 1.5 - 0.5 = 1$, $S_0'(0) = 3/2$... actually the slope at $x = 0$ is $1.5$, but the natural-boundary condition sets $S''(0) = M_0 = 0$, and the slope is then a free quantity; the spline balances the slopes to make $S$ smooth at $x = 1$. The clean form is
+
+$$S_0(x) = \tfrac{3}{2} x - \tfrac{1}{2} x^3, \quad 0 \le x \le 1,$$
+
+$$S_1(x) = \tfrac{3}{2}(2 - x) - \tfrac{1}{2}(2 - x)^3, \quad 1 \le x \le 2.$$
+
+Check: $S_0(0) = 0$, $S_0(1) = 1.5 - 0.5 = 1$ ✓; $S_1(2) = 0$ ✓; $S_1(1) = 1.5 - 0.5 = 1$ ✓; $S_0'(1) = 3/2 - 3/2 = 0$ and $S_1'(1) = -3/2 + 3/2 = 0$, so the spline has a horizontal tangent at $x = 1$ (the peak). $S_0''(0) = 0$ ✓ and $S_1''(2) = 0$ ✓. The interpolation is verified.
 
 **Example 3 — B-spline basis.** Cubic B-splines with uniform knots: $B_0 = (1 - 3t + 3t^2 - t^3)/6$ on $[0, 1]$, etc. Four overlapping pieces, each supported on a span of $4$ knots. Local: changing one control point only affects the spline locally.
 

@@ -147,15 +147,16 @@ These questions drive the experimental programme of particle physics today, with
 
 Consider the reaction $\pi^- + p \to \Lambda^0 + K^0$. The pion is $u\bar{d}$ or $d\bar{u}$, the proton is $uud$, the $\Lambda^0$ is $uds$, and the $K^0$ is $d\bar{s}$. Verify the conservation of charge, baryon number, and strangeness.
 
-**Solution.** Choose the $\pi^-$ as $d\bar{u}$. Initial state: $d\bar{u} + uud = udd + \bar{u} + u = uud + u\bar{d} = $ quark content $uud + d\bar{u}$. Wait, let me just count the quarks. The initial state has the quarks $d, \bar{u}, u, u, d$ = two $u$'s, two $d$'s, one $\bar{u}$ — net two $u$'s and one $d$ (so $uud$). The final state has $u, d, s, d, \bar{s}$ = $udd + s\bar{s}$ = net $udd$. Both initial and final states have the quark content $uud$ plus a $q\bar{q}$ pair, but with different flavours. So the net quark content of the hadrons is $uud$ on both sides, but the initial pion and final kaon have different flavour structure.
+**Solution.** Tabulate the conserved quantum numbers using the standard quark assignments $\pi^- = d\bar{u}$, $p = uud$, $\Lambda^0 = uds$, $K^0 = d\bar{s}$:
 
-Charge: initial: $\pi^- + p$ has charge $(-1) + (+1) = 0$. Final: $\Lambda^0 + K^0$ has charge $0 + 0 = 0$. Charge is conserved.
+| Quantity | $\pi^-$ | $p$ | Initial | $\Lambda^0$ | $K^0$ | Final |
+|---|---:|---:|---:|---:|---:|---:|
+| Electric charge $Q$ | $-1$ | $+1$ | $0$ | $0$ | $0$ | $0$ |
+| Baryon number $B$ | $0$ | $1$ | $1$ | $1$ | $0$ | $1$ |
+| Strangeness $S$ | $0$ | $0$ | $0$ | $-1$ | $+1$ | $0$ |
+| Lepton number $L$ | $0$ | $0$ | $0$ | $0$ | $0$ | $0$ |
 
-Baryon number: $0 + 1 = 1 + 0 = 1$. Baryon number is conserved.
-
-Strangeness: $0 + 0 = (-1) + (+1) = 0$. Strangeness is conserved on both sides (the $\Lambda^0$ has $S = -1$, the $K^0$ has $S = +1$).
-
-The reaction is allowed by the strong interaction because all the quantum numbers are conserved.
+All conserved quantum numbers match between the initial and final states. The valence quark content rearranges ($d\bar{u} + uud \to uds + d\bar{s}$), but the *conserved totals* are equal. The reaction is therefore allowed by the strong interaction (which conserves strangeness). Note: the literal quark multiset of the hadrons is not preserved, because hadrons are bound states and gluon exchange within the collision can rearrange the quark content; only the conserved quantum numbers (charge, baryon number, strangeness, lepton number) need to balance.
 
 ### Example 2 — Threshold energy for $\pi^-$ production in $p + p$ collisions
 

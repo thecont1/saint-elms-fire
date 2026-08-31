@@ -141,19 +141,21 @@ Use the Born–Lande model with Madelung constant $M = 1.748$, ion separation $r
 
 $$U = -\frac{N_A M e^2}{4\pi\epsilon_0 r_e}\left(1 - \frac{1}{n}\right).$$
 
-The Coulomb term per pair is
+The Coulomb constant in convenient units is
 
-$$\frac{M e^2}{4\pi\epsilon_0 r_e} = \frac{1.748 \times 1.44\,\text{eV·Å}}{2.36\,\text{Å}} = 1.067\,\text{eV}.$$
+$$\frac{e^2}{4\pi\epsilon_0} = 14.4\ \text{eV·Å},$$
 
-Wait, $e^2/(4\pi\epsilon_0) = 14.4$ eV·Å, so
+so the Coulomb term per ion pair is
 
-$$\frac{M e^2}{4\pi\epsilon_0 r_e} = \frac{1.748 \times 14.4}{2.36} = 10.66\,\text{eV}.$$
+$$\frac{M e^2}{4\pi\epsilon_0 r_e} = \frac{1.748 \times 14.4\ \text{eV·Å}}{2.36\ \text{Å}} = 10.66\ \text{eV}.$$
 
-With $1 - 1/n = 8/9$:
+(Unit check: eV·Å / Å = eV. ✓)
 
-$$U = -10.66 \times 0.889 = -9.48\,\text{eV per pair}.$$
+With $1 - 1/n = 1 - 1/9 = 8/9$:
 
-The experimental cohesive energy of NaCl is about 7.9 eV per ion pair. The Born–Lande estimate is high because it uses an oversimplified repulsion; the Born–Mayer form with exponential repulsion gives a more accurate value.
+$$U = -10.66 \times \frac{8}{9} = -9.48\ \text{eV per ion pair}.$$
+
+The experimental cohesive energy of NaCl is about 7.9 eV per ion pair. The Born–Lande estimate is high because it uses an oversimplified power-law repulsion; the Born–Mayer form with exponential repulsion (and a more accurate anion radius) gives a value closer to experiment.
 
 ### Example 2 — Heitler–London binding of H$_2$
 

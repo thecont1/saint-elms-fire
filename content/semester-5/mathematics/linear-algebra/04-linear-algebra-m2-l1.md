@@ -157,7 +157,7 @@ A linear operator $T$ on a vector space $V$ has a matrix that depends on the cho
 
 **Google PageRank.** The PageRank vector is the dominant eigenvector of the modified adjacency matrix of the web graph. The largest eigenvalue is $1$ (after normalisation). Computed by power iteration on a matrix of size $10^{10}$ (the size of the web).
 
-**Why this matters for Saint Elms Fire.** The knowledge graph extraction is a singular value decomposition of the document-term matrix. The SVD gives concepts (the singular vectors) and the relations between them (the singular values). Linear algebra is the engine of the platform.
+**Why SVD matters.** SVD supports low-rank approximation (truncating to the top-$k$ singular values gives the best rank-$k$ approximation in both Frobenius and spectral norm), compression (image, audio, and video codecs), denoising (signal lies in the top singular subspace, noise is distributed across all of them), and principal-component analysis (the right singular vectors of a centred data matrix are the principal axes of the cloud). These applications illustrate how a single linear-algebraic decomposition exposes the dominant structure in a wide range of datasets.
 
 ## Key Ideas
 - Change of basis: $A' = P^{-1} A P$ (endomorphism) or $A' = Q^{-1} A P$ (general map).

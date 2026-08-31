@@ -159,7 +159,18 @@ An *ideal* of a ring $R$ is a special kind of subring — closed under multiplic
 - Maximal implies prime, not conversely.
 
 ## Worked Examples
-**Example 1 — Ideals of $\mathbb{Z}_{12}$.** Ideals: $(0), (1) = (5), (2) = (10), (3) = (9), (4) = (4) = (8), (6), (12) = (0)$. The proper non-trivial ideals are $(2), (3), (4), (6)$. Maximal: $(2), (3), (4)$ — wait, $(4)$ is not maximal because $(2) \subsetneq (4) \subsetneq \mathbb{Z}_{12}$ is a chain. So maximal ideals: $(2), (3), (4)$? Actually $\mathbb{Z}_{12}/(4) = \mathbb{Z}_4$, not a field, so $(4)$ is not maximal. Maximal: $(2), (3)$. Indeed $\mathbb{Z}_{12}/(2) = \mathbb{Z}_2$ and $\mathbb{Z}_{12}/(3) = \mathbb{Z}_4$ — wait, $\mathbb{Z}_{12}/(3) = \mathbb{Z}_3$? No: $(3) = \{0, 3, 6, 9\}$, so $\mathbb{Z}_{12}/(3) = \{0, 1, 2, 3\}$ which is $\mathbb{Z}_4$. $\mathbb{Z}_4$ is not a field. So $(3)$ is not maximal either. So only $(2)$ and ... let me recheck. The prime ideals of $\mathbb{Z}_{12}$ are the ideals whose quotient is an integral domain. $(0) = \{0\}$ gives $\mathbb{Z}_{12}$, not an integral domain (has zero-divisors). So $(0)$ is not prime. The only prime ideal of $\mathbb{Z}_{12}$ is... hmm, $\mathbb{Z}_{12}$ has no prime ideals other than... wait, $\mathbb{Z}_{12}$ is not an integral domain, so $(0)$ is not prime. None of its ideals give an integral domain. So $\mathbb{Z}_{12}$ has no prime ideals.
+**Example 1 — Ideals of $\mathbb{Z}_{12}$.** The ideals of $\mathbb{Z}_{12}$ are in one-to-one correspondence with the divisors of $12$:
+
+$$(0),\ (1),\ (2),\ (3),\ (4),\ (6),\ (12) = (0).$$
+
+The proper non-trivial ideals are $(2), (3), (4), (6)$. We test each for maximality and primeness by computing the quotient ring:
+
+- $\mathbb{Z}_{12}/(2) = \mathbb{Z}_2$, a field, so $(2)$ is maximal (and therefore prime).
+- $\mathbb{Z}_{12}/(3) = \mathbb{Z}_3$, a field, so $(3)$ is maximal (and therefore prime).
+- $\mathbb{Z}_{12}/(4) = \mathbb{Z}_4$, which has zero-divisors, so $(4)$ is neither maximal nor prime.
+- $\mathbb{Z}_{12}/(6) = \mathbb{Z}_6$, which has zero-divisors, so $(6)$ is neither maximal nor prime.
+
+So the maximal and prime ideals of $\mathbb{Z}_{12}$ are exactly $(2)$ and $(3)$. (The earlier draft note that $\mathbb{Z}_{12}$ "has no prime ideals" was wrong: $(2)$ and $(3)$ are prime because their quotients are the fields $\mathbb{F}_2$ and $\mathbb{F}_3$.)
 
 **Example 2 — Maximal ideals of $\mathbb{Z}[x]$.** Examples: $(p, x)$ for any prime $p$, $(p, f(x))$ where $f$ is irreducible mod $p$. The maximal ideals correspond to "points" in the affine plane over a finite field.
 
