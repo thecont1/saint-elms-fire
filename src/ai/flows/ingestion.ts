@@ -1,6 +1,7 @@
 import { z } from 'genkit';
-import { ai, COURSEWARE_EMBEDDER, GEMINI_FLASH } from '../genkit';
+import { ai, GEMINI_FLASH } from '../genkit';
 import { generateWithFallback } from '../model-router';
+import { embedWithRouting } from '../embed-router';
 import { DataService } from '../../lib/data-service';
 import { chunkMarkdown } from '../../lib/courseware-rag';
 import { runLessonIngestion, type GraphExtraction } from '../../lib/second-brain-ingestion';
@@ -89,12 +90,11 @@ export const ingestCourseware = ai.defineFlow(
       getStagedEmbedding: (releaseId, lessonId, index) => DataService.getStagedEmbedding(releaseId, lessonId, index),
       saveStagedEmbedding: (releaseId, lessonId, index, embedding) => DataService.saveStagedEmbedding(releaseId, lessonId, index, embedding),
       embedChunk: async (content) => {
-        const response = await ai.embed({
-          embedder: COURSEWARE_EMBEDDER,
+        const response = await embedWithRouting({
           content,
           options: { taskType: 'RETRIEVAL_DOCUMENT', title: lessonTitle },
         });
-        return response[0]?.embedding ?? [];
+        return response.embedding;
       },
       writeVectors: (records) => DataService.writeVerifiedCoursewareVectors(records),
       verifyVectors: (records) => DataService.verifyCoursewareVectors(records),
@@ -102,14 +102,14 @@ export const ingestCourseware = ai.defineFlow(
         const existingGraph = await DataService.getStudentKnowledgeGraph(input.studentId);
         // Route through the model router so a retryable Gemini outage (429/5xx)
         // degrades to Sarvam instead of failing the graph_write stage.
-        const { output, model } = await generateWithFallback({
+        const { output, servedBy } = await generateWithFallback({
           system: 'You extract concise knowledge graphs from lesson Markdown. Return only facts present in the lesson text. Connect to prior concepts only when explicitly supported.',
           prompt: `Extract a concise knowledge graph from the lesson below. Use only facts in the Markdown. Connect to prior concepts only when explicitly supported.\n\nPrior concepts: ${JSON.stringify(existingGraph.nodes.map(node => node.concept))}\n\nLesson: ${lessonTitle}\n\n${markdown}`,
           schema: GraphExtractionSchema,
         });
         if (!output) throw new Error('graph extraction returned no output');
-        if (model !== GEMINI_FLASH) {
-          console.warn('graph_extraction_served_by_fallback', { model, lessonId: input.lessonId });
+        if (servedBy.role === 'fallback') {
+          console.warn('graph_extraction_served_by_fallback', { model: servedBy.model, lessonId: input.lessonId });
         }
         return GraphExtractionSchema.parse(output);
       },

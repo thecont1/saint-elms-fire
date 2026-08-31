@@ -200,6 +200,11 @@ export interface GeneratedFormat {
   title: string;
   content: string; // Markdown or script
   persona?: string;
+  servedBy?: {
+    model: string;
+    role: 'primary' | 'fallback';
+    attemptCount: number;
+  };
   createdAt: string;
 }
 
@@ -256,4 +261,9 @@ export interface ChatMessage {
     concept: string;
   }>;
   isGrounded: boolean;
+  servedBy?: {
+    model: string;
+    role: 'primary' | 'fallback';
+    attemptCount: number;
+  };
 }

@@ -16,6 +16,7 @@ import {
 import { CoronaMark } from '@/components/Navigation';
 import { ArtifactPanel } from '@/components/ArtifactPanel';
 import type { Lesson, GeneratedFormat } from '@/lib/types';
+import { ServedByChip } from '@/components/ServedByChip';
 
 interface MultiFormatViewerProps {
   lesson: Lesson;
@@ -96,6 +97,7 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
           title: data.title,
           content: data.content,
           createdAt: new Date().toISOString(),
+          servedBy: data.metadata?.servedBy,
         },
       }));
     } catch (err: any) {
@@ -199,9 +201,10 @@ export function MultiFormatViewer({ lesson, studentId }: MultiFormatViewerProps)
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-2 pb-3 border-b border-beacon-100 text-xs text-marine-500 flex-wrap">
               <span className="font-bold text-beacon-800">{currentFormat.title}</span>
-              <span className="chart-annotation bg-beacon-50 px-2.5 py-1 rounded-full text-beacon-700 border border-beacon-100">
-                Gemini 3.7 Flash &bull; {new Date(currentFormat.createdAt).toLocaleDateString()}
-              </span>
+              <div className="flex items-center gap-2">
+                <ServedByChip servedBy={currentFormat.servedBy} />
+                <span>{new Date(currentFormat.createdAt).toLocaleDateString()}</span>
+              </div>
             </div>
             <div className="prose-light max-w-none text-xs leading-relaxed whitespace-pre-wrap text-marine-800">
               {currentFormat.content}

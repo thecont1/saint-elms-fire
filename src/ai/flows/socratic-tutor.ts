@@ -1,14 +1,13 @@
 import { z } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { ai } from '../genkit';
-import { resolveGeminiModel } from '../model-router';
+import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { selectProactiveTarget } from '../../lib/courseware-rag';
 
 export const ProactiveTutorInputSchema = z.object({
   studentId: z.string().trim().min(1),
   forceNew: z.boolean().optional(),
-  model: z.string().optional().default('gemini-3.7-flash'),
+  model: z.string().trim().min(1).optional(),
 });
 
 export const SocraticChallengeOutputSchema = z.object({
@@ -33,7 +32,7 @@ export const proactiveTutor = ai.defineFlow(
     inputSchema: ProactiveTutorInputSchema,
     outputSchema: SocraticChallengeOutputSchema,
   },
-  async ({ studentId, forceNew = false, model = 'gemini-3.7-flash' }) => {
+  async ({ studentId, forceNew = false, model }) => {
     if (!forceNew) {
       const active = await DataService.getActiveSocraticSession(studentId);
       if (active) {
@@ -77,11 +76,11 @@ export const proactiveTutor = ai.defineFlow(
       knowledgeNodes: graph.nodes,
     });
 
-    const response = await ai.generate({
+    const response = await generateWithFallback({
       system: 'You are Socrates my Philosopher. You push students to explore beyond the syllabus. Ask one thought-provoking question that builds on the target concept and connects to the broader world. Ask one Socratic question.',
       prompt: `TARGET: ${target.concept}\nREASON: ${target.triggerReason}\nRELEASED LESSON: ${target.lessonTitle}\n\n${target.lessonContent}`,
-      output: { schema: GeneratedChallengeSchema },
-      model: googleAI.model(resolveGeminiModel(model) as Parameters<typeof googleAI.model>[0]),
+      schema: GeneratedChallengeSchema,
+      model,
     });
     if (!response.output) throw new Error('Gemini returned no Socratic challenge');
     const generated = GeneratedChallengeSchema.parse(response.output);

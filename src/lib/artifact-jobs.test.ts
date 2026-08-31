@@ -26,9 +26,9 @@ function makeDeps(overrides = {}) {
     state,
     deps: {
       getArtifact: async () => artifact,
-      markArtifactReady: async (id, size) => { state.ready = { id, size }; },
+      markArtifactReady: async (id, size, sources, servedBy) => { state.ready = { id, size, sources, servedBy }; },
       markArtifactFailed: async (id, category) => { state.failed = { id, category }; },
-      generate: async () => 'HOST: Welcome.\nGUEST: Glad to be here.',
+      generate: async () => ({ content: 'HOST: Welcome.\nGUEST: Glad to be here.' }),
       synthesizePodcast: async () => pcmToWav(Buffer.alloc(200)),
       renderPdf: async () => Buffer.from('%PDF-fake'),
       save: async (path, data) => { state.saved = { path, bytes: data.length }; return { sizeBytes: data.length }; },
@@ -79,5 +79,14 @@ describe('pdf pipeline', () => {
     const { state, deps } = makeDeps();
     await handleNotesPdfJob(pdfJob, deps);
     expect(state.ready.id).toBe('art-1');
+  });
+
+  test('persists the exact generation provenance on a ready artifact', async () => {
+    const servedBy = { model: 'sarvam-105b-conversations', role: 'fallback', attemptCount: 3 };
+    const { state, deps } = makeDeps({
+      generate: async () => ({ content: 'HOST: Welcome.\nGUEST: Glad to be here.', servedBy }),
+    });
+    await handleNotesPdfJob(pdfJob, deps);
+    expect(state.ready.servedBy).toEqual(servedBy);
   });
 });

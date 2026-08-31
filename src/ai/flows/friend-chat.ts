@@ -1,5 +1,6 @@
 import { z } from 'genkit';
-import { ai, COURSEWARE_EMBEDDER } from '../genkit';
+import { ai } from '../genkit';
+import { embedWithRouting } from '../embed-router';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { db } from '../../lib/firestore';
@@ -25,6 +26,7 @@ export const FriendChatOutputSchema = z.object({
   })),
   confidence: z.number().min(0).max(1),
   retrievedChunkCount: z.number().int().nonnegative(),
+  servedBy: z.object({ model: z.string(), role: z.enum(['primary', 'fallback']), attemptCount: z.number().int().positive() }).optional(),
 });
 
 const GeneratedAnswerSchema = z.object({
@@ -50,12 +52,11 @@ export const friendChatFlow = ai.defineFlow(
     // The prompt says: "RED tests: physics question to Friend -> redirect to Guide"
     // Let's rely on the LLM system prompt.
 
-    const queryEmbedding = await ai.embed({
-      embedder: COURSEWARE_EMBEDDER,
+    const queryEmbedding = await embedWithRouting({
       content: question,
       options: { taskType: 'RETRIEVAL_QUERY' },
     });
-    const vector = queryEmbedding[0]?.embedding;
+    const vector = queryEmbedding.embedding;
     if (!vector?.length) throw new Error('Gemini returned no query embedding');
 
     // The dataset is extremely small (60 chunks), so we can just fetch all chunks where subjectId == 'university-support' and do in-memory dot product to avoid gRPC vector search index errors
@@ -76,7 +77,7 @@ export const friendChatFlow = ai.defineFlow(
       `[${index + 1}] ${chunk.lessonTitle}\n${chunk.content}`
     ).join('\n\n');
 
-    const { output } = await generateWithFallback({
+    const { output, servedBy } = await generateWithFallback({
       system: `You are Socrates my Friend. You are a course-ops buddy. You help with university support like timetable, fees, contacts, and policies.
       
 IMPORTANT RULES:
@@ -96,6 +97,7 @@ IMPORTANT RULES:
       groundedSources: generated.groundedSources,
       confidence: generated.confidence,
       retrievedChunkCount: chunks.length,
+      servedBy,
     };
   }
 );

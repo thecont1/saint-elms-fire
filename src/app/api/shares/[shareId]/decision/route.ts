@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { DataService } from '@/lib/data-service';
 import { runPeerAcceptance, validateAcceptance } from '@/lib/peer-acceptance';
 import { chunkMarkdown } from '@/lib/courseware-rag';
-import { ai, COURSEWARE_EMBEDDER } from '@/ai/genkit';
+import { embedWithRouting } from '@/ai/embed-router';
 import { generateWithFallback } from '@/ai/model-router';
 import { z } from 'genkit';
 import { resolveRequestIdentity, authorizationResponse } from '@/lib/request-identity';
@@ -72,12 +72,11 @@ export async function POST(
       {
         chunkMarkdown,
         embedText: async (text) => {
-          const response = await ai.embed({
-            embedder: COURSEWARE_EMBEDDER,
+          const response = await embedWithRouting({
             content: text,
             options: { taskType: 'RETRIEVAL_DOCUMENT' },
           });
-          const embedding = response[0]?.embedding ?? [];
+          const embedding = response.embedding;
           if (!embedding.length) throw new Error('Empty embedding');
           return embedding;
         },

@@ -1,6 +1,7 @@
 import { z } from 'genkit';
 import { ai, GEMINI_FLASH } from '../genkit';
 import { DataService } from '../../lib/data-service';
+import { generateWithFallback } from '../model-router';
 
 /**
  * generateQuizFlow
@@ -65,6 +66,7 @@ export const GenerateQuizOutputSchema = z.object({
     .min(1)
     .describe('Why the correct answer is correct, grounded in lesson content'),
   model: z.string().trim().min(1).describe('Model string that authored the question'),
+  servedBy: z.object({ model: z.string(), role: z.enum(['primary', 'fallback']), attemptCount: z.number().int().positive() }),
 });
 export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
 
@@ -123,9 +125,9 @@ SOURCE LESSON: "${lesson.title}"
 ${lesson.markdownContent}
 """`;
 
-    const response = await ai.generate({
+    const response = await generateWithFallback({
       prompt,
-      output: { schema: QuizGenerationSchema },
+      schema: QuizGenerationSchema,
     });
 
     const generated = response.output;
@@ -151,7 +153,8 @@ ${lesson.markdownContent}
       options: generated.options,
       correctIndex: generated.correctIndex,
       explanation: generated.explanation,
-      model: GEMINI_FLASH,
+      model: response.servedBy.model,
+      servedBy: response.servedBy,
     };
   },
 );

@@ -80,6 +80,7 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
       isGrounded: result.isGrounded,
       groundedSources: result.groundedSources,
+      servedBy: result.servedBy,
     });
 
     return NextResponse.json(result);

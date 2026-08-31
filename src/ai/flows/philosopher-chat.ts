@@ -1,5 +1,6 @@
 import { z } from 'genkit';
-import { ai, COURSEWARE_EMBEDDER } from '../genkit';
+import { ai } from '../genkit';
+import { embedWithRouting } from '../embed-router';
 import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { filterReleasedRetrievedChunks } from '../../lib/courseware-rag';
@@ -30,6 +31,7 @@ export const PhilosopherChatOutputSchema = z.object({
   groundedSources: z.array(GroundedSourceSchema),
   confidence: z.number().min(0).max(1),
   retrievedChunkCount: z.number().int().nonnegative(),
+  servedBy: z.object({ model: z.string(), role: z.enum(['primary', 'fallback']), attemptCount: z.number().int().positive() }).optional(),
 });
 
 const GeneratedAnswerSchema = z.object({
@@ -53,12 +55,11 @@ export const philosopherChatFlow = ai.defineFlow(
 
     if (releasedLessons.length > 0) {
       const activeReleases = await DataService.getReleasesForStudent(studentId);
-      const queryEmbedding = await ai.embed({
-        embedder: COURSEWARE_EMBEDDER,
+      const queryEmbedding = await embedWithRouting({
         content: question,
         options: { taskType: 'RETRIEVAL_QUERY' },
       });
-      const vector = queryEmbedding[0]?.embedding;
+      const vector = queryEmbedding.embedding;
       if (vector?.length) {
         releasedIds = new Set(releasedLessons.map((lesson) => lesson.id));
         const rawChunks = await DataService.retrieveCoursewareChunks(
@@ -79,7 +80,7 @@ export const philosopherChatFlow = ai.defineFlow(
       `[course_chunk_${index + 1}] ${chunk.lessonTitle} (lessonId=${chunk.lessonId}, chunk=${chunk.chunkIndex})\n${chunk.content}`
     ).join('\n\n');
 
-    const { output } = await generateWithFallback({
+    const { output, servedBy } = await generateWithFallback({
       system: `You are Socrates my Philosopher, a forward-looking mentor. You use BOTH the courseware context and Google Search (web) to answer the student's question.
       
 IMPORTANT RULES:
@@ -110,6 +111,7 @@ IMPORTANT RULES:
       groundedSources: [...sourceMap.values()],
       confidence: generated.confidence,
       retrievedChunkCount: chunks.length,
+      servedBy,
     };
   }
 );

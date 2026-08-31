@@ -22,6 +22,7 @@ import { AdminReleaseManager } from '@/components/AdminReleaseManager';
 import { QuizModal } from '@/components/QuizModal';
 import { InfoIcon } from '@/components/InfoIcon';
 import { WikiPageView } from '@/components/WikiPageView';
+import { ModelHelmPanel } from '@/components/ModelHelmPanel';
 import type { Course, CourseModule, Lesson, ReleaseEvent, KnowledgeNode, KnowledgeEdge, SocraticSession } from '@/lib/types';
 
 interface LmsDashboardClientProps {
@@ -476,6 +477,9 @@ export function LmsDashboardClient({
         {/* ADMIN EXPERIENCE: 2 STRUCTURED COLUMNS */}
         {role === 'admin' && selectedCourse && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-12">
+              <ModelHelmPanel />
+            </div>
             {/* Admin Left Column: Course Structure & Markdown Upload (5 cols) */}
             <div className="lg:col-span-5 space-y-5">
               <AdminCourseManager

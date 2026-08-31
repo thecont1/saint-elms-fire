@@ -6,6 +6,7 @@ import { Send, AlertTriangle, BookOpen, User, HelpCircle, Loader2, Compass, Hear
 import { CoronaMark } from '@/components/Navigation';
 import { InfoIcon } from '@/components/InfoIcon';
 import type { ChatMessage } from '@/lib/types';
+import { ServedByChip } from '@/components/ServedByChip';
 
 interface StudentChatProps {
   studentId: string;
@@ -164,6 +165,7 @@ export function StudentChat({
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         isGrounded: data.isGrounded,
         groundedSources: data.groundedSources,
+        servedBy: data.servedBy,
       };
 
       setMessagesByPersona(prev => ({ ...prev, [persona]: [...prev[persona], tutorMessage] }));
@@ -231,6 +233,7 @@ export function StudentChat({
               }`}
             >
               <div className="whitespace-pre-wrap leading-relaxed text-[15px]">{msg.content}</div>
+              {msg.sender === 'tutor' && <ServedByChip servedBy={msg.servedBy} className="mt-2" />}
               
               {msg.sender === 'tutor' && msg.isGrounded && (
                 <div className="mt-3 pt-3 border-t border-slate-100">

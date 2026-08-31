@@ -40,6 +40,11 @@ export interface GeneratedArtifact {
   mimeType: string;
   sizeBytes?: number;
   sources?: ArtifactSource[];
+  servedBy?: {
+    model: string;
+    role: 'primary' | 'fallback';
+    attemptCount: number;
+  };
   /** Generation options preserved so retries can replay the original request. */
   persona?: string;
   corpusScope?: 'lesson' | 'second_brain';
@@ -137,8 +142,9 @@ export function completeArtifact(
   sizeBytes: number,
   completedAt: string,
   sources?: ArtifactSource[],
+  servedBy?: GeneratedArtifact['servedBy'],
 ): GeneratedArtifact {
-  return { ...artifact, status: 'ready', sizeBytes, completedAt, updatedAt: completedAt, sources: sources ?? artifact.sources, error: undefined };
+  return { ...artifact, status: 'ready', sizeBytes, completedAt, updatedAt: completedAt, sources: sources ?? artifact.sources, servedBy: servedBy ?? artifact.servedBy, error: undefined };
 }
 
 /**

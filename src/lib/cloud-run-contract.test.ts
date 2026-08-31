@@ -79,7 +79,7 @@ describe('model fallback routing', () => {
     expect(ingestion).toContain("import { generateWithFallback } from '../model-router';");
     // The graph stage must never call ai.generate directly — a retryable
     // Gemini outage would otherwise fail graph_write instead of degrading.
-    expect(ingestion).toContain('const { output, model } = await generateWithFallback({');
+    expect(ingestion).toContain('const { output, servedBy } = await generateWithFallback({');
     expect(ingestion).toContain('schema: GraphExtractionSchema');
   });
 
@@ -87,7 +87,8 @@ describe('model fallback routing', () => {
     const chat = read('src/ai/flows/guide-chat.ts');
 
     expect(chat).toContain("import { generateWithFallback } from '../model-router';");
-    expect(chat).toContain('const { output, model } = await generateWithFallback({');
+    expect(chat).toContain('const { output, servedBy } = await generateWithFallback({');
+    expect(chat).toContain('servedBy,');
     expect(chat).toContain("throw new Error('model returned no structured RAG answer')");
   });
 

@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const studentId = resolveStudentScope(identity, searchParams.get('studentId'));
     const forceNew = searchParams.get('forceNew') === 'true';
-    const model = searchParams.get('model') || 'gemini-3.7-flash';
+    const model = searchParams.get('model') || undefined;
 
     const session = await proactiveSocraticTutorFlow({
       studentId,

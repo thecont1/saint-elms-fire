@@ -4,6 +4,7 @@ import { DataService } from '../../lib/data-service';
 import { resolveRegenerationSource } from '../../lib/courseware-rag';
 import { assembleCorpus, type CorpusScope } from '../../lib/corpus-assembly';
 import { withDeadline } from '../../lib/deadline';
+import { generateWithFallback } from '../model-router';
 
 /** Phase 7, Track A1: Gemini capacity blips can black-hole requests for a
  *  minute or more; generation must terminate in bounded time. */
@@ -104,14 +105,14 @@ export const regenerateFormat = ai.defineFlow(
     const title = `${titlePrefix}: ${sourceTitle}`;
 
     const response = await withDeadline(
-      ai.generate({
+      generateWithFallback({
         system: 'You are Saint Elms Fire’s courseware adaptation engine. Preserve source meaning exactly; introduce no external facts.',
         prompt: `${formatInstructions(input.formatType, input.persona)}\n\nSOURCE MARKDOWN:\n${corpusMarkdown}`,
       }),
       GENERATION_DEADLINE_MS,
       'format generation',
     );
-    const content = response.text.trim();
+    const content = (response.text || '').trim();
     if (!content) throw new Error('Gemini returned an empty regenerated format');
 
     let savedId: string | undefined;
@@ -123,6 +124,7 @@ export const regenerateFormat = ai.defineFlow(
         title,
         content,
         persona: input.persona,
+        servedBy: response.servedBy,
       });
       savedId = saved.id;
     }
@@ -139,6 +141,7 @@ export const regenerateFormat = ai.defineFlow(
         corpusScope: scope,
         sources,
         persona: input.persona || 'default',
+        servedBy: response.servedBy,
       },
     };
   }

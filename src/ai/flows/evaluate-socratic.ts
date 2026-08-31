@@ -1,14 +1,13 @@
 import { z } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { ai } from '../genkit';
-import { resolveGeminiModel } from '../model-router';
+import { generateWithFallback } from '../model-router';
 import { DataService } from '../../lib/data-service';
 import { db } from '../../lib/firestore';
 
 export const EvaluateSocraticInputSchema = z.object({
   sessionId: z.string().describe('ID of the active Socratic session'),
   studentResponse: z.string().describe('Student text response to the question'),
-  model: z.string().optional().default('gemini-3.7-flash'),
+  model: z.string().trim().min(1).optional(),
 });
 
 export const EvaluateSocraticOutputSchema = z.object({
@@ -25,7 +24,7 @@ export const evaluateSocraticFlow = ai.defineFlow(
     inputSchema: EvaluateSocraticInputSchema,
     outputSchema: EvaluateSocraticOutputSchema,
   },
-  async ({ sessionId, studentResponse, model = 'gemini-3.7-flash' }) => {
+  async ({ sessionId, studentResponse, model }) => {
     const sessionSnapshot = await db.collection('socratic_sessions').doc(sessionId).get();
     const directDoc = sessionSnapshot.exists ? sessionSnapshot.data() : null;
 
@@ -69,17 +68,15 @@ OUTPUT JSON:
     };
 
     try {
-      const response = await ai.generate({
+      const response = await generateWithFallback({
         prompt,
-        output: {
-          schema: z.object({
+        schema: z.object({
             understandingScore: z.number().min(1).max(10),
             feedback: z.string(),
             socraticFollowUp: z.string().optional(),
             masteryUpdate: z.string(),
           }),
-        },
-        model: googleAI.model(resolveGeminiModel(model) as Parameters<typeof googleAI.model>[0]),
+        model,
       });
 
       if (response.output) {

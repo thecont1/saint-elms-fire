@@ -1,5 +1,6 @@
 import { z } from 'genkit';
 import { ai } from '../genkit';
+import { generateWithFallback } from '../model-router';
 import { db, FieldValue } from '../../lib/firestore';
 
 /**
@@ -33,7 +34,7 @@ export const incidentSummaryFlow = ai.defineFlow(
       throw new Error(`Incident ${incidentId} not found`);
     }
 
-    const { output } = await ai.generate({
+    const { output } = await generateWithFallback({
       prompt: [
         {
           text:
@@ -42,7 +43,7 @@ export const incidentSummaryFlow = ai.defineFlow(
             JSON.stringify(snap.data(), null, 2),
         },
       ],
-      output: { schema: IncidentOutput },
+      schema: IncidentOutput,
       config: { temperature: 0.2 },
     });
 

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getActiveModelActivity } from '@/ai/model-router';
-import { GEMINI_FLASH } from '@/ai/genkit';
-import { SARVAM_MODEL } from '@/ai/sarvam';
+import { getActiveModelActivity, getRecentModelRequests } from '@/ai/model-router';
 import { DataService } from '@/lib/data-service';
 
 export const runtime = 'nodejs';
@@ -44,10 +42,8 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({
-    models: {
-      [GEMINI_FLASH]: activity[GEMINI_FLASH] ?? { inFlight: false, recent: false },
-      [SARVAM_MODEL]: activity[SARVAM_MODEL] ?? { inFlight: false, recent: false },
-    },
+    models: activity,
+    recentRequests: getRecentModelRequests(searchParams.get('limit') ? Number(searchParams.get('limit')) : 20),
     ...(generation ? { generation } : {}),
     timestamp: new Date().toISOString(),
   });

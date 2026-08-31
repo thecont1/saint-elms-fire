@@ -13,6 +13,7 @@ const validQuiz = {
   correctIndex: 1,
   explanation: 'A strict majority of five is three.',
   model: 'gemini-3.7-flash',
+  servedBy: { model: 'gemini-3.7-flash', role: 'primary', attemptCount: 1 },
 };
 
 describe('GenerateQuizInputSchema', () => {

@@ -6,6 +6,9 @@ import {
   pcmToWav,
   synthesizePodcast,
   TtsUnavailableError,
+  selectTtsAdapters,
+  geminiTts,
+  sarvamTts,
 } from './tts';
 
 const script = `# DeepDive Episode
@@ -51,6 +54,24 @@ describe('WAV utilities', () => {
 
   test('empty segment list throws', () => {
     expect(() => concatenateWavSegments([])).toThrow();
+  });
+});
+
+describe('runtime TTS model selection', () => {
+  test('selects Sarvam as primary when the override names Sarvam', () => {
+    const selected = selectTtsAdapters('sarvam-tts-bulbul-v3');
+    expect(selected.primary).toBe(sarvamTts);
+    expect(selected.fallback).toBe(geminiTts);
+  });
+
+  test('selects Gemini as primary when the override names Gemini', () => {
+    const selected = selectTtsAdapters('gemini-2.5-flash-preview-tts');
+    expect(selected.primary).toBe(geminiTts);
+    expect(selected.fallback).toBe(sarvamTts);
+  });
+
+  test('rejects unsupported TTS ids instead of silently ignoring the Helm', () => {
+    expect(() => selectTtsAdapters('chat-model')).toThrow('Unsupported TTS model');
   });
 });
 

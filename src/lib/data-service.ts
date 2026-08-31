@@ -831,12 +831,12 @@ export const DataService = {
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   },
 
-  async markArtifactReady(id: string, sizeBytes: number, sources?: GeneratedArtifact['sources']): Promise<GeneratedArtifact> {
+  async markArtifactReady(id: string, sizeBytes: number, sources?: GeneratedArtifact['sources'], servedBy?: GeneratedArtifact['servedBy']): Promise<GeneratedArtifact> {
     const ref = db.collection('generated_artifacts').doc(id);
     return db.runTransaction(async transaction => {
       const snap = await transaction.get(ref);
       if (!snap.exists) throw new Error('Artifact not found');
-      const updated = completeArtifact(sanitizeDoc<GeneratedArtifact>(snap), sizeBytes, new Date().toISOString(), sources);
+      const updated = completeArtifact(sanitizeDoc<GeneratedArtifact>(snap), sizeBytes, new Date().toISOString(), sources, servedBy);
       transaction.set(ref, updated);
       return updated;
     });
