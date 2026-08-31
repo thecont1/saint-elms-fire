@@ -88,7 +88,7 @@ A *linear map* $T: V \to W$ is a structure-preserving map between vector spaces 
 - $F^n \cong F^n$ (the identity).
 - $M_{m \times n} \cong F^{mn}$ (vectorise the matrix).
 - $F[x]_{\le n} \cong F^{n+1}$ (by the map $p \mapsto (a_0, a_1, \ldots, a_n)$).
-- $F^2 \cong \mathbb{C}$ (over $\mathbb{R}$? no, over $\mathbb{C}$ they are both 1D — wait, $\mathbb{C}$ is 1D over $\mathbb{C}$ and 2D over $\mathbb{R}$). Over $\mathbb{R}$: $F^2 \cong \mathbb{C}$ (identify $(a, b) \leftrightarrow a + b i$).
+- $\mathbb{R}^2 \cong \mathbb{C}$ as real vector spaces (identify $(a, b) \leftrightarrow a + b i$; note $\mathbb{C}$ is 1-dimensional over $\mathbb{C}$ but 2-dimensional over $\mathbb{R}$).
 - $V \oplus W \cong F^{\dim V + \dim W}$.
 
 **First isomorphism theorem.** If $T: V \to W$ is linear, then $V / \ker T \cong \text{im}(T)$. So the quotient is isomorphic to the image. In particular, $\dim V = \dim \ker T + \dim \text{im}(T)$ — a restatement of rank-nullity.
@@ -193,9 +193,9 @@ A *linear map* $T: V \to W$ is a structure-preserving map between vector spaces 
 
 **Example 3 — Diagonalisation.** $A = \begin{pmatrix} 1 & 2 \\ 2 & 1 \end{pmatrix}$. Characteristic polynomial: $\lambda^2 - 2 \lambda - 3 = (\lambda - 3)(\lambda + 1)$. Eigenvalues $3, -1$. Eigenvectors: for $\lambda = 3$: $(1, 1)$. For $\lambda = -1$: $(1, -1)$. Diagonalisation: $A = P D P^{-1}$ with $P = \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}$, $D = \begin{pmatrix} 3 & 0 \\ 0 & -1 \end{pmatrix}$.
 
-**Example 4 — First isomorphism.** $T: \mathbb{R}^3 \to \mathbb{R}^2$, $T(x, y, z) = (x, y)$. $\ker T = $ $z$-axis. $\text{im}(T) = \mathbb{R}^2$. So $\mathbb{R}^3 / \mathbb{R} \cong \mathbb{R}^2$. Both sides are 2D. ✓
+**Example 4 — First isomorphism.** $T: \mathbb{R}^3 \to \mathbb{R}^2$, $T(x, y, z) = (x, y)$. $\ker T = \mathbb{R}(0, 0, 1)$ (the $z$-axis). $\text{im}(T) = \mathbb{R}^2$. So $\mathbb{R}^3 / \mathbb{R}(0, 0, 1) \cong \mathbb{R}^2$. Both sides are 2D. ✓
 
-**Example 5 — Singular value decomposition.** $A = \begin{pmatrix} 3 & 0 \\ 0 & -2 \end{pmatrix}$ is already SVD: $U = A/|A| \cdot |A|$, $V = I$, $\Sigma = $ diag$(|3|, |-2|) = $ diag$(3, 2)$. Wait, that's not quite right. The SVD of a diagonal matrix is just itself: $A = I \cdot A \cdot I$.
+**Example 5 — Singular value decomposition.** $A = \begin{pmatrix} 3 & 0 \\ 0 & -2 \end{pmatrix}$. A diagonal matrix with a negative entry is *not* already in SVD form, because SVD requires non-negative singular values. The SVD is $A = U \Sigma V^T$ with $U = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}$, $\Sigma = \begin{pmatrix} 3 & 0 \\ 0 & 2 \end{pmatrix}$, $V = I$: $U \Sigma V^T = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix} \begin{pmatrix} 3 & 0 \\ 0 & 2 \end{pmatrix} = \begin{pmatrix} 3 & 0 \\ 0 & -2 \end{pmatrix} = A$. ✓ The sign of the negative entry is absorbed into $U$ (or $V$).
 
 ## Common Misconceptions
 - **"Every linear map is a matrix."** Only after choosing bases. The matrix depends on the bases.
