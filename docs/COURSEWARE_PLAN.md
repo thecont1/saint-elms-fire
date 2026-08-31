@@ -160,6 +160,37 @@ Courses (semester order, 6–9 lessons each):
 
 ---
 
+### 3.6 Remaining rows after WP-B through WP-E (29 rows; 43 of 72 released)
+
+**Status (2026-09-01): every work package in this plan is complete. Below is the residual scope left in the manifest — 13 external rows, 1 internship workflow, and 15 authorable courses (3 of them lab/practical, with module plans detailed below).**
+
+**A. External / administrative rows (13) — no authoring until provider or syllabus is confirmed.** English I (Sem 1), English II (Sem 2), Environmental Science (Sem 1), Holistic Education I–IV (Sems 1/2/3/4), Open Elective I / II / Swayam (Sems 1/2/3), Understanding India (Sem 2), Modern Indian Language I / II (Sems 3/4). Action per row: confirm provider and approved syllabus, then record provider/link/credit evidence in the manifest (`external` delivery); do not author placeholder content.
+
+**B. Internship (Sem 5, 8 credits) — milestone workflow, not lessons.** Placement/proposal → supervisor approval → work log → midpoint review → final report → presentation → viva. Model as a supervised workflow artefact; the 9-lesson schema does not apply.
+
+**C. Authorable courses (15), semester order.** Lab/practical courses carry detailed module plans; theory rows keep the manifest `notes` as scope until a package is opened.
+
+**Lab and practical courses — proposed module plans** (6-lesson lab schema from WP-C: each lesson is a full experiment with Theory / Apparatus / Procedure / Analysis / Sources of Error; theory-practical templates alternate theory and practical lessons):
+
+- **Analog and Digital Electronics** (Sem 3, SEC, 6 lessons)
+  - M1 Analog building blocks: L1 CE transistor amplifier — bias point, small-signal gain, frequency response with measured f_L and f_H; L2 Op-amp circuits — inverting/non-inverting/summing configurations, gain-bandwidth product and slew-rate measurements.
+  - M2 Digital logic: L3 Logic gates — truth-table verification, fan-out and noise margins with 74-series ICs; L4 Flip-flops and counters — SR/JK/D behaviour, switch debouncing, ripple-counter chains.
+  - M3 Data conversion and capstone: L5 ADC/DAC — R-2R ladder, quantisation error, sampling and aliasing demos; L6 capstone — one small measurement or simulation project (sensor → amplifier → converter chain).
+- **Communication Electronics** (Sem 4, Major Core, 6 lessons, theory-practical)
+  - M1 Modulation and demodulation: L1 AM generation and envelope detection — modulation index measurement; L2 FM generation and detection — VCO-based modulation, discriminator concept.
+  - M2 Oscillators, filters, channels: L3 LC and crystal oscillators — startup condition and frequency stability; L4 Active filters and channel response — design, impedance matching, block-diagram tracing.
+  - M3 Noise and system integration: L5 Noise — SNR and noise-figure measurements, noise temperature; L6 superheterodyne receiver system — complete block diagram and link budget.
+- **Electronic Instrumentation** (Sem 6, Physics Option B, 6 lessons, theory-practical; complements the released `electronic-instrumentation-lab`)
+  - M1 Sensors and conditioning: L1 Transducer families — resistive/capacitive/optical sensors, sensitivity and linearity calibration; L2 Bridges and instrumentation amplifiers — Wheatstone bridge balancing, INA gain/offset, filtering.
+  - M2 Conversion and calibration: L3 ADC/DAC in instruments — resolution, integral and differential nonlinearity measurements; L4 Calibration and uncertainty — standards, traceability, uncertainty budgets.
+  - M3 Noise and instrument design: L5 Low-noise practice — grounding, shielding, lock-in principle; L6 design case — a complete instrument chain for one physics measurement, bridging into the released EI lab experiments.
+
+**Theory/project electives (manifest notes as scope):** Astronomy and Astrophysics (Sem 5, Option A, advanced theory), Microcontroller and Embedded Systems (Sem 5, Option B, project-based: architecture, GPIO, sensors, timing, serial communication, data logging, physics-instrumentation project), Low-Dimensional Materials (Sem 5, Option C, advanced theory), Integral Transforms (Sem 5, Math Elective I), Calculus of Several Variables (Sem 5, Math Elective II), Renewable Energy and Applications (Sem 6, Option A, theory + design case), Advanced Quantum Mechanics (Sem 6, Option C), Complex Analysis (Sem 6, Major Core), Advanced Numerical Methods (Sem 6, Math Elective I A, computational), Computational Linear Algebra (Sem 6, Math Elective II A), Financial Mathematics (Sem 6, Math Elective II B), Mathematical Modelling (Sem 6, Math Elective II C, project). Note the semester-5/6 option groups are elective *choices* — a learner takes one option per group, so authoring all of them completes the catalogue even though not every row is on any one learner's path.
+
+**Close-out rule for future packages:** identical pipeline to WP-C/WP-E — author with `status: in-review`, regenerate catalog and verify `--check`, flip manifest rows to `released` with `contentPath` and bump `manifestVersion`/`releasedRows`, import via `scripts/import-content-tree.ts`, one PR per package.
+
+---
+
 ## 4. Process notes for the next session
 
 ### 4.1 Defensive branching
@@ -218,5 +249,7 @@ Each lesson file:
 - [x] WP-D: Astrophysics III + IV (18 lessons)
 - [x] WP-C leftovers (22 lessons) — 4 lab courses complete; manifest flipped to released; catalog at 303 lessons / 41 courses
 - [x] WP-E math breadth (time-boxed) — closed at 2 courses (Number Theory, Operations Research); manifest at 43 released rows; catalog at 321 lessons / 43 courses
-- [ ] Open PR per work package; merge when verified
-- [ ] Never touch `src/` in this branch
+- [x] Open PR per work package; merge when verified — PR #9 opened and merged 2026-09-01
+- [x] Never touch `src/` in this branch — content-only throughout
+- [ ] Remaining scope per §3.6: 15 authorable courses (3 lab/practical with module plans), internship workflow, 13 external rows awaiting provider confirmation
+- [ ] WP-G release check re-run in a healthy Gemini window (§3.1 item 6)
