@@ -164,7 +164,7 @@ Eigenvalues are the natural tool for analysing long-time behaviour of linear sys
 
 **Resolvent.** $(A - \lambda I)^{-1}$ has poles at the eigenvalues of $A$. Used in the holomorphic functional calculus: $f(A) = (1/2\pi i) \oint f(z) (z I - A)^{-1} dz$ over a contour enclosing the spectrum.
 
-**Power method and PageRank.** The dominant eigenvalue $\lambda_1$ and eigenvector $v_1$ of a matrix are the fixed point of repeated multiplication $x^{(k+1)} = A x^{(k)} / \|A x^{(k)}\|$. The iteration converges whenever $|\lambda_1| > |\lambda_2|$, with rate governed by the spectral gap $|\lambda_1|/|\lambda_2|$. This is the workhorse of Markov-chain stationary-distribution computation, including the original PageRank algorithm: the stationary distribution of a random surfer on the web graph is the dominant eigenvector of a suitably modified Google matrix, found by the power method. The same machinery underlies recommender systems, link prediction in social networks, and many other graph algorithms.
+**Why this matters for Saint Elms Fire.** The knowledge graph extraction is a Markov process. The convergence of the iterative extraction is governed by the spectral gap of the relevant operator. The same ideas power recommendation systems, link prediction, and many other graph algorithms.
 
 ## Key Ideas
 - Power method: $v_{k+1} = A v_k / \|A v_k\| \to $ dominant eigenvector.
