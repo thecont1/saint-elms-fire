@@ -229,7 +229,42 @@ export function LmsDashboardClient({
     setChatInitialQuery(`Can you explain the significance of "${concept}" in our courseware?`);
   };
 
-  const completionPercentage = Math.round((releasedLessons.length / Math.max(1, lessons.length)) * 100);
+  // Flatten ALL lessons across the entire programme outline for the header
+  // metrics. The `lessons` state only holds one course's lessons (for the
+  // Knowledge Reader), but the header cards should reflect the whole voyage.
+  const allProgrammeLessons = React.useMemo(() => {
+    if (!programmeOutline) return lessons;
+    const all: { id: string; moduleId: string }[] = [];
+    for (const sem of programmeOutline.semesters) {
+      for (const c of sem.courses) {
+        for (const mod of c.modules) {
+          for (const lesson of mod.lessons) {
+            all.push({ id: lesson.id, moduleId: lesson.moduleId });
+          }
+        }
+      }
+    }
+    for (const c of programmeOutline.orphanCourses) {
+      for (const mod of c.modules) {
+        for (const lesson of mod.lessons) {
+          all.push({ id: lesson.id, moduleId: lesson.moduleId });
+        }
+      }
+    }
+    return all;
+  }, [programmeOutline, lessons]);
+
+  const releasedProgrammeLessonCount = React.useMemo(() => {
+    if (role === 'admin') return allProgrammeLessons.length;
+    const { lessonIds, moduleIds } = releasedLessonIds;
+    return allProgrammeLessons.filter(
+      (l) => lessonIds.has(l.id) || moduleIds.has(l.moduleId)
+    ).length;
+  }, [allProgrammeLessons, releasedLessonIds, role]);
+
+  const completionPercentage = Math.round(
+    (releasedProgrammeLessonCount / Math.max(1, allProgrammeLessons.length)) * 100
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-marine-900">
@@ -261,7 +296,7 @@ export function LmsDashboardClient({
               <div className="chart-card px-4 py-4 flex flex-col justify-center h-full">
                 <p className="chart-annotation mb-1">Course plotted</p>
                 <p className="font-display text-2xl font-semibold text-marine-900">
-                  {releasedLessons.length}<span className="text-marine-600 text-lg">/{lessons.length}</span>
+                  {releasedProgrammeLessonCount}<span className="text-marine-600 text-lg">/{allProgrammeLessons.length}</span>
                 </p>
                 <p className="text-[11px] text-marine-700 font-medium">lessons unlocked</p>
               </div>
@@ -500,7 +535,7 @@ export function LmsDashboardClient({
               </div>
               <div>
                 <span className="font-display text-sm font-semibold text-marine-900">Saint Elms Fire</span>
-                <p className="chart-annotation mt-0.5">Lux in tempestate — light in the storm</p>
+                <p className="chart-annotation mt-0.5">© 2026 Mahesh Shantaram. All rights reserved.</p>
               </div>
             </div>
 

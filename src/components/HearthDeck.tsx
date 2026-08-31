@@ -170,7 +170,6 @@ export function HearthDeck({ studentId, initialQuery = '' }: HearthDeckProps) {
             <div className="flex w-[176px] shrink-0 flex-col border-r border-beacon-100 bg-white/70 px-3 py-4">
               <div className="space-y-1.5 px-1 text-center">
                 <p className="chart-annotation text-beacon-700">The Hearth</p>
-                <p className="chart-annotation leading-relaxed">Three companions · one flame</p>
               </div>
               <div className="flex flex-1 flex-col justify-center">
                 <HearthRail active={active} onSelect={select} />
