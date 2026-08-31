@@ -107,7 +107,6 @@ export const ragChat = ai.defineFlow(
     const retrieval = selectReleasedRetrievedChunks(visibleCandidates, releasedIds, retrievalConfig);
     const chunks = retrieval.chunks;
     console.info('rag_retrieval', {
-      studentId,
       releasedLessonCount: releasedIds.size,
       topK: retrievalConfig.topK,
       candidateK: retrievalConfig.candidateK,

@@ -40,6 +40,28 @@ function arg(name: string): string | undefined {
 const studentArg = arg('student') ?? 'chetna';
 const studentId = PERSONAS[studentArg] ?? studentArg;
 const baseUrlArg = process.argv.slice(2).find((value) => value.startsWith('http'));
+// Validate the override before resolveProdContext mints and forwards
+// credentials: an arbitrary URL would otherwise receive the proxy secret and
+// identity token. Only approved HTTPS service origins may be targeted.
+const APPROVED_ORIGINS = new Set([
+  'https://saint-elms-fire-ldyuznepoq-el.a.run.app',
+]);
+if (baseUrlArg !== undefined) {
+  let parsed: URL;
+  try {
+    parsed = new URL(baseUrlArg);
+  } catch {
+    console.error(`Invalid smoke-test target URL: ${baseUrlArg}`);
+    process.exit(2);
+  }
+  if (parsed.protocol !== 'https:' || !APPROVED_ORIGINS.has(parsed.origin)) {
+    console.error(
+      `Refusing to send credentials to non-approved origin: ${parsed.origin}. ` +
+      `Approved: ${[...APPROVED_ORIGINS].join(', ')}`,
+    );
+    process.exit(2);
+  }
+}
 const ctx = resolveProdContext(baseUrlArg);
 const questions = studentArg === 'chetna' ? [...SHARED_QUESTIONS, ...CHETNA_ONLY] : SHARED_QUESTIONS.slice(0, 5);
 const results: Array<{ question: string; pass: boolean; detail: string }> = [];

@@ -769,7 +769,12 @@ export const DataService = {
     const docs = await db.getAll(...records.map(record => db.collection('courseware_chunks').doc(record.id)));
     return docs.length === records.length && docs.every((doc, index) => {
       const data = doc.data();
-      return doc.exists && data?.releaseId === records[index].releaseId && data?.lessonId === records[index].lessonId;
+      const embedding = (data?.embedding as { toArray?: () => unknown[] } | undefined)?.toArray?.();
+      return doc.exists
+        && data?.releaseId === records[index].releaseId
+        && data?.lessonId === records[index].lessonId
+        && Array.isArray(embedding)
+        && embedding.length > 0;
     });
   },
 

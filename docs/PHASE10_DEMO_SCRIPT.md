@@ -35,7 +35,7 @@ Automated/static rehearsal completed 2026-09-01:
 - Chetna and Ananya Firestore states audited.
 - Full live rehearsal is blocked until the missing-vector backfill is complete.
 
-A human presenter must still rehearse the 8-minute flow once after the backfill. Record actual elapsed times in the table below.
+A full live rehearsal is planned once the missing-vector backfill is complete (static preflight only so far, 2026-09-01). Record actual elapsed times in the table below.
 
 | Rehearsal | Date | Duration | RAG | Artifact | Student switch | Notes |
 | --- | --- | ---: | --- | --- | --- | --- |
@@ -45,8 +45,8 @@ A human presenter must still rehearse the 8-minute flow once after the backfill.
 
 | Script | Purpose | Command |
 | --- | --- | --- |
-| `scripts/audit-rag-index.ts` | Count vectors per released lesson and fail on gaps | `bun run scripts/audit-rag-index.ts --student=chetna` |
-| `scripts/rag-smoke-test.ts` | Run known-good Guide questions and fail if any are ungrounded | `bun run scripts/rag-smoke-test.ts --student=chetna` |
+| `scripts/audit-rag-index.ts` | Count vectors per released lesson and fail on gaps | `bun run scripts/audit-rag-index.ts --student=chetna` and `bun run scripts/audit-rag-index.ts --student=ananya` |
+| `scripts/rag-smoke-test.ts` | Run known-good Guide questions and fail if any are ungrounded | `bun run scripts/rag-smoke-test.ts --student=chetna` and `bun run scripts/rag-smoke-test.ts --student=ananya` |
 | `scripts/generate-demo-fallback.ts` | Regenerate the pre-baked PDF fallback | `bun run scripts/generate-demo-fallback.ts` |
 
 ## CI checks

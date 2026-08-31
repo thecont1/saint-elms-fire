@@ -30,11 +30,17 @@ const releasedIds = new Set(lessons.map((lesson) => lesson.id));
 const counts = new Map<string, number>();
 
 // A collection scan is intentional: this is a one-time operational audit and
-// avoids one Firestore read query per lesson at Chetna scale.
-const chunks = await db.collection('courseware_chunks').select('lessonId').get();
+// avoids one Firestore read query per lesson at Chetna scale. Select the
+// embedding value (not just document presence) so a chunk only counts as
+// indexed coverage when it carries a non-empty vector.
+const chunks = await db.collection('courseware_chunks').select('lessonId', 'embedding').get();
 for (const doc of chunks.docs) {
-  const lessonId = String(doc.data().lessonId || '');
-  if (releasedIds.has(lessonId)) counts.set(lessonId, (counts.get(lessonId) ?? 0) + 1);
+  const data = doc.data();
+  const lessonId = String(data.lessonId || '');
+  const embedding = (data.embedding as { toArray?: () => unknown[] } | undefined)?.toArray?.();
+  if (releasedIds.has(lessonId) && Array.isArray(embedding) && embedding.length > 0) {
+    counts.set(lessonId, (counts.get(lessonId) ?? 0) + 1);
+  }
 }
 
 const rows: AuditRow[] = lessons
