@@ -134,8 +134,11 @@ In particular, the interpolation error is $O(h^4)$ — better than the $O(h^2)$ 
 ## Worked Examples
 **Example 1 — Piecewise linear.** Data $(0, 0), (1, 1), (2, 4)$. The piecewise linear interpolant is $y = x$ on $[0, 1]$ and $y = 3x - 2$ on $[1, 2]$. Continuous, but the derivative jumps from $1$ to $3$ at $x = 1$.
 
-**Example 2 — Natural cubic spline.** Data $(0, 0), (1, 1), (2, 0)$, with $h_0 = h_1 = 1$. Tridiagonal: $2(1 + 1) M_1 = 6((0 - 1)/1 - (1 - 0)/1) = -12$, so $M_1 = -3$. $M_0 = M_2 = 0$. The spline pieces:
-- On $[0, 1]$: $S(x) = M_0 (1 - x)^3/6 + M_1 x (x - 1)(x - 2)/(-2) + \ldots = -3/(-2) \cdot x(x-1)(x-2)/6 = (x^3 - 3 x^2 + 2 x)/4$ — wait, let me redo. The formula is more complex; the point is that the spline is the unique cubic interpolant with the natural boundary conditions.
+**Example 2 — Natural cubic spline.** Data $(0, 0), (1, 1), (2, 0)$, with $h_0 = h_1 = 1$. The spline $S(x)$ is *piecewise* cubic: one cubic on $[0, 1]$ and another on $[1, 2]$. The tridiagonal system gives $2(1 + 1) M_1 = 6((0 - 1)/1 - (1 - 0)/1) = -12$, so $M_1 = -3$, with $M_0 = M_2 = 0$ (natural boundary conditions). Using the standard piecewise formula $S_i(x) = M_i (x_{i+1} - x)^3/(6 h_i) + M_{i+1} (x - x_i)^3/(6 h_i) + (y_i/h_i - M_i h_i/6)(x_{i+1} - x) + (y_{i+1}/h_i - M_{i+1} h_i/6)(x - x_i)$:
+- On $[0, 1]$: $S(x) = -x^3/2 + 3 x/2$. Checks: $S(0) = 0$, $S(1) = 1$, $S''(0) = 0 = M_0$, $S''(1) = -3 = M_1$.
+- On $[1, 2]$: $S(x) = -(2 - x)^3/2 + 3 (2 - x)/2$. Checks: $S(1) = 1$, $S(2) = 0$, $S''(1) = -3 = M_1$, $S''(2) = 0 = M_2$.
+
+The two pieces meet at $x = 1$ with continuous value, first derivative ($S'(1) = 0$ from both sides), and second derivative ($-3$), as required.
 
 **Example 3 — B-spline basis.** Cubic B-splines with uniform knots: $B_0 = (1 - 3t + 3t^2 - t^3)/6$ on $[0, 1]$, etc. Four overlapping pieces, each supported on a span of $4$ knots. Local: changing one control point only affects the spline locally.
 
