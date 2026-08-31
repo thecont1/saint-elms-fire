@@ -13,7 +13,7 @@ lessonId: linear-algebra-m1-l2
 lessonName: Linear Independence, Basis and Dimension
 lessonNumber: 2
 moduleNumber: 1
-semesterNumber: 2
+semesterNumber: 5
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 2

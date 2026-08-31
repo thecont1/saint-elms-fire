@@ -13,7 +13,7 @@ lessonId: abstract-algebra-m1-l2
 lessonName: Examples of Groups — Z, R*, GL(n)
 lessonNumber: 2
 moduleNumber: 1
-semesterNumber: 2
+semesterNumber: 4
 difficulty: foundation
 estimatedStudyMinutes: 50
 releaseOrder: 2

@@ -13,7 +13,7 @@ lessonId: linear-algebra-m2-l3
 lessonName: Eigenvalues, Eigenvectors and Diagonalisation
 lessonNumber: 6
 moduleNumber: 2
-semesterNumber: 3
+semesterNumber: 5
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 6

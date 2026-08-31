@@ -13,7 +13,7 @@ lessonId: real-analysis-m1-l2
 lessonName: Convergence of Sequences
 lessonNumber: 2
 moduleNumber: 1
-semesterNumber: 2
+semesterNumber: 3
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 2

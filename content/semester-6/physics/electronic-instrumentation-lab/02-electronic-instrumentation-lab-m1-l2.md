@@ -1,8 +1,8 @@
 ***
 programmeId: bsc-physics-mathematics-astrophysics
 programmeName: B.Sc. Physics & Mathematics with minor in Astrophysics
-semesterId: sem-5
-semesterName: Semester 5
+semesterId: sem-6
+semesterName: Semester 6
 subjectId: physics
 subjectName: Physics
 courseId: electronic-instrumentation-lab
@@ -13,7 +13,7 @@ lessonId: electronic-instrumentation-lab-m1-l2
 lessonName: Wheatstone Bridge and Strain Gauge Measurement
 lessonNumber: 2
 moduleNumber: 1
-semesterNumber: 5
+semesterNumber: 6
 difficulty: intermediate
 estimatedStudyMinutes: 50
 releaseOrder: 2

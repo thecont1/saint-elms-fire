@@ -13,7 +13,7 @@ lessonId: electricity-and-magnetism-m1-l3
 lessonName: Electric Potential and Capacitance
 lessonNumber: 3
 moduleNumber: 1
-semesterNumber: 3
+semesterNumber: 2
 difficulty: intermediate
 estimatedStudyMinutes: 50
 releaseOrder: 3

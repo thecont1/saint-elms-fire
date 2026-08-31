@@ -13,7 +13,7 @@ lessonId: solid-state-physics-m1-l2
 lessonName: Miller Indices and Crystal Planes
 lessonNumber: 2
 moduleNumber: 1
-semesterNumber: 2
+semesterNumber: 5
 difficulty: foundation
 estimatedStudyMinutes: 50
 releaseOrder: 2

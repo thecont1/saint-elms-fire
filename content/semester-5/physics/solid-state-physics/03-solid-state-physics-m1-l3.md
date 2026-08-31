@@ -13,7 +13,7 @@ lessonId: solid-state-physics-m1-l3
 lessonName: X-ray Diffraction and Bragg's Law
 lessonNumber: 3
 moduleNumber: 1
-semesterNumber: 3
+semesterNumber: 5
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 3

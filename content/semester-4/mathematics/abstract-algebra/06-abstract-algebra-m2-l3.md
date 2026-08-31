@@ -13,7 +13,7 @@ lessonId: abstract-algebra-m2-l3
 lessonName: Normal Subgroups and Quotient Groups
 lessonNumber: 6
 moduleNumber: 2
-semesterNumber: 3
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 6

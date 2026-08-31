@@ -13,7 +13,7 @@ lessonId: real-analysis-m2-l2
 lessonName: Uniform Continuity and the Extreme Value Theorem
 lessonNumber: 5
 moduleNumber: 2
-semesterNumber: 2
+semesterNumber: 3
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 5

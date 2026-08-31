@@ -13,7 +13,7 @@ lessonId: atomic-and-molecular-physics-m1-l2
 lessonName: Spin, Fine Structure and the Zeeman Effect
 lessonNumber: 2
 moduleNumber: 1
-semesterNumber: 2
+semesterNumber: 6
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 2

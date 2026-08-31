@@ -13,7 +13,7 @@ lessonId: abstract-algebra-m3-l3
 lessonName: Fields, Field Extensions and Finite Fields
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 9

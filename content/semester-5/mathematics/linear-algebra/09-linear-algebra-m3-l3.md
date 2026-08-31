@@ -13,7 +13,7 @@ lessonId: linear-algebra-m3-l3
 lessonName: Applications to Physics and Geometry
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 5
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 9

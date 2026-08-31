@@ -13,7 +13,7 @@ lessonId: solid-state-physics-m2-l3
 lessonName: Thermal and Electrical Conductivity in Solids
 lessonNumber: 6
 moduleNumber: 2
-semesterNumber: 3
+semesterNumber: 5
 difficulty: advanced
 estimatedStudyMinutes: 55
 releaseOrder: 6

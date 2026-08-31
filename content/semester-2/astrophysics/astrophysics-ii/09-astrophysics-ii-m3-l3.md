@@ -13,7 +13,7 @@ lessonId: astrophysics-ii-m3-l3
 lessonName: Habitable Zones and Biosignatures
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 2
 difficulty: intermediate
 estimatedStudyMinutes: 50
 releaseOrder: 9

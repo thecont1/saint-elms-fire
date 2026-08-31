@@ -13,7 +13,7 @@ lessonId: introduction-to-quantum-mechanics-m3-l2
 lessonName: Hydrogen Atom — Quantum Numbers and Orbitals
 lessonNumber: 8
 moduleNumber: 3
-semesterNumber: 2
+semesterNumber: 4
 difficulty: advanced
 estimatedStudyMinutes: 60
 releaseOrder: 8

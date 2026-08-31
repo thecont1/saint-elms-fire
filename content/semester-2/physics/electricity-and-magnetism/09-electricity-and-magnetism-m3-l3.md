@@ -13,7 +13,7 @@ lessonId: electricity-and-magnetism-m3-l3
 lessonName: Faraday's Law and Electromagnetic Induction
 lessonNumber: 9
 moduleNumber: 3
-semesterNumber: 3
+semesterNumber: 2
 difficulty: intermediate
 estimatedStudyMinutes: 55
 releaseOrder: 9
