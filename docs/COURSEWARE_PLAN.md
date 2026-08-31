@@ -25,42 +25,64 @@ Before any new courseware is written:
 2. If it does: proceed with the existing convention.
 3. If it does not: **stop** and patch the parser to accept `***` (preferred) or migrate the 122 existing lessons to `---` (last resort). Do not author new lessons until this is resolved.
 
+**Verdict (2026-08-31, first `content/wp-fdg` session): ACCEPTED.** There is no
+frontmatter parser anywhere in `src/` — the admin upload path treats the whole
+file as markdown body, so both `***` and `---` are tolerated as inert text.
+Verified empirically: a real `***`-delimited lesson chunks cleanly through
+`chunkMarkdown` (23 chunks, no error). Known quirk (pre-existing, all released
+lessons share it): the YAML block rides along inside the first "Introduction"
+chunk and gets embedded/graph-extracted with the body. If that ever matters,
+the fix is a strip step in `parseMarkdown` (`src/ai/flows/ingestion.ts`) —
+which needs a `src/` branch, not this one.
+
 ---
 
 ## 3. What remains — prioritized for demo value
 
 ### 3.1 WP-G: Catalog regeneration + manifest status + release-verified import (1 task, no authoring)
 
-**Goal:** Make the existing 122 lessons actually usable in Elms.
+**Goal:** Make the existing lessons actually usable in Elms.
+**Status (2026-08-31): DONE, except one flap-gated release re-verification.**
 
-Steps:
+Executed findings and steps:
 
-1. Run the catalog generation script (whatever the project uses to build the lesson catalog from `content/programme-manifest.yaml` and the `content/semester-*/` tree).
-2. Verify the catalog includes all 13 complete WP-C labs and the partial Electronic Instrumentation Lab.
-3. Update `content/programme-manifest.yaml`: set `status: released` for the 13 complete labs; leave deferred courses as `planned`.
-4. Import the updated content via admin/seed (not as a static site build).
-5. Run one release end-to-end: admin releases a lesson → ingestion completes with metadata → verify graph node growth and RAG availability.
-6. **Do not** revert the revert (`5ef5a303`) — the merge already reintroduced the content; history stays.
+1. **Revert trap discovered:** `5ef5a303` reverted the manifest + Bridge Physics (3),
+   Integral Calculus (9), Thermal Physics & Stat Mech (9), Introductory Algebra (9),
+   and Calculus using Python L1–L2. The later feature-branch merge could not bring
+   them back (their commits were already "merged"). Restored byte-for-byte from
+   `3dd7faf8` as new commits — history untouched, per item 6 below.
+2. **Manifest restored + synced:** `content/programme-manifest.yaml` back; 13 complete
+   labs, Basic Electronics, Calculus using Python and the four restored WP-B courses
+   set `released` (35 released rows); Electronic Instrumentation Lab `in_authoring` (2/6).
+3. **Catalog generator written:** `scripts/generate-course-catalog.ts` (none existed);
+   `content/course-catalog.md` regenerated: 263 lessons across 36 courses. `--check`
+   flag detects drift.
+4. **Frontmatter corrected:** 42 lessons carried module-derived `semesterNumber`
+   (and the EI lab a wrong semester triple); all now match the `content/semester-{N}/` tree.
+5. **Import complete:** `scripts/import-content-tree.ts` (idempotent; matches courses by
+   `code`, modules by marker, skips complete courses) imported all 263 lessons / 36
+   courses into the live service via the admin API.
+6. **Release check flap-gated:** `bridge-physics-m1-l1` → `student-wpg-import` reached
+   parsing/chunking/embedding/vector_write (21/21 vectors) but failed at `graph_write`
+   with `graph_extraction_failed` — Gemini 3.7 Flash was 503-ing environment-wide at the
+   time (verified by direct probe). Re-run when Gemini is healthy:
+   `bun run scripts/import-content-tree.ts` (imports skip; release check retries itself).
+7. **Do not** revert the revert (`5ef5a303`) — history stays; restoration rides forward.
 
 ---
 
 ### 3.2 WP-F: University Support corpus (6 lessons, highest demo-value-per-lesson)
 
 **Goal:** Unblock the Friend persona (Phase 9 Task 4).
-
-Courses:
-
-- `university-support` subject (new subjectId), 6 lessons:
-  1. Reading a timetable and understanding office hours
-  2. Fee deadlines and payment channels
-  3. How to contact instructors or departments
-  4. Classroom / lab etiquette
-  5. Using the library and lab safely
-  6. Peer contact privacy norms (placeholders for PII, never real values)
-
-**Frontmatter:** Same schema as existing lessons; `subjectId: university-support`, `tags: [admin, support]`.
-
-**Ingestion:** Run `scripts/ingest-friend-corpus.ts` (already on `dev/krithika`) after authoring.
+**Status (2026-08-31): AUTHORING ALREADY COMPLETE on `main`.** The corpus exists at
+`content/university-support/student-life-and-university-navigation/` (6/6 lessons) and
+covers all six planned topics: timetable + academic calendar (m1-l1), office hours /
+faculty contact / helpdesks (m1-l2), fee deadlines / payments / refunds (m1-l3),
+classroom / laboratory / field etiquette (m2-l1), library / e-resources / reading lists
+(m2-l2), peer contact / privacy / code of conduct (m2-l3). It is also imported into the
+live service by `scripts/import-content-tree.ts` (WP-G). The only remaining step is
+running `scripts/ingest-friend-corpus.ts`, which lives on `dev/krithika` and belongs to
+the Phase 9 persona workstream — no authoring needed in this branch.
 
 ---
 
