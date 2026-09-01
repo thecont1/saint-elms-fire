@@ -26,6 +26,31 @@ function gcloud(args: string[]): string {
 }
 
 /**
+ * Validate that a URL is a well-formed HTTPS address belonging to `approvedOrigins`.
+ * Throws before credentials are read or transmitted if validation fails.
+ */
+export function assertApprovedUrl(
+  rawUrl: string,
+  approvedOrigins: Set<string> = APPROVED_ORIGINS,
+): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(`Invalid target URL: ${rawUrl}`);
+  }
+
+  if (parsed.protocol !== 'https:' || !approvedOrigins.has(parsed.origin)) {
+    throw new Error(
+      `Refusing to send credentials to non-approved origin: ${parsed.origin}. ` +
+        `Approved: ${[...approvedOrigins].join(', ')}`,
+    );
+  }
+
+  return rawUrl;
+}
+
+/**
  * Parse the first positional CLI argument as a target base URL. Any supplied
  * value is validated against `approvedOrigins` and rejected before credentials
  * are resolved, preventing a malformed target from falling through to the
@@ -37,26 +62,12 @@ export function parseBaseUrlArg(
 ): string | undefined {
   const positional = argv.find((arg) => !arg.startsWith('--'));
   if (!positional) return undefined;
-
-  let parsed: URL;
-  try {
-    parsed = new URL(positional);
-  } catch {
-    throw new Error(`Invalid target URL: ${positional}`);
-  }
-
-  if (parsed.protocol !== 'https:' || !approvedOrigins.has(parsed.origin)) {
-    throw new Error(
-      `Refusing to send credentials to non-approved origin: ${parsed.origin}. ` +
-        `Approved: ${[...approvedOrigins].join(', ')}`,
-    );
-  }
-
-  return positional;
+  return assertApprovedUrl(positional, approvedOrigins);
 }
 
 export function resolveProdContext(argvBaseUrl?: string): ProdContext {
-  const baseUrl = (argvBaseUrl || process.env.SERVICE_URL || DEFAULT_SERVICE_URL).replace(/\/+$/, '');
+  const rawBaseUrl = argvBaseUrl || process.env.SERVICE_URL || DEFAULT_SERVICE_URL;
+  const baseUrl = assertApprovedUrl(rawBaseUrl).replace(/\/+$/, '');
 
   // Service accounts require --audiences; user accounts reject it. Try the
   // audience-scoped form first, fall back to the plain token.
