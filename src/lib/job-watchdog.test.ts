@@ -124,7 +124,7 @@ describe('sweepStaleWork', () => {
 
   test('leaves a legitimately slow podcast alone inside its bounded budget', async () => {
     // The artifacts list endpoint sweeps on every UI poll: a podcast at 200s
-    // is still inside its ~225s bounded worst case and must NOT be
+    // is still inside its ~285s bounded worst case and must NOT be
     // dead-lettered while it is visibly making progress.
     const now = Date.now();
     const slow = job({
@@ -171,7 +171,7 @@ describe('parsePodcastCeilingMs', () => {
   test('accepts only positive finite integer seconds', () => {
     expect(parsePodcastCeilingMs('300')).toBe(300_000);
     for (const invalid of [undefined, '', '0', '-2', '1.5', '12seconds', 'Infinity', 'NaN']) {
-      expect(parsePodcastCeilingMs(invalid)).toBe(4 * 60_000);
+      expect(parsePodcastCeilingMs(invalid)).toBe(285_000);
     }
   });
 });

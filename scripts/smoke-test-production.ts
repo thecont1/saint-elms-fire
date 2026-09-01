@@ -236,8 +236,8 @@ async function testBackgroundPipeline(ctx: ProdContext): Promise<void> {
   //                            loop was throttled/scaled away (the exact
   //                            failure --no-cpu-throttling prevents). FAIL.
   //   - `running`/terminal   — the worker claimed the job during the silent
-  //                            window; a podcast legitimately runs up to ~225s
-  //                            (75s generation + 120s TTS), so keep polling
+  //                            window; a podcast legitimately runs up to ~285s
+  //                            (75s generation + 180s TTS), so keep polling
   //                            to the terminal state.
   const firstCheck = await fetchJson<JobPoll>(
     `${ctx.baseUrl}/api/jobs/${jobId}`,
