@@ -15,18 +15,20 @@ import { DEMO_PERSONAS, getDemoPersona } from '@/lib/demo-session';
 import type { ChatMessage, Lesson } from '@/lib/types';
 
 beforeAll(() => {
-  const dom = new JSDOM('<!doctype html><html><body></body></html>', {
-    url: 'http://localhost/',
-    pretendToBeVisual: true,
-  });
-  globalThis.window = dom.window;
-  globalThis.document = dom.window.document;
-  for (const key of [
-    'Node', 'NodeList', 'Element', 'HTMLElement', 'HTMLInputElement', 'HTMLTextAreaElement',
-    'SVGElement', 'DocumentFragment', 'MutationObserver', 'CustomEvent', 'Event',
-    'KeyboardEvent', 'MouseEvent', 'getComputedStyle', 'CSS',
-  ]) {
-    if (dom.window[key] !== undefined) globalThis[key] = dom.window[key];
+  if (!globalThis.window) {
+    const dom = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'http://localhost/',
+      pretendToBeVisual: true,
+    });
+    globalThis.window = dom.window;
+    globalThis.document = dom.window.document;
+    for (const key of [
+      'Node', 'NodeList', 'Element', 'HTMLElement', 'HTMLInputElement', 'HTMLTextAreaElement',
+      'SVGElement', 'DocumentFragment', 'MutationObserver', 'CustomEvent', 'Event',
+      'KeyboardEvent', 'MouseEvent', 'getComputedStyle', 'CSS',
+    ]) {
+      if (dom.window[key] !== undefined) globalThis[key] = dom.window[key];
+    }
   }
 });
 

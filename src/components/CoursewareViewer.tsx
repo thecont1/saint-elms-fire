@@ -308,17 +308,20 @@ function ProgrammeTree({
     return { semesters, courses: {} };
   });
 
+  const [hasLoadedExpansion, setHasLoadedExpansion] = useState(false);
+
   // Apply any persisted expansion state after mount (client only).
   useEffect(() => {
     const saved = loadExpansionState();
     if (saved) setExpansionState(saved);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setHasLoadedExpansion(true);
   }, []);
 
-  // Persist on every change
+  // Never let the server-safe defaults overwrite persisted state on mount.
   useEffect(() => {
+    if (!hasLoadedExpansion) return;
     saveExpansionState(expansionState);
-  }, [expansionState]);
+  }, [expansionState, hasLoadedExpansion]);
 
   const toggleSemester = useCallback((semId: string) => {
     setExpansionState((prev) => ({
