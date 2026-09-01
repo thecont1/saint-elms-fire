@@ -23,6 +23,12 @@ import { ModelHelmPanel } from '@/components/ModelHelmPanel';
 import type { Course, CourseModule, Lesson, ReleaseEvent, KnowledgeNode, KnowledgeEdge, ProgrammeOutline } from '@/lib/types';
 import type { DemoPersona, DemoPersonaId } from '@/lib/demo-session';
 
+const gitCommitSha = process.env.NEXT_PUBLIC_GIT_COMMIT_SHA || 'dev';
+const gitCommitUrl =
+  gitCommitSha === 'dev'
+    ? 'https://github.com/thecont1/saint-elms-fire'
+    : `https://github.com/thecont1/saint-elms-fire/commit/${gitCommitSha}`;
+
 interface LmsDashboardClientProps {
   initialCourse: Course | null;
   initialModules: CourseModule[];
@@ -698,20 +704,30 @@ export function LmsDashboardClient({
               </div>
             </div>
 
-            <p className="text-[11px] text-marine-700 max-w-md leading-relaxed text-center">
-              Trust the light, not the thunder. Reasoned knowledge, drip-fed with
-              courage, mapped as a constellation, and guarded by Socrates.
-            </p>
-
-            <div className="chart-annotation flex items-center gap-4">
-              <span>Genkit 1.41</span>
-              <span className="h-3 w-px bg-beacon-200" />
-              <span>Gemini 3.7 Flash</span>
-              <span className="h-3 w-px bg-beacon-200" />
-              <span className="flex items-center gap-1.5">
-                <Anchor className="w-3 h-3 text-beacon-500" />
-                GCP Firestore
-              </span>
+            <div className="chart-annotation flex flex-col items-start sm:items-end gap-1.5">
+              <div className="flex flex-wrap items-center gap-4">
+                <span>Genkit 1.41</span>
+                <span className="h-3 w-px bg-beacon-200" />
+                <span>Gemini 3.7 Flash</span>
+                <span className="h-3 w-px bg-beacon-200" />
+                <span className="flex items-center gap-1.5">
+                  <Anchor className="w-3 h-3 text-beacon-500" />
+                  GCP Firestore
+                </span>
+              </div>
+              <a
+                href={gitCommitUrl}
+                className="font-mono text-[10px] tracking-wide text-marine-500 hover:text-beacon-600 transition-colors"
+                target="_blank"
+                rel="noreferrer"
+                aria-label={
+                  gitCommitSha === 'dev'
+                    ? 'View the Saint Elms Fire repository on GitHub'
+                    : `View build ${gitCommitSha} on GitHub`
+                }
+              >
+                Build {gitCommitSha.slice(0, 8)}
+              </a>
             </div>
           </div>
         </div>

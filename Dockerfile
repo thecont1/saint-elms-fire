@@ -10,6 +10,9 @@ RUN bun install --frozen-lockfile
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
+ARG NEXT_PUBLIC_GIT_COMMIT_SHA=dev
+ENV NEXT_PUBLIC_GIT_COMMIT_SHA=$NEXT_PUBLIC_GIT_COMMIT_SHA
+
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -143,6 +143,49 @@ describe('Cloud Run runtime contract (Phase 8)', () => {
     expect(result.stderr).toContain('AUTH_MODE=demo detected in production context');
   });
 
+  test('public demo deploy is isolated from production and preserves its runtime contract', () => {
+    const script = read('scripts/deploy-cloud-run-demo.sh');
+
+    expect(script).toContain("SERVICE=\"${SERVICE:-saint-elms-fire-demo}\"");
+    expect(script).toContain('Refusing to deploy demo auth to the private production service');
+    expect(script).toContain('--allow-unauthenticated');
+    expect(script).toContain('--min-instances=1');
+    expect(script).toContain('--max-instances=1');
+    expect(script).toContain('--no-cpu-throttling');
+    expect(script).toContain('AUTH_MODE=demo');
+    expect(script).toContain('SAINT_ELMS_ENV=staging');
+    expect(script).toContain('NEXT_PUBLIC_GIT_COMMIT_SHA');
+    expect(script).toContain('--update-secrets=');
+    expect(script).not.toContain('--set-secrets=');
+  });
+
+  test('public demo dry-run deploys an existing CI image without local Docker', () => {
+    const result = spawnSync('bash', ['scripts/deploy-cloud-run-demo.sh', '--dry-run'], {
+      cwd: root,
+      env: {
+        ...process.env,
+        DEPLOY_IMAGE: 'asia-south1-docker.pkg.dev/saint-elms-fire/cloud-run-source-deploy/saint-elms-fire:test-sha',
+      },
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('skipping build: deploying existing image');
+    expect(result.stdout).toContain('gcloud run deploy saint-elms-fire-demo');
+    expect(result.stdout).toContain('--allow-unauthenticated');
+  });
+
+  test('public demo dry-run refuses the private production service', () => {
+    const result = spawnSync('bash', ['scripts/deploy-cloud-run-demo.sh', '--dry-run'], {
+      cwd: root,
+      env: { ...process.env, SERVICE: 'saint-elms-fire' },
+      encoding: 'utf8',
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('Refusing to deploy demo auth');
+  });
+
   test('trusted-proxy dry-run echoes the full contract deploy command', () => {
     const result = runDeployScript({ ENVIRONMENT: 'production', AUTH_MODE: 'trusted-proxy' });
 

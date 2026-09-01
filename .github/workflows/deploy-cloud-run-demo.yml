@@ -1,0 +1,80 @@
+name: Deploy Cloud Run demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cloud-run-demo
+  cancel-in-progress: true
+
+env:
+  PROJECT_ID: saint-elms-fire
+  PROJECT_NUMBER: "543329415341"
+  REGION: asia-south1
+  SERVICE: saint-elms-fire-demo
+  RUNTIME_SA: saint-elms-fire-app@saint-elms-fire.iam.gserviceaccount.com
+  DEPLOYER_SA: saint-elms-fire-deployer@saint-elms-fire.iam.gserviceaccount.com
+  AR_REPO: cloud-run-source-deploy
+  WIF_PROVIDER: projects/543329415341/locations/global/workloadIdentityPools/github-actions/providers/github-thecont1
+
+jobs:
+  verify-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.9"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test
+        run: bun test
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Build application
+        run: bun run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SA }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authenticate Docker to Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Build and push immutable image
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPO}/saint-elms-fire:${GITHUB_SHA}"
+          docker build \
+            --platform linux/amd64 \
+            --build-arg "NEXT_PUBLIC_GIT_COMMIT_SHA=${GITHUB_SHA}" \
+            --tag "$image" .
+          docker push "$image"
+          echo "uri=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy and verify public demo
+        env:
+          DEPLOY_IMAGE: ${{ steps.image.outputs.uri }}
+        run: scripts/deploy-cloud-run-demo.sh
