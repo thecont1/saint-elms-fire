@@ -26,12 +26,20 @@ import {
   resolveProdContext,
   fetchJson,
   sleep,
+  parseBaseUrlArg,
   type ProdContext,
 } from './lib/prod-context';
 
 const argv = process.argv.slice(2);
 const quick = argv.includes('--quick');
-const baseUrlArg = argv.find((arg) => arg.startsWith('http'));
+
+let baseUrlArg: string | undefined;
+try {
+  baseUrlArg = parseBaseUrlArg(argv);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(2);
+}
 
 const STUDENT_ID = process.env.SMOKE_STUDENT_ID || 'student-alex';
 const WAIT_SECONDS = quick ? 0 : Number(process.env.SMOKE_WAIT_SECONDS ?? 90);
@@ -236,8 +244,8 @@ async function testBackgroundPipeline(ctx: ProdContext): Promise<void> {
   //                            loop was throttled/scaled away (the exact
   //                            failure --no-cpu-throttling prevents). FAIL.
   //   - `running`/terminal   — the worker claimed the job during the silent
-  //                            window; a podcast legitimately runs up to ~225s
-  //                            (75s generation + 120s TTS), so keep polling
+  //                            window; a podcast legitimately runs up to ~285s
+  //                            (75s generation + 180s TTS), so keep polling
   //                            to the terminal state.
   const firstCheck = await fetchJson<JobPoll>(
     `${ctx.baseUrl}/api/jobs/${jobId}`,

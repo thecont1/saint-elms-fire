@@ -24,11 +24,19 @@ import {
   resolveProdContext,
   fetchJson,
   pollArtifactToTerminal,
+  parseBaseUrlArg,
   type ProdContext,
 } from './lib/prod-context';
 
 const argv = process.argv.slice(2);
-const baseUrlArg = argv.find((arg) => arg.startsWith('http'));
+
+let baseUrlArg: string | undefined;
+try {
+  baseUrlArg = parseBaseUrlArg(argv);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(2);
+}
 
 const ADMIN_ID = process.env.GOLDEN_ADMIN_ID || 'prof-golden-path';
 const RUN_ID = Date.now().toString(36);

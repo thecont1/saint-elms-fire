@@ -86,7 +86,10 @@ export function pcmToWav(pcm: Buffer, sampleRate = 24_000, channels = 1): Buffer
   return Buffer.concat([header, pcm]);
 }
 
-const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
+// Gemini TTS (gemini-2.5-flash-preview-tts) synthesis can exceed the old 30s
+// ceiling per segment (2026-08-31 deploy failed tts_unavailable at the limit);
+// 60s leaves headroom while the caller's AbortSignal still bounds total job time.
+const DEFAULT_FETCH_TIMEOUT_MS = 60_000;
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
@@ -105,12 +108,28 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = D
 
 const GEMINI_TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 const GEMINI_VOICES = { HOST: 'Kore', GUEST: 'Puck' } as const;
+// Gemini TTS latency scales with text length and is superlinear for long
+// inputs (~50-65ms/char for 35-124 char lines; a 520-char line exceeded 60s,
+// measured 2026-09-01). The thinking-era generator writes much longer speaker
+// lines than the 120s-era scripts, so a single long line could blow the
+// per-request fetch ceiling. Chunking keeps every request well under it
+// (200 chars ≈ 10-15s), same pattern as sarvamTts.
+const GEMINI_TTS_CHAR_LIMIT = 200;
+// Transient-capacity retry (2026-09-01: the Gemini fleet flaps 429/503
+// "high demand" errors while the generation path already retries via
+// genkit) — TTS chunks get the same treatment. Bounded to 2 retries with
+// short backoff; fetch timeouts are NOT retried: a slow endpoint would only
+// double the pressure on the synthesis deadline.
+const GEMINI_TTS_RETRIES = 2;
+const GEMINI_TTS_BACKOFF_MS = [2_000, 5_000];
 
-export const geminiTts: TtsAdapter = {
-  name: 'gemini-tts',
-  async synthesize(segment, signal) {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-    if (!apiKey) throw new TtsUnavailableError('GEMINI_API_KEY not configured');
+async function synthesizeGeminiChunk(
+  text: string,
+  voiceName: string,
+  apiKey: string,
+  signal?: AbortSignal,
+): Promise<Buffer> {
+  for (let attempt = 0; ; attempt += 1) {
     const response = await fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent`,
       {
@@ -118,25 +137,49 @@ export const geminiTts: TtsAdapter = {
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         signal,
         body: JSON.stringify({
-          contents: [{ parts: [{ text: segment.text }] }],
+          contents: [{ parts: [{ text }] }],
           generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_VOICES[segment.speaker] } },
+              voiceConfig: { prebuiltVoiceConfig: { voiceName } },
             },
           },
         }),
       },
     );
-    if (!response.ok) {
+    if (response.ok) {
+      const json = await response.json() as {
+        candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;
+      };
+      const data = json.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (data) return pcmToWav(Buffer.from(data, 'base64'));
+      // 200 without audio — fall through and retry like a capacity flap.
+    } else if (response.status !== 429 && response.status < 500) {
+      // Deterministic client errors (400/401/404) will not improve with retries.
       throw new TtsUnavailableError(`Gemini TTS responded ${response.status}`);
     }
-    const json = await response.json() as {
-      candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;
-    };
-    const data = json.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (!data) throw new TtsUnavailableError('Gemini TTS returned no audio');
-    return pcmToWav(Buffer.from(data, 'base64'));
+    if (attempt >= GEMINI_TTS_RETRIES) {
+      throw new TtsUnavailableError(
+        response.ok ? 'Gemini TTS returned no audio' : `Gemini TTS responded ${response.status}`,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, GEMINI_TTS_BACKOFF_MS[attempt]));
+  }
+}
+
+export const geminiTts: TtsAdapter = {
+  name: 'gemini-tts',
+  async synthesize(segment, signal) {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!apiKey) throw new TtsUnavailableError('GEMINI_API_KEY not configured');
+    const chunks = splitTextIntoChunks(segment.text, GEMINI_TTS_CHAR_LIMIT);
+    const audioBuffers: Buffer[] = [];
+    for (const text of chunks) {
+      audioBuffers.push(
+        await synthesizeGeminiChunk(text, GEMINI_VOICES[segment.speaker], apiKey, signal),
+      );
+    }
+    return concatenateWavSegments(audioBuffers);
   },
 };
 
@@ -214,8 +257,11 @@ export function selectTtsAdapters(modelId: string): { primary: TtsAdapter; fallb
 }
 
 /** Phase 7, Track A1: per-segment caps exist, but a long episode needs an
- *  overall ceiling so synthesis terminates in bounded time. */
-export const PODCAST_SYNTHESIS_DEADLINE_MS = 120_000;
+ *  overall ceiling so synthesis terminates in bounded time. 180s (raised from
+ *  120s on 2026-09-01): measured throughput is ~65ms/char and thinking-era
+ *  scripts run 1850+ chars, so the 120s ceiling aborted mid-podcast (production
+ *  tts_unavailable at 161s = ~41s generation + 120s synthesis deadline). */
+export const PODCAST_SYNTHESIS_DEADLINE_MS = 180_000;
 
 /**
  * Synthesizes a complete two-voice podcast from a dialogue script.

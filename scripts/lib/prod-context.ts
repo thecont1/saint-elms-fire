@@ -6,6 +6,7 @@
 import { execFileSync } from 'node:child_process';
 
 export const DEFAULT_SERVICE_URL = 'https://saint-elms-fire-ldyuznepoq-el.a.run.app';
+export const APPROVED_ORIGINS = new Set([DEFAULT_SERVICE_URL]);
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'saint-elms-fire';
 const PROXY_SECRET_NAME = process.env.AUTH_PROXY_SECRET_NAME || 'saint-elms-auth-proxy-secret';
 
@@ -22,6 +23,36 @@ function gcloud(args: string[]): string {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
   }).trim();
+}
+
+/**
+ * Parse the first positional CLI argument as a target base URL. Any supplied
+ * value is validated against `approvedOrigins` and rejected before credentials
+ * are resolved, preventing a malformed target from falling through to the
+ * default Cloud Run service.
+ */
+export function parseBaseUrlArg(
+  argv: string[],
+  approvedOrigins: Set<string> = APPROVED_ORIGINS,
+): string | undefined {
+  const positional = argv.find((arg) => !arg.startsWith('--'));
+  if (!positional) return undefined;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(positional);
+  } catch {
+    throw new Error(`Invalid target URL: ${positional}`);
+  }
+
+  if (parsed.protocol !== 'https:' || !approvedOrigins.has(parsed.origin)) {
+    throw new Error(
+      `Refusing to send credentials to non-approved origin: ${parsed.origin}. ` +
+        `Approved: ${[...approvedOrigins].join(', ')}`,
+    );
+  }
+
+  return positional;
 }
 
 export function resolveProdContext(argvBaseUrl?: string): ProdContext {

@@ -8,12 +8,14 @@
 import type { JobRecord, JobErrorCategory, JobKind } from './job-queue';
 import type { GeneratedArtifact, ArtifactErrorCategory } from './artifacts';
 
-/** Above the worst-case bounded job duration (75s generation + 120s TTS +
- *  30s storage ≈ 225s) so a legitimately slow job is never reclaimed. */
+/** Above the worst-case bounded job duration (75s generation + 180s TTS +
+ *  30s storage ≈ 285s) so a legitimately slow job is never reclaimed. */
 export const JOB_LEASE_MS = 5 * 60_000;
 export const MAX_JOB_ATTEMPTS = 3;
 
-const DEFAULT_PODCAST_CEILING_MS = 4 * 60_000;
+// 285s = 75s generation + 180s synthesis (PODCAST_SYNTHESIS_DEADLINE_MS,
+// raised 2026-09-01 for thinking-era script lengths) + 30s storage.
+const DEFAULT_PODCAST_CEILING_MS = 285_000;
 
 export function parsePodcastCeilingMs(value: string | undefined): number {
   if (!value || !/^\d+$/.test(value)) return DEFAULT_PODCAST_CEILING_MS;
@@ -25,7 +27,7 @@ export function parsePodcastCeilingMs(value: string | undefined): number {
 
 /** Wall-clock dead-letter ceilings measured from createdAt. They MUST sit
  *  above each pipeline's own bounded worst case (podcast ≈ 75s generation +
- *  120s TTS + 30s storage ≈ 225s; PDF ≈ 75s + render + 30s ≈ 110s): a
+ *  180s TTS + 30s storage ≈ 285s; PDF ≈ 75s + render + 30s ≈ 110s): a
  *  legitimately running job always reaches a terminal state by its own
  *  deadlines before the watchdog may fire. A lower ceiling kills in-flight
  *  work — the artifacts list endpoint sweeps on every UI poll, so an

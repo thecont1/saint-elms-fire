@@ -9,7 +9,11 @@ import { sarvamGenerate, SARVAM_MODEL } from '@/ai/sarvam';
  * into hammering Firestore/Gemini on every request.
  */
 
-const PROBE_TIMEOUT_MS = 15_000;
+// Gemini 3.7 Flash runs thinking mode: a trivial prompt round-trips in ~26s
+// (measured 2026-08-31), so the generation probe needs headroom beyond the old
+// 15s ceiling or /api/health falsely reports gemini=down. Firestore probes
+// finish in milliseconds; this constant only bounds hangs.
+const PROBE_TIMEOUT_MS = 45_000;
 // Above the UI's 10s polling interval so normal requests are served from
 // cache without firing generation probes on every poll. Deep checks happen
 // only when explicitly requested (?deep=true) or on cold cache.

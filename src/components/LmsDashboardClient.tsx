@@ -138,19 +138,38 @@ export function LmsDashboardClient({
     return () => root.classList.remove('admin-theme');
   }, [role]);
 
+  // Focus target for the persona-switch transition veil. Focus is moved here
+  // when a switch begins so keyboard users land on the status while the rest
+  // of the app is inert.
+  const personaVeilRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isChangingPersona) personaVeilRef.current?.focus();
+  }, [isChangingPersona]);
+
   const handlePersonaChange = async (persona: DemoPersonaId) => {
+    if (persona === demoSession?.selected.id || isChangingPersona) return;
     setIsChangingPersona(true);
+    // Demo personas are server-resolved principals. A full navigation is
+    // required so every server component and API scope switches atomically;
+    // render an explicit veil meanwhile to prevent any stale-persona flash.
+    // The request is bounded: timeout, abort, or failure always clears the
+    // veil so the dashboard can never stay permanently obscured.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
       const response = await fetch('/api/session', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ persona }),
+        signal: controller.signal,
       });
       if (!response.ok) throw new Error(`Session switch failed: ${response.status}`);
       window.location.assign('/');
     } catch (error) {
       console.error(error);
       setIsChangingPersona(false);
+    } finally {
+      clearTimeout(timeout);
     }
   };
 
@@ -323,9 +342,29 @@ export function LmsDashboardClient({
     (releasedProgrammeLessonCount / Math.max(1, allProgrammeLessons.length)) * 100
   );
 
+  // While the persona switch is pending the app subtree is inert, so the veil
+  // (kept outside that subtree so it can still receive focus) is the only
+  // active surface and no underlying control can take keyboard focus.
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-marine-900">
-      {/* 1. TOP HEADER / APP NAVIGATION */}
+      {isChangingPersona && (
+        <div
+          ref={personaVeilRef}
+          tabIndex={-1}
+          className="fixed inset-0 z-[100] grid place-items-center bg-white/95 backdrop-blur-sm outline-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-3 rounded-full border border-beacon-200 bg-white px-5 py-3 text-sm font-semibold text-marine-800 shadow-lg">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-beacon-500 border-t-transparent" />
+            Plotting the selected student’s voyage…
+          </div>
+        </div>
+      )}
+      {/* 1. TOP HEADER / APP NAVIGATION — start of the app subtree, inert while
+          the persona switch is pending so underlying controls cannot receive
+          or activate keyboard focus. */}
+      <div inert={isChangingPersona ? true : undefined} className="contents">
       <Navigation
         currentRole={role}
         currentPersona={demoSession?.selected}
@@ -686,6 +725,7 @@ export function LmsDashboardClient({
           onNavigate={setWikiNodeId}
         />
       )}
+      </div>
     </div>
   );
 }

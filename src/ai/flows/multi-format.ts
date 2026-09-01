@@ -47,7 +47,7 @@ function formatInstructions(formatType: z.infer<typeof FormatTypeSchema>, person
     return 'Produce hierarchical notes with key takeaways, concise explanations, one Mermaid or ASCII diagram where justified, and a mastery checklist.';
   }
   if (formatType === 'podcast_dialogue') {
-    return 'Produce a natural two-host podcast script with Alex asking sharp questions, Sam answering only from the source, speaker labels, pacing cues, a hook, and a takeaway.';
+    return 'Produce a natural two-host podcast script with Alex asking sharp questions, Sam answering only from the source, speaker labels, pacing cues, a hook, and a takeaway. Keep the entire script under 1800 characters (roughly 12-16 dialogue lines) — synthesis is bounded, and longer scripts cannot be fully rendered as audio.';
   }
   return `Produce a four-minute video lecture script with timestamps, camera directions, on-screen diagram cues, a hook, explanation, and synthesis. Presenter persona: ${persona || 'clear technical educator'}.`;
 }
