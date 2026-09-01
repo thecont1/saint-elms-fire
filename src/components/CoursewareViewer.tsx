@@ -297,15 +297,23 @@ function ProgrammeTree({
   );
 
   const [expansionState, setExpansionState] = useState<ExpansionState>(() => {
-    const saved = loadExpansionState();
-    if (saved) return saved;
-    // Compute default: latest sailing semester expanded, rest collapsed
+    // Initial state must match the server render: compute defaults only.
+    // localStorage is applied after hydration (below) — reading it here
+    // returns null during SSR/SIG but a saved value on the client, which
+    // causes a hydration mismatch on aria-expanded and the chevron rotation.
     const semesters: Record<string, boolean> = {};
     for (const sem of outline.semesters) {
       semesters[sem.id] = sem.id === latestSailingSemId;
     }
     return { semesters, courses: {} };
   });
+
+  // Apply any persisted expansion state after mount (client only).
+  useEffect(() => {
+    const saved = loadExpansionState();
+    if (saved) setExpansionState(saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Persist on every change
   useEffect(() => {
