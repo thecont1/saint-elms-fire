@@ -18,8 +18,16 @@ export class AuthorizationError extends Error {
   }
 }
 
+function getEnv(name: string): string | undefined {
+  return process.env[name];
+}
+
+function deploymentEnv(): string | undefined {
+  return getEnv('SAINT_ELMS_ENV') || getEnv('NODE_ENV');
+}
+
 function isProduction(): boolean {
-  return process.env.NODE_ENV === 'production';
+  return deploymentEnv() === 'production';
 }
 
 function getAuthMode(): string | undefined {

@@ -53,8 +53,16 @@ export function getDemoPersona(id: string | null | undefined): DemoPersona | und
   return DEMO_PERSONAS.find((persona) => persona.id === id);
 }
 
+function getEnv(name: string): string | undefined {
+  return process.env[name];
+}
+
+function deploymentEnv(): string | undefined {
+  return getEnv('SAINT_ELMS_ENV') || getEnv('NODE_ENV');
+}
+
 export function demoSessionsEnabled(): boolean {
-  return process.env.NODE_ENV !== 'production' && process.env.AUTH_MODE !== 'trusted-proxy';
+  return deploymentEnv() !== 'production' && process.env.AUTH_MODE !== 'trusted-proxy';
 }
 
 function signingSecret(): string {
