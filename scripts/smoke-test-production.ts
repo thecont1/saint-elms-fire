@@ -26,12 +26,20 @@ import {
   resolveProdContext,
   fetchJson,
   sleep,
+  parseBaseUrlArg,
   type ProdContext,
 } from './lib/prod-context';
 
 const argv = process.argv.slice(2);
 const quick = argv.includes('--quick');
-const baseUrlArg = argv.find((arg) => arg.startsWith('http'));
+
+let baseUrlArg: string | undefined;
+try {
+  baseUrlArg = parseBaseUrlArg(argv);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(2);
+}
 
 const STUDENT_ID = process.env.SMOKE_STUDENT_ID || 'student-alex';
 const WAIT_SECONDS = quick ? 0 : Number(process.env.SMOKE_WAIT_SECONDS ?? 90);

@@ -13,7 +13,7 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { resolveProdContext, fetchJson, type ProdContext } from './lib/prod-context';
+import { resolveProdContext, fetchJson, parseBaseUrlArg, type ProdContext } from './lib/prod-context';
 
 const ADMIN_ID = process.env.WPG_ADMIN_ID || 'admin-wpg-import';
 const STUDENT_ID = process.env.WPG_STUDENT_ID || 'student-wpg-import';
@@ -308,7 +308,16 @@ async function releaseCheck(ctx: ProdContext, refs: EntityRefs, entityModuleId: 
 async function main() {
   const argv = process.argv.slice(2);
   const skipRelease = argv.includes('--skip-release');
-  const ctx = resolveProdContext(argv.find((arg) => arg.startsWith('http')));
+
+  let baseUrlArg: string | undefined;
+  try {
+    baseUrlArg = parseBaseUrlArg(argv);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(2);
+  }
+
+  const ctx = resolveProdContext(baseUrlArg);
   const lessons = collect();
   console.log(`Collected ${lessons.length} lessons from content/`);
 
