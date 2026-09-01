@@ -17,32 +17,30 @@ Saint Elms Fire takes uploaded markdown lessons and, through a gated release pip
 
 ## Architecture
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    Next.js 16 App Router                     │
-│  (Student dashboard / Admin dashboard / API routes)         │
-├─────────────────────────────────────────────────────────────┤
-│  Genkit 1.41 Flows                                          │
-│  ├── student-chat.ts      → RAG-grounded tutor chat         │
-│  ├── ingestion.ts         → chunk + embed + graph extract   │
-│  ├── generate-quiz.ts     → concept-targeted quiz questions │
-│  ├── socratic-tutor.ts    → proactive challenge generation  │
-│  ├── evaluate-socratic.ts → response evaluation             │
-│  ├── multi-format.ts      → notes / podcast / video script  │
-│  └── incident-summary.ts  → error summarization             │
-├─────────────────────────────────────────────────────────────┤
-│  Gemini 3.7 Flash (primary)  ·  Sarvam 105B (fallback)      │
-├─────────────────────────────────────────────────────────────┤
-│  Firestore (native mode)                                    │
-│  ├── programmes / subjects / semesters (UGC hierarchy)      │
-│  ├── courses / modules / lessons                            │
-│  ├── courseware_chunks (768-dim vector search)              │
-│  ├── knowledge_nodes / knowledge_edges (Second Brain)       │
-│  ├── releases (state machine: pending → released/failed)    │
-│  ├── quiz_submissions / socratic_sessions                   │
-│  └── generated_formats                                      │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph CloudRun["Cloud Run"]
+        Next["Next.js 16 App Router"]
+        GenKit["Genkit 1.41 Flows"]
+        Gemini["Gemini 3.7 Flash + Sarvam 105B fallback"]
+    end
+    Firestore[("Firestore (native mode)")]
+    GCS[("Google Cloud Storage")]
+    Secret[("Secret Manager")]
+    Student(["Student / Internet"])
+    Student --> Next
+    Next --> GenKit
+    GenKit --> Gemini
+    GenKit <--> Firestore
+    Next <--> Firestore
+    GenKit --> GCS
+    Next --> GCS
+    Next --> Secret
+    GenKit --> Secret
 ```
+
+For the editable source with component responsibilities and environment flags, open `artifacts/architecture/architecture.drawio` in [diagrams.net](https://app.diagrams.net/).
+
 
 ### UGC Academic Hierarchy
 
@@ -132,8 +130,8 @@ The container exposes port 8080 with a healthcheck against `/health`.
 | Gemini 3.5+ model | ✅ Gemini 3.7 Flash (`gemini-3.7-flash`) |
 | Google agent framework | ✅ Genkit 1.41 (`@genkit-ai/google-genai`) |
 | At least one GCP service | ✅ Firestore (native mode), Cloud Run, Secret Manager |
-| Public GitHub repository | ✅ MIT licensed |
-| Working demo (live or video) | ✅ Demo video + private Cloud Run deployment |
+| Public GitHub repository | ✅ |
+| Working demo (live or video) | ✅ https://saint-elms-fire-demo-543329415341.asia-south1.run.app |
 
 ## Tech stack
 
@@ -144,6 +142,4 @@ The container exposes port 8080 with a healthcheck against `/health`.
 - **Runtime:** Bun (install) / Node 22 (build + serve on Cloud Run)
 - **Fonts:** Fraunces (display), Instrument Sans (body), IBM Plex Mono (code)
 
-## License
 
-MIT

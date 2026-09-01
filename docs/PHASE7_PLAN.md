@@ -162,10 +162,9 @@ Findings from auditing `/Users/home/DEV/tools/relexplorer`:
   — i.e., you'd port a monolith and then rewrite its core.
 - The genuinely decoupled, reusable parts are ~600 lines: `highlightController.ts`,
   `dynamicLayout.ts`, `egoNetwork.ts`.
-- Licensing note: relex is **BSL 1.0** while this repo is MIT and public for the buildathon.
-  Copying BSL code into it creates a license inconsistency in a submission artifact. (The author
-  is the same person, so this is a paperwork concern, not a rights concern — but judges read
-  repos.)
+- Licensing note: relex is **BSL 1.0**. Copying BSL code into this repo creates a license
+  inconsistency in a submission artifact. (The author is the same person, so this is a paperwork
+  concern, not a rights concern — but judges read repos.)
 
 **Decision:** the current SVG constellation stays. It was purpose-built for this data model in
 Phase 6 (dashed peer rings, lesson provenance, wiki navigation, origin styling), is cohesive
@@ -188,7 +187,7 @@ Each is additive, revertible, and touches no data flow. Cut entirely if Track A 
 
 ### B3. Post-submission backlog (recorded, not scheduled)
 
-"Constellation 2.0" spike: adopt Cytoscape + fcose directly (MIT/Apache), port relex's three
+"Constellation 2.0" spike: adopt Cytoscape + fcose directly, port relex's three
 decoupled libs verbatim, rebuild the stylesheet around knowledge-node categories with our
 provenance encodings, and add drag/wheel-zoom. Decision gate after submission.
 

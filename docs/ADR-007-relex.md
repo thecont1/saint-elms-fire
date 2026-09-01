@@ -31,10 +31,9 @@ as a library for the constellation, or treat relex as a visual-design reference?
   (renderer-agnostic hover/pin state machine with dwell-then-fade timing),
   `dynamicLayout.ts` (space-aware sizing/collision math), `egoNetwork.ts`
   (1-hop neighbor computation). These are portable as-is.
-- **Licensing:** relex is **BSL 1.0**; this repo is MIT and public for the
-  buildathon. The author is the same person, so this is a paperwork concern
-  rather than a rights concern — but embedding BSL code in a public MIT
-  submission artifact creates a license inconsistency judges will read.
+- **Licensing:** relex is **BSL 1.0**. The author is the same person, so this
+  is a paperwork concern rather than a rights concern — but embedding BSL code
+  in a submission artifact creates a license inconsistency judges will read.
 - **Current visualizer:** raw inline SVG with a deterministic golden-angle
   layout (`KnowledgeGraphVisualizer.tsx`), cohesive with the mariner's-chart
   language, legible at the expected scale (tens of nodes, low hundreds max),
@@ -47,7 +46,7 @@ The current SVG constellation stays. Do not extract `GraphCanvas` or any
 Cytoscape code before the submission.
 
 Post-submission, run a "Constellation 2.0" spike: adopt Cytoscape + fcose
-directly (MIT/Apache), reimplement the behavior of the three decoupled libs
+directly, reimplement the behavior of the three decoupled libs
 (`highlightController`, `dynamicLayout`, `egoNetwork`), and rebuild the
 stylesheet around knowledge-node categories with our provenance encodings,
 adding drag/wheel-zoom. Decision gate after the submission.
@@ -56,7 +55,7 @@ adding drag/wheel-zoom. Decision gate after the submission.
 
 - ✅ Zero regression risk to a core demo feature inside the deadline window;
   the constellation keeps its Phase 6 data-model affordances.
-- ✅ No BSL code enters the MIT submission repo.
+- ✅ No BSL code enters the submission repo.
 - ✅ Cheap, revertible borrows remain available pre-submission if time allows
   (at most two, porting ideas rather than code): ego-network fade on hover
   (~130ms in / 380ms dwell / 500ms fade), progressive label disclosure past a
