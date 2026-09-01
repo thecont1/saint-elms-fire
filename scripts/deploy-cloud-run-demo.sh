@@ -121,8 +121,20 @@ DESCRIBE=(gcloud run services describe "$SERVICE" --project="$PROJECT_ID" --regi
 THROTTLING="$("${DESCRIBE[@]}" --format='value(spec.template.metadata.annotations["run.googleapis.com/cpu-throttling"])')"
 MIN_SCALE="$("${DESCRIBE[@]}" --format='value(spec.template.metadata.annotations["autoscaling.knative.dev/minScale"])')"
 MAX_SCALE="$("${DESCRIBE[@]}" --format='value(spec.template.metadata.annotations["autoscaling.knative.dev/maxScale"])')"
-AUTH_MODE_LIVE="$("${DESCRIBE[@]}" --format='value(spec.template.spec.containers[0].env[?name="AUTH_MODE"].value)')"
-DEPLOY_ENV_LIVE="$("${DESCRIBE[@]}" --format='value(spec.template.spec.containers[0].env[?name="SAINT_ELMS_ENV"].value)')"
+
+read_env_value() {
+  local name="$1"
+  "${DESCRIBE[@]}" --format=json | node -e '
+    const fs = require("node:fs");
+    const name = process.argv[1];
+    const service = JSON.parse(fs.readFileSync(0, "utf8"));
+    const vars = service?.spec?.template?.spec?.containers?.[0]?.env || [];
+    process.stdout.write(vars.find((item) => item.name === name)?.value || "");
+  ' "$name"
+}
+
+AUTH_MODE_LIVE="$(read_env_value AUTH_MODE)"
+DEPLOY_ENV_LIVE="$(read_env_value SAINT_ELMS_ENV)"
 SERVICE_URL="$("${DESCRIBE[@]}" --format='value(status.url)')"
 
 CONTRACT_OK=true
