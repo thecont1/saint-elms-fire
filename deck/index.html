@@ -50,6 +50,9 @@ body::before{
 .deck{
   position:fixed;inset:0;overflow:hidden;z-index:1;
 }
+/* while the slide index is open, the deck (and its overlay) sit above the
+   fixed nav/dots/progress — the popover truly owns the viewport */
+body.menu-open .deck{z-index:12}
 /* transform lives on .track, not .deck: overflow clip applies in the
    element's local space, so clipping + translating the same element
    clips every slide beyond the first out of existence. */
@@ -62,7 +65,7 @@ body::before{
 }
 /* frozen deck header — logo, wordmark and rule stay put while slides slide by */
 .deck-head{
-  position:absolute;top:56px;left:72px;right:72px;z-index:3;
+  position:absolute;top:56px;left:72px;right:72px;z-index:11;
 }
 /* brand lockup — frozen above every slide */
 .brand{
@@ -84,10 +87,32 @@ body::before{
   font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;
   color:var(--marine-600);text-transform:uppercase;
 }
-.brand-right{
-  margin-left:auto;font-family:var(--font-mono);font-size:11px;
-  color:var(--marine-600);letter-spacing:.08em;
+/* slide index — styled dropdown on desktop, hamburger on mobile */
+.deck-menu{margin-left:auto;position:relative;font-family:var(--font-mono)}
+.menu-btn{
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font:inherit;font-size:11px;letter-spacing:.08em;color:var(--marine-600);
+  background:none;border:1px solid transparent;border-radius:999px;padding:7px 12px;
 }
+.menu-btn:hover{color:var(--marine-900);background:var(--beacon-50)}
+.menu-caret{font-size:9px;color:var(--beacon-500)}
+.menu-burger{display:none}
+.menu-list{
+  position:absolute;top:calc(100% + 10px);right:0;min-width:250px;
+  background:var(--paper);border:1px solid var(--beacon-100);border-radius:12px;
+  box-shadow:0 10px 30px rgba(22,34,63,.14),0 1px 3px rgba(22,34,63,.08);
+  padding:6px;display:none;z-index:20;
+}
+.deck-menu.open .menu-list{display:block}
+.menu-list button{
+  display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;
+  padding:9px 12px;border:0;border-radius:8px;background:none;cursor:pointer;
+  font:inherit;font-size:11px;letter-spacing:.06em;color:var(--marine-700);
+}
+.menu-list button:hover{background:var(--beacon-50);color:var(--marine-900)}
+.menu-list button.on{color:var(--beacon-700);background:var(--beacon-50)}
+.menu-list .mi{font-size:9px;color:var(--beacon-400);min-width:14px}
+.menu-list button.on .mi{color:var(--beacon-700)}
 .rule{
   height:1px;background:var(--beacon-200);margin:18px 0 0;flex:none;
 }
@@ -104,7 +129,7 @@ body::before{
 .eyebrow::after{content:"";flex:0 0 56px;height:1px;background:var(--beacon-300)}
 h1,h2{
   font-family:var(--font-display);color:var(--marine-950);
-  font-weight:500;letter-spacing:-0.01em;
+  font-weight:500;letter-spacing:-0.01em;text-wrap:balance;
 }
 h1{font-size:clamp(44px,5.2vw,72px);line-height:1.04}
 h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
@@ -166,11 +191,43 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 .dots{position:fixed;left:18px;bottom:18px;z-index:10;display:flex;gap:7px}
 .dots i{width:7px;height:7px;border-radius:50%;background:var(--beacon-200)}
 .dots i.on{background:var(--beacon-700)}
+/* short viewports (landscape phones, resized windows) — scroll instead of crop;
+   restores vertical reachability without collapsing the desktop grids */
+@media (max-height:620px){
+  .slide{overflow-y:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch;
+    padding-top:96px;padding-bottom:84px}
+  .deck-head{top:24px}
+}
 @media (max-width:900px){
-  .slide{padding:96px 24px 40px;overflow-y:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .slide{padding:96px 24px 84px;overflow-y:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
   .deck-head{top:24px;left:24px;right:24px}
   .grid2,.grid3{grid-template-columns:1fr}
   .brand-word{font-size:12px}
+  .menu-current,.menu-caret{display:none}
+  .menu-burger{display:flex;flex-direction:column;gap:4px}
+  .menu-burger i{width:16px;height:1.5px;background:var(--marine-800);border-radius:1px;transition:transform .25s,opacity .2s}
+  .menu-btn{padding:10px;background:#fff;border-color:var(--beacon-200);box-shadow:0 1px 3px rgba(22,34,63,.12);position:relative;z-index:30}
+  /* burger morphs into a close X while the index is open */
+  .deck-menu.open .menu-burger i:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+  .deck-menu.open .menu-burger i:nth-child(2){opacity:0}
+  .deck-menu.open .menu-burger i:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+  /* full-viewport popover: the slide index becomes the screen */
+  .menu-list{
+    position:fixed;inset:0;min-width:0;border:0;border-radius:0;
+    padding:96px 32px 40px;overflow-y:auto;z-index:20;
+    flex-direction:column;justify-content:safe center;
+    background-image:linear-gradient(to right, rgba(62,94,200,.05) 1px, transparent 1px),linear-gradient(to bottom, rgba(62,94,200,.045) 1px, transparent 1px);
+    background-size:56px 56px;
+  }
+  .deck-menu.open .menu-list{display:flex}
+  .menu-list button{
+    font-family:var(--font-display);font-size:clamp(20px,5.6vw,30px);
+    letter-spacing:0;color:var(--marine-800);
+    padding:16px 4px;gap:16px;border-radius:0;
+    border-bottom:1px solid var(--beacon-100);
+  }
+  .menu-list button:last-child{border-bottom:0}
+  .menu-list .mi{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em}
 }
 </style>
 </head>
@@ -182,7 +239,14 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
       <svg class="corona" viewBox="0 0 64 64" role="img" aria-label="Saint Elms Fire CoronaMark"><circle cx="32" cy="32" r="28.5" fill="#3E5EC0"/><circle cx="32" cy="32" r="24" fill="none" stroke="#F6F7FB" stroke-width="1.2" opacity="0.45"/><g transform="translate(32,32)"><circle r="5.4" fill="#F6F7FB"/><g stroke="#F6F7FB" stroke-linecap="round"><line x1="9.1" y1="0" x2="17.9" y2="0" stroke-width="3.4"/><line x1="6.4" y1="6.4" x2="12.25" y2="12.25" stroke-width="2.4"/><line x1="0" y1="9.1" x2="0" y2="17.9" stroke-width="3.4"/><line x1="-6.4" y1="6.4" x2="-12.25" y2="12.25" stroke-width="2.4"/><line x1="-9.1" y1="0" x2="-17.9" y2="0" stroke-width="3.4"/><line x1="-6.4" y1="-6.4" x2="-12.25" y2="-12.25" stroke-width="2.4"/><line x1="0" y1="-9.1" x2="0" y2="-17.9" stroke-width="3.4"/><line x1="6.4" y1="-6.4" x2="12.25" y2="-12.25" stroke-width="2.4"/></g></g></svg>
       <div class="brand-word">Saint <b>Elms</b> Fire</div>
     </a>
-    <div class="brand-right" id="brand-right"></div>
+    <nav class="deck-menu" id="deck-menu" aria-label="Slide index">
+      <button class="menu-btn" id="menu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Slide index">
+        <span class="menu-current" id="menu-current"></span>
+        <span class="menu-caret" aria-hidden="true">&#9662;</span>
+        <span class="menu-burger" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <div class="menu-list" id="menu-list" role="menu"></div>
+    </nav>
   </header>
   <div class="rule"></div>
 </div>
@@ -193,7 +257,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 <section class="slide" data-context="Intent · Purpose · Vision">
   <div class="stage">
     <p class="eyebrow">An AI-native LMS</p>
-    <h1>Guidance through<br>the storm.</h1>
+    <h1>Guidance through the storm.</h1>
     <p class="lede">
       Most learning platforms are digital filing cabinets — they store, track,
       and file. Saint Elms Fire puts learning back at the masthead, built with
@@ -215,7 +279,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 <section class="slide" data-context="Why we built it">
   <div class="stage">
     <p class="eyebrow">The diagnosis</p>
-    <h2>Most LMSs are designed for Management.<br class="lg-hide"> Learning deserves its own architect.</h2>
+    <h2>Most LMSs are designed for Management. Learning deserves its own architect.</h2>
     <div class="grid2">
       <div class="card">
         <span class="k">The incumbent</span>
@@ -247,7 +311,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 <section class="slide" data-context="Three vital features">
   <div class="stage">
     <p class="eyebrow">The vision</p>
-    <h2>What good is AI if it cannot take on<br>100&times; the work a human can?</h2>
+    <h2>What good is AI if it cannot take on 100&times; the work a human can?</h2>
     <div class="grid3">
       <div class="card">
         <span class="k">01 · The Second Brain</span>
@@ -282,7 +346,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 <section class="slide" data-context="Feature 01 · The Second Brain">
   <div class="stage">
     <p class="eyebrow">01 · A living constellation</p>
-    <h2>From Day 1, Elms builds you<br>a second brain.</h2>
+    <h2>From Day 1, Elms builds you a second brain.</h2>
     <div class="grid2" style="margin-top:20px">
       <div class="figure">
         <svg viewBox="0 0 420 260" style="width:100%;max-width:460px;height:auto">
@@ -372,7 +436,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 <section class="slide" data-context="Feature 02 · Multimodal Notes">
   <div class="stage">
     <p class="eyebrow">02 · AI at the learner&rsquo;s service</p>
-    <h2>Every learner, a different temperament.<br>Every learner, notes in their own mode.</h2>
+    <h2>Every learner, a different temperament. Every learner, notes in their own mode.</h2>
     <div class="grid3" style="margin-top:26px">
       <div class="card">
         <span class="k">PDF Study Notes</span>
@@ -408,7 +472,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 <section class="slide" data-context="Feature 03 · The Socratic Trident">
   <div class="stage">
     <p class="eyebrow">03 · Three domains, not one generalist</p>
-    <h2>One chatbot can only do an average job.<br>We give you three &mdash; each with a domain.</h2>
+    <h2>One chatbot can only do an average job. We give you three &mdash; each with a domain.</h2>
     <div class="grid3" style="margin-top:26px">
       <div class="card">
         <span class="k">◦ &nbsp;Socrates my Friend</span>
@@ -444,7 +508,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 <section class="slide" data-context="How it&rsquo;s built">
   <div class="stage">
     <p class="eyebrow">Production-grade, end-to-end</p>
-    <h2>Simple architecture. Real engineering.<br>No demo tricks.</h2>
+    <h2>Simple architecture. Real engineering. No demo tricks.</h2>
     <div class="grid2" style="margin-top:22px">
       <div class="card">
         <span class="k">The pipeline</span>
@@ -487,8 +551,7 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
   <div class="stage">
     <p class="eyebrow">The vision, stated plainly</p>
     <h2>
-      Every learner is different.<br>
-      The system should be, too.
+      Every learner is different. The system should be, too.
     </h2>
     <p class="lede">
       St. Elmo&rsquo;s fire appears at the masthead when sailors have weathered
@@ -520,34 +583,75 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
 (function(){
   var track=document.getElementById('track');
   var pageno=document.getElementById('pageno');
+  var menu=document.getElementById('deck-menu');
+  var menuList=document.getElementById('menu-list');
+  var menuCurrent=document.getElementById('menu-current');
+  var menuBtn=document.getElementById('menu-btn');
   var slides=[],n=0;
-  function go(i){
+  // Clean paths (deck root = slide 1, /2../N after) over http(s).
+  // file:// cannot pushState across paths, so it keeps hash routing.
+  var usePath=location.protocol!=='file:';
+  function baseUrl(){
+    var p=location.pathname.replace(/\/\d+\/?$/,'').replace(/index\.html$/,'');
+    return p.slice(-1)==='/'?p:p+'/';
+  }
+  function urlFor(i){return i<=0?baseUrl():baseUrl()+(i+1)}
+  function slideFromUrl(){
+    var m=location.pathname.match(/\/(\d+)\/?$/);
+    if(m)return parseInt(m[1],10);
+    m=(location.hash||'').match(/^#\/?(\d+)$/);   // legacy #/N links still resolve
+    return m?parseInt(m[1],10):1;
+  }
+  function closeMenu(){menu.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');document.body.classList.remove('menu-open')}
+  function go(i,skipUrl){
     n=Math.max(0,Math.min(slides.length-1,i));
     track.style.transform='translateX(-'+(n*100)+'vw)';
     var dots=document.querySelectorAll('.dots i');
     for(var k=0;k<dots.length;k++)dots[k].classList.toggle('on',k===n);
+    var items=menuList.children;
+    for(var j=0;j<items.length;j++)items[j].classList.toggle('on',j===n);
     document.getElementById('progress').style.width=((n+1)/slides.length*100)+'%';
     pageno.textContent=(n+1)+' / '+slides.length;
-    document.getElementById('brand-right').textContent=slides[n].getAttribute('data-context')||'';
-    location.hash='/'+(n+1);
-  }
-  function slideFromHash(){
-    var m=(location.hash||'').match(/^#\/?(\d+)$/);
-    if(!m) return 1;
-    var i=parseInt(m[1],10);
-    return isNaN(i)?1:i;
+    menuCurrent.textContent=slides[n].getAttribute('data-context')||'';
+    if(skipUrl)return;
+    if(usePath){
+      try{history.pushState(null,'',urlFor(n));}
+      catch(e){usePath=false;location.hash='/'+(n+1);}
+    }else{
+      location.hash='/'+(n+1);
+    }
   }
   window.__initDeck=function(){
     slides=Array.prototype.slice.call(document.querySelectorAll('.slide'));
     var dotsEl=document.getElementById('dots');
-    dotsEl.innerHTML='';
-    slides.forEach(function(_,k){var i=document.createElement('i');dotsEl.appendChild(i);});
-    go(slideFromHash()-1);
+    dotsEl.innerHTML='';menuList.innerHTML='';
+    slides.forEach(function(s,k){
+      dotsEl.appendChild(document.createElement('i'));
+      var b=document.createElement('button');
+      b.setAttribute('role','menuitem');
+      b.innerHTML='<span class="mi">'+('0'+(k+1)).slice(-2)+'</span><span></span>';
+      b.lastChild.textContent=s.getAttribute('data-context')||('Slide '+(k+1));
+      b.onclick=function(){go(k);closeMenu();};
+      menuList.appendChild(b);
+    });
+    go(slideFromUrl()-1);
+    if(usePath){try{history.replaceState(null,'',urlFor(n));}catch(e){usePath=false;}}
   };
   document.getElementById('prev').onclick=function(){go(n-1)};
   document.getElementById('next').onclick=function(){go(n+1)};
+  menuBtn.onclick=function(e){
+    e.stopPropagation();
+    var open=menu.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded',open?'true':'false');
+    document.body.classList.toggle('menu-open',open);
+  };
+  // Tap the popover's empty backdrop to dismiss it.
+  menuList.addEventListener('click',function(e){
+    if(e.target===menuList)closeMenu();
+  });
   // Click any brand lockup (top-left logo) to reset to the opening slide.
   document.addEventListener('click',function(e){
+    if(!e.target.closest||!e.target.closest('#deck-menu'))closeMenu();
     var a=e.target && e.target.closest ? e.target.closest('.brand-home') : null;
     if(!a) return;
     e.preventDefault();
@@ -555,14 +659,19 @@ h2{font-size:clamp(30px,3.4vw,46px);line-height:1.06}
     a.blur();
   });
   document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){closeMenu();return;}
     if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')go(n+1);
     if(e.key==='ArrowLeft'||e.key==='PageUp')go(n-1);
     if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);
   });
   __initDeck();
-  // If the user edits the hash manually, navigate to it.
+  // Back/forward buttons follow history; manual hash edits still navigate.
+  window.addEventListener('popstate',function(){
+    var i=slideFromUrl();
+    if((i-1)!==n) go(i-1,true);
+  });
   window.addEventListener('hashchange',function(){
-    var i=slideFromHash();
+    var i=slideFromUrl();
     if((i-1)!==n) go(i-1);
   });
   // Prevent iOS Safari / old WebKit from skipping the very first paint.
