@@ -2,7 +2,7 @@ import os, sys
 from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:8931"
-OUT = "/Users/home/hermes-workspace/st-elms-fire-deck/shots"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shots")
 os.makedirs(OUT, exist_ok=True)
 
 # playwright bundled browser in caches
@@ -22,7 +22,7 @@ print("CHROME =", CHROME)
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, executable_path=CHROME)
     page = browser.new_page(viewport={"width": 1440, "height": 900}, device_scale_factor=2)
-    page.goto(BASE + "/#/1", wait_until="networkidle")
+    page.goto(BASE + "/", wait_until="networkidle")
     # deck init
     page.wait_for_function("document.querySelectorAll('.slide').length===8")
     page.evaluate("window.__initDeck && window.__initDeck()")

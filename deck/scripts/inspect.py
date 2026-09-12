@@ -7,16 +7,12 @@ CHROME="/Users/home/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, executable_path=CHROME)
     page = browser.new_page(viewport={"width":1440,"height":900})
-    page.goto(BASE+"/#/1", wait_until="networkidle")
+    page.goto(BASE+"/5", wait_until="networkidle")
     page.wait_for_function("document.querySelectorAll('.slide').length===8")
-    page.wait_for_timeout(300)
-
-    # force to slide 5 and inspect
-    page.evaluate("location.hash='#/5'")
     page.wait_for_timeout(700)
 
     out = page.evaluate("""()=>{
-      const deck=document.getElementById('deck');
+      const deck=document.getElementById('track');
       const slots=[...document.querySelectorAll('.slide')].map((s,i)=>{
         const r=s.getBoundingClientRect();
         const cs=getComputedStyle(s);

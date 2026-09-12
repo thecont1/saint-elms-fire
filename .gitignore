@@ -33,3 +33,6 @@ npm-debug.log*
 # Generated Phase 10 operational evidence and demo artifacts
 artifacts/rag-index-audit-*.json
 artifacts/demo-fallback-forced-oscillations-notes.pdf
+
+# generated slide captures
+deck/shots/

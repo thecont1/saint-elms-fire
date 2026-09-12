@@ -15,7 +15,7 @@ issues = []
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, executable_path=CHROME)
     page = browser.new_page(viewport={"width":1440,"height":900})
-    page.goto(BASE+"/#/1", wait_until="networkidle")
+    page.goto(BASE+"/", wait_until="networkidle")
     page.wait_for_function("document.querySelectorAll('.slide').length===8")
     page.evaluate("window.__initDeck && window.__initDeck()")
     page.wait_for_timeout(400)
@@ -28,7 +28,7 @@ with sync_playwright() as p:
             """(i)=>{
               const s=document.querySelectorAll('.slide')[i];
               const r=el=>el?el.getBoundingClientRect():null;
-              const img=s.querySelector('.brand img');
+              const img=document.querySelector('.brand-home svg.corona');
               const h=s.querySelector('h1,h2');
               const stage=s.querySelector('.stage');
               const foot=s.querySelector('.foot');
@@ -37,7 +37,7 @@ with sync_playwright() as p:
                 const b=c.getBoundingClientRect();
                 return {h:Math.round(b.height), bottom:Math.round(b.bottom)};
               });
-              const br=r(s.querySelector('.brand'));
+              const br=r(document.querySelector('.brand'));
               const sr=r(stage);
               const fr=r(foot);
               const hr=r(h);
@@ -51,7 +51,7 @@ with sync_playwright() as p:
               return {
                 slide:i+1,
                 brandW:Math.round(br.width),
-                logoOk: img.complete && img.naturalWidth>0,
+                logoOk: img && img.getBoundingClientRect().width>0,
                 heading: h.textContent.slice(0,60),
                 stageH: stage.scrollHeight, stageC: stage.clientHeight,
                 foot: fr ? Math.round(fr.top)+'/'+Math.round(fr.bottom) : null,
