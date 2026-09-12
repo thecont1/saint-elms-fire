@@ -27,6 +27,9 @@ dist/
 *.log
 npm-debug.log*
 
+# Browser/MCP automation scratch
+.playwright-mcp/
+
 # Generated Phase 10 operational evidence and demo artifacts
 artifacts/rag-index-audit-*.json
 artifacts/demo-fallback-forced-oscillations-notes.pdf
