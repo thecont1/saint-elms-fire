@@ -2,8 +2,8 @@
 # Christ University, Bangalore
 # Programme manifest (source of truth for course and lesson metadata)
 #
-# 71 PDF rows transcribed. 43 rows currently have authored courseware under content/.
-# 29 rows remain (planned, external, or in authoring) per the action plan dated 2026-08-31.
+# 71 PDF rows transcribed. 58 rows currently have authored courseware under content/.
+# 14 rows remain (external, or the supervised Internship) as of 2026-10-08; the 15 planned theory courses were authored on 2026-10-07/08 and carry status: in-review in lesson frontmatter.
 #
 # Status legend:
 #   released       — Authored courseware present in content/ and QA-approved.
@@ -18,10 +18,10 @@ programmeName: B.Sc. Physics & Mathematics with minor in Astrophysics
 institution: Christ University, Bangalore
 sourcePdfs:
   - BScPM_Astropysics2024_20241109100918.pdf
-manifestVersion: "2026-08-31.5"
+manifestVersion: "2026-10-08.1"
 totalPdfRows: 71
-releasedRows: 43
-authoringRows: 37
+releasedRows: 58
+authoringRows: 22
 
 # ===========================================================================
 # SEMESTER 1 — 13 rows
@@ -475,8 +475,9 @@ semester-3:
       optionGroup: null
       deliveryMode: authored-courseware
       prerequisites: [basic-electronics]
-      status: planned
+      status: released
       packageTemplate: six-to-nine-lesson-SEC
+      contentPath: content/semester-3/physics/analog-and-digital-electronics/
       notes: Diode/transistor amplifiers, op-amps, logic gates, flip-flops, ADC/DAC, small measurement/simulation project.
 
     - rowId: sem3-row-06
@@ -572,8 +573,9 @@ semester-4:
       optionGroup: null
       deliveryMode: authored-courseware
       prerequisites: [analog-and-digital-electronics]
-      status: planned
+      status: released
       packageTemplate: six-to-nine-lesson-theory-practical
+      contentPath: content/semester-4/physics/communication-electronics/
       notes: Modulation, demodulation, oscillators, filters, communication channels, noise, system block diagrams.
 
     - rowId: sem4-row-04
@@ -738,8 +740,9 @@ semester-5:
       optionGroup: sem5-physics-option
       deliveryMode: authored-courseware
       prerequisites: [astrophysics-iv, thermal-physics-and-statistical-mechanics]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-advanced-theory
+      contentPath: content/semester-5/physics/astronomy-and-astrophysics/
       notes: Radiative processes, stellar atmospheres, ISM, galactic structure, observational methods, data analysis. Distinct from Astrophysics minor sequence.
 
     - rowId: sem5-row-04
@@ -753,8 +756,9 @@ semester-5:
       optionGroup: sem5-physics-option
       deliveryMode: authored-courseware
       prerequisites: [communication-electronics]
-      status: planned
+      status: released
       packageTemplate: six-to-nine-lesson-project
+      contentPath: content/semester-5/physics/microcontroller-and-embedded-systems/
       notes: Microcontroller architecture, GPIO, sensors, timing, serial communication, data logging, physics instrumentation project.
 
     - rowId: sem5-row-05
@@ -768,8 +772,9 @@ semester-5:
       optionGroup: sem5-physics-option
       deliveryMode: authored-courseware
       prerequisites: [solid-state-physics]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-advanced-theory
+      contentPath: content/semester-5/physics/low-dimensional-materials/
       notes: Quantum confinement, 2D materials, nanostructures, fabrication, transport, optical properties, applications.
 
     - rowId: sem5-row-06
@@ -847,8 +852,9 @@ semester-5:
       optionGroup: sem5-mathematics-elective
       deliveryMode: authored-courseware
       prerequisites: [differential-equations, calculus-using-python]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory
+      contentPath: content/semester-5/mathematics/integral-transforms/
       notes: Fourier series/transforms, Laplace transforms, convolution, PDE/physics applications, transform methods.
 
     - rowId: sem5-row-11
@@ -862,8 +868,9 @@ semester-5:
       optionGroup: sem5-mathematics-elective
       deliveryMode: authored-courseware
       prerequisites: [integral-calculus, differential-calculus]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory
+      contentPath: content/semester-5/mathematics/calculus-of-several-variables/
       notes: Partial derivatives, multiple integrals, vector calculus, line/surface integrals, physics applications.
 
     - rowId: sem5-row-12
@@ -970,8 +977,9 @@ semester-6:
       optionGroup: sem6-physics-option
       deliveryMode: authored-courseware
       prerequisites: [solid-state-physics, thermal-physics-and-statistical-mechanics]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory-project
+      contentPath: content/semester-6/physics/renewable-energy-and-applications/
       notes: Solar, wind, storage, conversion efficiency, grid/context, lifecycle analysis, design case.
 
     - rowId: sem6-row-06
@@ -985,8 +993,9 @@ semester-6:
       optionGroup: sem6-physics-option
       deliveryMode: authored-courseware
       prerequisites: [communication-electronics]
-      status: planned
+      status: released
       packageTemplate: six-to-nine-lesson-theory-practical
+      contentPath: content/semester-6/physics/electronic-instrumentation/
       notes: Sensors, signal conditioning, bridges, ADC/DAC, instrumentation amplifiers, calibration, noise.
 
     - rowId: sem6-row-07
@@ -1000,8 +1009,9 @@ semester-6:
       optionGroup: sem6-physics-option
       deliveryMode: authored-courseware
       prerequisites: [introduction-to-quantum-mechanics, atomic-and-molecular-physics]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-advanced-theory
+      contentPath: content/semester-6/physics/advanced-quantum-mechanics/
       notes: Formalism, approximation methods, angular momentum, perturbation/scattering, selected applications.
 
     - rowId: sem6-row-08
@@ -1063,8 +1073,9 @@ semester-6:
       optionGroup: null
       deliveryMode: authored-courseware
       prerequisites: [integral-calculus, differential-equations]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory
+      contentPath: content/semester-6/mathematics/complex-analysis/
       notes: Complex functions, analyticity, contour integration, residues, mappings, physics applications.
 
     - rowId: sem6-row-12
@@ -1078,8 +1089,9 @@ semester-6:
       optionGroup: sem6-mathematics-elective-i
       deliveryMode: authored-courseware
       prerequisites: [numerical-methods, mathematics-lab-using-python-ii]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-theory-computational
+      contentPath: content/semester-6/mathematics/advanced-numerical-methods/
       notes: Stability, nonlinear systems, eigenvalue methods, PDEs, optimization, error/control.
 
     - rowId: sem6-row-13
@@ -1125,8 +1137,9 @@ semester-6:
       optionGroup: sem6-mathematics-elective-ii
       deliveryMode: authored-courseware
       prerequisites: [linear-algebra, numerical-methods]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-computational
+      contentPath: content/semester-6/mathematics/computational-linear-algebra/
       notes: Matrix factorizations, conditioning, iterative solvers, least squares, SVD, large-scale computation.
 
     - rowId: sem6-row-16
@@ -1140,8 +1153,9 @@ semester-6:
       optionGroup: sem6-mathematics-elective-ii
       deliveryMode: authored-courseware
       prerequisites: [differential-calculus, integral-calculus]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-applied-mathematics
+      contentPath: content/semester-6/mathematics/financial-mathematics/
       notes: Interest/annuities, bonds, risk, stochastic basics, model limitations.
 
     - rowId: sem6-row-17
@@ -1155,8 +1169,9 @@ semester-6:
       optionGroup: sem6-mathematics-elective-ii
       deliveryMode: authored-courseware
       prerequisites: [differential-equations, calculus-of-several-variables]
-      status: planned
+      status: released
       packageTemplate: nine-lesson-project
+      contentPath: content/semester-6/mathematics/mathematical-modelling/
       notes: Model formulation, nondimensionalization, calibration, validation, sensitivity, communication.
 
     - rowId: sem6-row-18

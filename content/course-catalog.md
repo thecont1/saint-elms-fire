@@ -3,10 +3,10 @@ programmeId: bsc-physics-mathematics-astrophysics
 programmeName: B.Sc. Physics & Mathematics with minor in Astrophysics
 institution: Christ University, Bangalore
 batch: 2023–2027
-generatedAt: 2026-08-31
+generatedAt: 2026-10-07
 totalSemesters: 6
-totalCourses: 43
-totalLessons: 321
+totalCourses: 58
+totalLessons: 456
 sourceType: authored-courseware
 ---
 
@@ -23,8 +23,8 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 
 | subjectId | subjectName | Semesters | Courses | Lessons |
 |-----------|-------------|-----------|---------|---------|
-| physics | Physics | 1–6 | 25 | 171 |
-| mathematics | Mathematics | 1–6 | 12 | 99 |
+| physics | Physics | 1–6 | 33 | 243 |
+| mathematics | Mathematics | 1–6 | 19 | 162 |
 | astrophysics | Astrophysics (minor) | 1–4 | 4 | 36 |
 | computational-methods | Computational Methods | 4 | 1 | 9 |
 | university-support | University Support and Student Information | all | 1 | 6 |
@@ -165,6 +165,15 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 3 | mathematics | Real Analysis | Riemann Integration | Riemann Sums and the Riemann Integral | real-analysis-m3-l1 | intermediate | 55 |
 | 3 | mathematics | Real Analysis | Riemann Integration | Integrability of Continuous and Monotone Functions | real-analysis-m3-l2 | advanced | 55 |
 | 3 | mathematics | Real Analysis | Riemann Integration | Fundamental Theorem of Calculus | real-analysis-m3-l3 | advanced | 55 |
+| 3 | physics | Analog and Digital Electronics | Diode and Transistor Amplifiers | Diode Circuits Revisited: Clippers, Clampers and Regulated Supplies | analog-and-digital-electronics-m1-l1 | foundation | 50 |
+| 3 | physics | Analog and Digital Electronics | Diode and Transistor Amplifiers | BJT Biasing and the Common-Emitter Amplifier | analog-and-digital-electronics-m1-l2 | intermediate | 55 |
+| 3 | physics | Analog and Digital Electronics | Diode and Transistor Amplifiers | FET Amplifiers and Negative Feedback | analog-and-digital-electronics-m1-l3 | intermediate | 55 |
+| 3 | physics | Analog and Digital Electronics | Operational Amplifiers | The Ideal Op-Amp: Golden Rules and the Basic Amplifier Configurations | analog-and-digital-electronics-m2-l1 | intermediate | 50 |
+| 3 | physics | Analog and Digital Electronics | Operational Amplifiers | Integrator, Differentiator, Comparators and the Schmitt Trigger | analog-and-digital-electronics-m2-l2 | intermediate | 50 |
+| 3 | physics | Analog and Digital Electronics | Operational Amplifiers | Active Filters, the Instrumentation Amplifier and Practical Op-Amp Limits | analog-and-digital-electronics-m2-l3 | advanced | 55 |
+| 3 | physics | Analog and Digital Electronics | Digital Logic and Data Conversion | Number Systems, Boolean Algebra and Combinational Logic | analog-and-digital-electronics-m3-l1 | foundation | 50 |
+| 3 | physics | Analog and Digital Electronics | Digital Logic and Data Conversion | Latches, Flip-Flops, Counters and Shift Registers | analog-and-digital-electronics-m3-l2 | intermediate | 55 |
+| 3 | physics | Analog and Digital Electronics | Digital Logic and Data Conversion | ADC and DAC Architectures and a Digital Thermometer Chain | analog-and-digital-electronics-m3-l3 | advanced | 60 |
 | 3 | physics | Waves and Optics | Oscillations and Waves | Simple Harmonic Motion in Detail | waves-and-optics-m1-l1 | foundation | 50 |
 | 3 | physics | Waves and Optics | Oscillations and Waves | Wave Motion and the Wave Equation | waves-and-optics-m1-l2 | intermediate | 50 |
 | 3 | physics | Waves and Optics | Oscillations and Waves | Superposition, Standing Waves and Beats | waves-and-optics-m1-l3 | intermediate | 50 |
@@ -213,6 +222,15 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Boundary Value Problems and the Heat Equation — Stability of FTCS | mathematics-lab-using-python-ii-m1-l4 | intermediate | 50 |
 | 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Numerical Integration — Orders, Extrapolation and Improper Integrals | mathematics-lab-using-python-ii-m1-l5 | intermediate | 50 |
 | 4 | mathematics | Mathematics Lab using Python II | Scientific Computing in Python — Linear Algebra, ODEs and Integration | Capstone — A Reproducible Computational Experiment, End to End | mathematics-lab-using-python-ii-m1-l6 | advanced | 55 |
+| 4 | physics | Communication Electronics | Signals, Filters and Oscillators | The Communication System and Signal Spectra | communication-electronics-m1-l1 | foundation | 50 |
+| 4 | physics | Communication Electronics | Signals, Filters and Oscillators | Passive and Active Filters | communication-electronics-m1-l2 | intermediate | 55 |
+| 4 | physics | Communication Electronics | Signals, Filters and Oscillators | Sinusoidal Oscillators | communication-electronics-m1-l3 | intermediate | 55 |
+| 4 | physics | Communication Electronics | Analogue Modulation and Reception | Amplitude Modulation, DSB-SC and SSB | communication-electronics-m2-l1 | intermediate | 55 |
+| 4 | physics | Communication Electronics | Analogue Modulation and Reception | The Superheterodyne Receiver | communication-electronics-m2-l2 | intermediate | 55 |
+| 4 | physics | Communication Electronics | Analogue Modulation and Reception | Frequency and Phase Modulation | communication-electronics-m2-l3 | advanced | 60 |
+| 4 | physics | Communication Electronics | Channels, Noise and Digital Communication | Transmission Lines, Antennas and Propagation | communication-electronics-m3-l1 | intermediate | 55 |
+| 4 | physics | Communication Electronics | Channels, Noise and Digital Communication | Noise in Communication Systems | communication-electronics-m3-l2 | advanced | 60 |
+| 4 | physics | Communication Electronics | Channels, Noise and Digital Communication | Digital Communication and System Overview | communication-electronics-m3-l3 | advanced | 60 |
 | 4 | physics | Communication Electronics Lab | Modulation, Filters, and Signal Analysis | Amplitude Modulation and Demodulation | communication-electronics-lab-m1-l1 | intermediate | 55 |
 | 4 | physics | Communication Electronics Lab | Modulation, Filters, and Signal Analysis | Frequency Modulation and the FM Detector | communication-electronics-lab-m1-l2 | intermediate | 55 |
 | 4 | physics | Communication Electronics Lab | Modulation, Filters, and Signal Analysis | Filters — Low-Pass, High-Pass, and Band-Pass | communication-electronics-lab-m1-l3 | intermediate | 50 |
@@ -234,6 +252,24 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 4 | physics | Quantum Mechanics Lab | Spectroscopy, the Photoelectric Effect, and Quantum Demonstrations | Electron Diffraction and de Broglie's Wavelength | quantum-mechanics-lab-m1-l4 | intermediate | 50 |
 | 4 | physics | Quantum Mechanics Lab | Spectroscopy, the Photoelectric Effect, and Quantum Demonstrations | Numerical Wavefunctions — Particle in a Box and the Harmonic Oscillator | quantum-mechanics-lab-m1-l5 | intermediate | 60 |
 | 4 | physics | Quantum Mechanics Lab | Spectroscopy, the Photoelectric Effect, and Quantum Demonstrations | Uncertainty, Computational Reproducibility, and the Viva | quantum-mechanics-lab-m1-l6 | intermediate | 55 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Differentiation in Several Variables | Functions of Several Variables, Limits, Continuity and Partial Derivatives | calculus-of-several-variables-m1-l1 | foundation | 50 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Differentiation in Several Variables | Differentiability, the Chain Rule, Gradient and Directional Derivatives | calculus-of-several-variables-m1-l2 | intermediate | 55 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Differentiation in Several Variables | Taylor Expansion, Extrema and Lagrange Multipliers | calculus-of-several-variables-m1-l3 | intermediate | 55 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Multiple Integrals | Double Integrals, Fubini's Theorem and Polar Coordinates | calculus-of-several-variables-m2-l1 | intermediate | 55 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Multiple Integrals | Change of Variables, the Jacobian and Triple Integrals | calculus-of-several-variables-m2-l2 | intermediate | 60 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Multiple Integrals | Mass, Centroids, Moments of Inertia and Gravitational Potential | calculus-of-several-variables-m2-l3 | intermediate | 60 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Vector Calculus and Integral Theorems | Vector Fields, Line Integrals and Conservative Fields | calculus-of-several-variables-m3-l1 | intermediate | 55 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Vector Calculus and Integral Theorems | Green's Theorem, Surface Integrals and Flux | calculus-of-several-variables-m3-l2 | advanced | 60 |
+| 5 | mathematics | Calculus of Several Variables (Mathematics Elective II) | Vector Calculus and Integral Theorems | The Divergence Theorem, Stokes' Theorem and Maxwell's Equations | calculus-of-several-variables-m3-l3 | advanced | 60 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | Fourier Series and Fourier Transforms | Periodic Functions, Fourier Series and the Dirichlet Conditions | integral-transforms-m1-l1 | foundation | 55 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | Fourier Series and Fourier Transforms | Half-Range Expansions, Parseval's Identity and the Gibbs Phenomenon | integral-transforms-m1-l2 | intermediate | 55 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | Fourier Series and Fourier Transforms | The Fourier Transform, the Dirac Delta and the Uncertainty Relation | integral-transforms-m1-l3 | intermediate | 60 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | The Laplace Transform | Definition, Existence and Properties of the Laplace Transform | integral-transforms-m2-l1 | intermediate | 55 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | The Laplace Transform | Inverse Laplace Transforms and the Convolution Theorem | integral-transforms-m2-l2 | intermediate | 60 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | The Laplace Transform | Heaviside Step, Dirac Delta, Periodic Functions and the Limit Theorems | integral-transforms-m2-l3 | intermediate | 55 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | Transform Methods for ODEs, PDEs and Signals | Transform Solution of ODEs, Systems and Transfer Functions | integral-transforms-m3-l1 | advanced | 60 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | Transform Methods for ODEs, PDEs and Signals | Heat and Wave Equations by Fourier and Laplace Methods | integral-transforms-m3-l2 | advanced | 60 |
+| 5 | mathematics | Integral Transforms (Mathematics Elective I) | Transform Methods for ODEs, PDEs and Signals | The Discrete Fourier Transform and the FFT in Python | integral-transforms-m3-l3 | advanced | 60 |
 | 5 | mathematics | Linear Algebra | Vector Spaces | Vector Spaces and Subspaces | linear-algebra-m1-l1 | foundation | 50 |
 | 5 | mathematics | Linear Algebra | Vector Spaces | Linear Independence, Basis and Dimension | linear-algebra-m1-l2 | intermediate | 55 |
 | 5 | mathematics | Linear Algebra | Vector Spaces | Linear Maps, Isomorphisms and Dimension | linear-algebra-m1-l3 | intermediate | 55 |
@@ -243,18 +279,45 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 5 | mathematics | Linear Algebra | Decomposition and Factorisation | Eigenvalues, Markov Chains and Stability | linear-algebra-m3-l1 | advanced | 55 |
 | 5 | mathematics | Linear Algebra | Decomposition and Factorisation | Singular Value Decomposition and Applications | linear-algebra-m3-l2 | advanced | 55 |
 | 5 | mathematics | Linear Algebra | Decomposition and Factorisation | Applications to Physics and Geometry | linear-algebra-m3-l3 | advanced | 55 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Radiative Processes | Specific Intensity, Radiative Transfer and the Planck Function | astronomy-and-astrophysics-m1-l1 | advanced | 55 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Radiative Processes | Opacity Sources and the Boltzmann and Saha Equations | astronomy-and-astrophysics-m1-l2 | advanced | 55 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Radiative Processes | Line Broadening, the Curve of Growth and Non-thermal Emission | astronomy-and-astrophysics-m1-l3 | advanced | 60 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Stellar Atmospheres and the Interstellar Medium | The Grey Atmosphere, Limb Darkening and Hydrostatic Structure | astronomy-and-astrophysics-m2-l1 | advanced | 55 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Stellar Atmospheres and the Interstellar Medium | HII Regions, the Strömgren Sphere and the 21 cm Line | astronomy-and-astrophysics-m2-l2 | advanced | 55 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Stellar Atmospheres and the Interstellar Medium | Interstellar Dust, Molecular Clouds and the Onset of Star Formation | astronomy-and-astrophysics-m2-l3 | advanced | 60 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Galactic Structure and Observational Methods | The Galactic Rotation Curve, Oort Constants and Stellar Populations | astronomy-and-astrophysics-m3-l1 | advanced | 60 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Galactic Structure and Observational Methods | Photometry, CCD Signal-to-Noise and Spectroscopic Radial Velocities | astronomy-and-astrophysics-m3-l2 | advanced | 60 |
+| 5 | physics | Astronomy and Astrophysics (Physics Option A) | Galactic Structure and Observational Methods | Data Analysis in Python for Blackbody Fits, Periodograms and Error Propagation | astronomy-and-astrophysics-m3-l3 | advanced | 60 |
 | 5 | physics | Astronomy and Astrophysics Lab (Option A) | Observational Techniques, Photometry, and Data Reduction | Telescope Optics and CCD Imaging | astronomy-and-astrophysics-lab-m1-l1 | advanced | 60 |
 | 5 | physics | Astronomy and Astrophysics Lab (Option A) | Observational Techniques, Photometry, and Data Reduction | Photometry — Aperture and Differential | astronomy-and-astrophysics-lab-m1-l2 | advanced | 55 |
 | 5 | physics | Astronomy and Astrophysics Lab (Option A) | Observational Techniques, Photometry, and Data Reduction | Calibration — Bias, Dark, and Flat Field | astronomy-and-astrophysics-lab-m1-l3 | advanced | 55 |
 | 5 | physics | Astronomy and Astrophysics Lab (Option A) | Observational Techniques, Photometry, and Data Reduction | Spectroscopy with a Slit Spectrograph | astronomy-and-astrophysics-lab-m1-l4 | advanced | 55 |
 | 5 | physics | Astronomy and Astrophysics Lab (Option A) | Observational Techniques, Photometry, and Data Reduction | Catalog Queries — VizieR, SIMBAD, and Gaia | astronomy-and-astrophysics-lab-m1-l5 | advanced | 55 |
 | 5 | physics | Astronomy and Astrophysics Lab (Option A) | Observational Techniques, Photometry, and Data Reduction | Mini Research Project, Report Writing, and the Viva | astronomy-and-astrophysics-lab-m1-l6 | advanced | 60 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Quantum Confinement | Length Scales and Quantum Confinement | low-dimensional-materials-m1-l1 | intermediate | 50 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Quantum Confinement | Density of States in 3D, 2D, 1D and 0D | low-dimensional-materials-m1-l2 | intermediate | 55 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Quantum Confinement | Quantum Wells, Wires and Dots – Envelope Functions, Excitons and the Brus Equation | low-dimensional-materials-m1-l3 | intermediate | 55 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Two-Dimensional Materials and Nanostructures | Graphene – Tight-Binding Bands and Dirac Fermions | low-dimensional-materials-m2-l1 | advanced | 60 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Two-Dimensional Materials and Nanostructures | hBN, Transition-Metal Dichalcogenides, Carbon Nanotubes and Nanowires | low-dimensional-materials-m2-l2 | advanced | 60 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Two-Dimensional Materials and Nanostructures | Fabrication and Characterisation of Nanostructures | low-dimensional-materials-m2-l3 | intermediate | 55 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Transport, Optics and Applications | Ballistic Transport and the Landauer Formula | low-dimensional-materials-m3-l1 | advanced | 55 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Transport, Optics and Applications | Coulomb Blockade and the Integer Quantum Hall Effect | low-dimensional-materials-m3-l2 | advanced | 60 |
+| 5 | physics | Low-Dimensional Materials (Physics Option C) | Transport, Optics and Applications | Optical Properties and Applications of Nanostructures | low-dimensional-materials-m3-l3 | advanced | 60 |
 | 5 | physics | Low-Dimensional Materials Lab (Option C) | Thin Films, Nanomaterials, and Characterisation | Thin-Film Deposition — Thermal Evaporation and Sputtering | low-dimensional-materials-lab-m1-l1 | advanced | 55 |
 | 5 | physics | Low-Dimensional Materials Lab (Option C) | Thin Films, Nanomaterials, and Characterisation | Optical Characterisation — UV-Vis, Ellipsometry, and Photoluminescence | low-dimensional-materials-lab-m1-l2 | advanced | 50 |
 | 5 | physics | Low-Dimensional Materials Lab (Option C) | Thin Films, Nanomaterials, and Characterisation | Electrical Characterisation — I-V, Hall Effect, and Field-Effect Transistors | low-dimensional-materials-lab-m1-l3 | advanced | 50 |
 | 5 | physics | Low-Dimensional Materials Lab (Option C) | Thin Films, Nanomaterials, and Characterisation | Structural Characterisation — Raman, AFM, and SEM | low-dimensional-materials-lab-m1-l4 | advanced | 55 |
 | 5 | physics | Low-Dimensional Materials Lab (Option C) | Thin Films, Nanomaterials, and Characterisation | Data Fitting and Uncertainty in Nanomaterial Data | low-dimensional-materials-lab-m1-l5 | advanced | 50 |
 | 5 | physics | Low-Dimensional Materials Lab (Option C) | Thin Films, Nanomaterials, and Characterisation | Mini Project, Report Writing, and the Viva | low-dimensional-materials-lab-m1-l6 | advanced | 55 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Microcontroller Architecture and the Programming Model | Microprocessors, Microcontrollers and Embedded Systems | microcontroller-and-embedded-systems-m1-l1 | foundation | 50 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Microcontroller Architecture and the Programming Model | Clock, Instruction Cycle and Number Representation | microcontroller-and-embedded-systems-m1-l2 | intermediate | 55 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Microcontroller Architecture and the Programming Model | Toolchain, Bootloaders and Register-Level Embedded C | microcontroller-and-embedded-systems-m1-l3 | intermediate | 55 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Digital I/O, Timing and Analogue Interfacing | GPIO Registers, Pull-ups, Debouncing and Interrupts | microcontroller-and-embedded-systems-m2-l1 | intermediate | 55 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Digital I/O, Timing and Analogue Interfacing | Timers, Counters and PWM | microcontroller-and-embedded-systems-m2-l2 | intermediate | 55 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Digital I/O, Timing and Analogue Interfacing | ADC, DAC and Sensor Interfacing | microcontroller-and-embedded-systems-m2-l3 | advanced | 60 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Serial Buses, Data Logging and the Instrumentation Project | Serial Communication with UART, SPI and I2C | microcontroller-and-embedded-systems-m3-l1 | intermediate | 55 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Serial Buses, Data Logging and the Instrumentation Project | Data Logging, Timestamps, Power and Noise | microcontroller-and-embedded-systems-m3-l2 | intermediate | 55 |
+| 5 | physics | Microcontroller and Embedded Systems (Physics Option B) | Serial Buses, Data Logging and the Instrumentation Project | Project: A Photogate Pendulum Timer | microcontroller-and-embedded-systems-m3-l3 | advanced | 60 |
 | 5 | physics | Microcontroller and Embedded Systems Lab (Option B) | Embedded Programming, Sensors, and Control | Microcontroller Basics — GPIO, Digital I/O, and the First Sketch | microcontroller-and-embedded-systems-lab-m1-l1 | intermediate | 50 |
 | 5 | physics | Microcontroller and Embedded Systems Lab (Option B) | Embedded Programming, Sensors, and Control | Sensor Interfacing and the Analog-to-Digital Converter | microcontroller-and-embedded-systems-lab-m1-l2 | intermediate | 55 |
 | 5 | physics | Microcontroller and Embedded Systems Lab (Option B) | Embedded Programming, Sensors, and Control | Serial Communication — UART, I2C, and SPI | microcontroller-and-embedded-systems-lab-m1-l3 | intermediate | 50 |
@@ -276,6 +339,51 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 5 | physics | Solid State Physics Lab | Crystal Structure, Conductivity, and Semiconductors | Magnetic Susceptibility and the Curie-Weiss Law | solid-state-physics-lab-m1-l4 | advanced | 50 |
 | 5 | physics | Solid State Physics Lab | Crystal Structure, Conductivity, and Semiconductors | Specific Heat of Solids and the Debye Model | solid-state-physics-lab-m1-l5 | advanced | 50 |
 | 5 | physics | Solid State Physics Lab | Crystal Structure, Conductivity, and Semiconductors | Data Analysis, Report Writing, and the Viva | solid-state-physics-lab-m1-l6 | advanced | 55 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Error, Stability and Nonlinear Systems | Floating-Point Arithmetic, Conditioning and Backward Error | advanced-numerical-methods-m1-l1 | intermediate | 55 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Error, Stability and Nonlinear Systems | Newton's Method for Systems, Quasi-Newton Updates and Continuation | advanced-numerical-methods-m1-l2 | advanced | 60 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Error, Stability and Nonlinear Systems | Stiffness, A-Stability and Adaptive Step Control | advanced-numerical-methods-m1-l3 | advanced | 60 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Eigenvalue Methods | Power Iteration, Inverse Iteration with Shifts and the Rayleigh Quotient | advanced-numerical-methods-m2-l1 | intermediate | 55 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Eigenvalue Methods | Hessenberg Reduction, the QR Algorithm and Jacobi Rotations | advanced-numerical-methods-m2-l2 | advanced | 60 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Eigenvalue Methods | Krylov Subspaces, Lanczos and Arnoldi with Applications to Normal Modes and the Schrödinger Equation | advanced-numerical-methods-m2-l3 | advanced | 60 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Partial Differential Equations and Optimisation | Finite Differences for the Heat, Wave and Laplace Equations with von Neumann Stability Analysis | advanced-numerical-methods-m3-l1 | advanced | 60 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Partial Differential Equations and Optimisation | Iterative Solvers for Sparse Systems: Jacobi, Gauss–Seidel, SOR and Conjugate Gradients | advanced-numerical-methods-m3-l2 | advanced | 60 |
+| 6 | mathematics | Advanced Numerical Methods (Math Elective I, A) | Partial Differential Equations and Optimisation | Optimisation: Line Search, Newton, BFGS, Nonlinear Least Squares and KKT Conditions | advanced-numerical-methods-m3-l3 | advanced | 60 |
+| 6 | mathematics | Complex Analysis | Complex Numbers and Analytic Functions | Complex Numbers, the Complex Plane and Limits | complex-analysis-m1-l1 | foundation | 50 |
+| 6 | mathematics | Complex Analysis | Complex Numbers and Analytic Functions | Analyticity and the Cauchy–Riemann Equations | complex-analysis-m1-l2 | intermediate | 55 |
+| 6 | mathematics | Complex Analysis | Complex Numbers and Analytic Functions | Elementary Functions, Multivalued Functions and Branch Cuts | complex-analysis-m1-l3 | intermediate | 55 |
+| 6 | mathematics | Complex Analysis | Complex Integration and Series | Contour Integrals and the Cauchy–Goursat Theorem | complex-analysis-m2-l1 | intermediate | 55 |
+| 6 | mathematics | Complex Analysis | Complex Integration and Series | Cauchy's Integral Formula, Liouville's Theorem and the Fundamental Theorem of Algebra | complex-analysis-m2-l2 | advanced | 60 |
+| 6 | mathematics | Complex Analysis | Complex Integration and Series | Taylor and Laurent Series and the Classification of Singularities | complex-analysis-m2-l3 | advanced | 60 |
+| 6 | mathematics | Complex Analysis | Residues, Mappings and Applications | The Residue Theorem and the Evaluation of Real Integrals | complex-analysis-m3-l1 | advanced | 60 |
+| 6 | mathematics | Complex Analysis | Residues, Mappings and Applications | Conformal Mappings and Möbius Transformations | complex-analysis-m3-l2 | advanced | 60 |
+| 6 | mathematics | Complex Analysis | Residues, Mappings and Applications | Physics Applications – Potential Flow, Electrostatics, Kramers–Kronig and Bromwich | complex-analysis-m3-l3 | advanced | 60 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Direct Methods and Conditioning | Norms, Condition Numbers and Floating-Point Stability | computational-linear-algebra-m1-l1 | intermediate | 55 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Direct Methods and Conditioning | LU Factorisation with Partial Pivoting and Operation Counts | computational-linear-algebra-m1-l2 | intermediate | 55 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Direct Methods and Conditioning | Cholesky Factorisation, Banded Systems and Sparse Storage | computational-linear-algebra-m1-l3 | intermediate | 55 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Orthogonality, Least Squares and the SVD | QR Factorisation by Gram–Schmidt, Householder and Givens | computational-linear-algebra-m2-l1 | intermediate | 55 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Orthogonality, Least Squares and the SVD | Linear Least Squares by Normal Equations and QR | computational-linear-algebra-m2-l2 | intermediate | 55 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Orthogonality, Least Squares and the SVD | The SVD, Low-Rank Approximation, Pseudoinverse and PCA | computational-linear-algebra-m2-l3 | advanced | 60 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Iterative Methods and Large-Scale Computation | Krylov Subspaces, Conjugate Gradients, GMRES and Preconditioning | computational-linear-algebra-m3-l1 | advanced | 60 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Iterative Methods and Large-Scale Computation | Power Iteration, Eigenvalue Algorithms and PageRank | computational-linear-algebra-m3-l2 | advanced | 55 |
+| 6 | mathematics | Computational Linear Algebra (Math Elective II, A) | Iterative Methods and Large-Scale Computation | Randomised SVD, Memory Hierarchy and Large-Scale Applications | computational-linear-algebra-m3-l3 | advanced | 60 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Time Value of Money, Annuities and Project Appraisal | Interest, Discounting and the Time Value of Money | financial-mathematics-m1-l1 | foundation | 50 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Time Value of Money, Annuities and Project Appraisal | Annuities, Perpetuities and Growing Payment Streams | financial-mathematics-m1-l2 | intermediate | 55 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Time Value of Money, Annuities and Project Appraisal | Loan Amortisation, EMIs, NPV and IRR | financial-mathematics-m1-l3 | intermediate | 55 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Bonds, Interest-Rate Risk and Portfolio Theory | Bond Pricing, Yield to Maturity and the Term Structure | financial-mathematics-m2-l1 | intermediate | 55 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Bonds, Interest-Rate Risk and Portfolio Theory | Duration, Convexity and Interest-Rate Risk | financial-mathematics-m2-l2 | intermediate | 55 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Bonds, Interest-Rate Risk and Portfolio Theory | Portfolio Theory, CAPM and Value at Risk | financial-mathematics-m2-l3 | advanced | 60 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Derivatives, Stochastic Models and Model Limitations | Binomial Trees, No-Arbitrage and Risk-Neutral Pricing | financial-mathematics-m3-l1 | advanced | 55 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Derivatives, Stochastic Models and Model Limitations | Brownian Motion, Itô's Lemma and the Black–Scholes Formula | financial-mathematics-m3-l2 | advanced | 60 |
+| 6 | mathematics | Financial Mathematics (Math Elective II, B) | Derivatives, Stochastic Models and Model Limitations | Monte Carlo Simulation and the Limits of Financial Models | financial-mathematics-m3-l3 | advanced | 55 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Formulation and Scaling | The Modelling Cycle, Assumptions and Conservation Laws | mathematical-modelling-m1-l1 | foundation | 50 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Formulation and Scaling | Dimensional Analysis, Buckingham Pi and Nondimensionalisation | mathematical-modelling-m1-l2 | intermediate | 55 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Formulation and Scaling | Compartment Models for Populations, Epidemics and Drugs | mathematical-modelling-m1-l3 | intermediate | 55 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Stability, Bifurcation and Spatial Spread | Equilibria, Linear Stability and Phase Planes | mathematical-modelling-m2-l1 | intermediate | 55 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Stability, Bifurcation and Spatial Spread | Bifurcations and Perturbation Methods | mathematical-modelling-m2-l2 | advanced | 55 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Stability, Bifurcation and Spatial Spread | Diffusion and Fisher Travelling Waves | mathematical-modelling-m2-l3 | advanced | 60 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Data, Uncertainty and Communication | Parameter Estimation, Identifiability and Validation | mathematical-modelling-m3-l1 | advanced | 55 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Data, Uncertainty and Communication | Sensitivity Analysis and Monte Carlo Uncertainty | mathematical-modelling-m3-l2 | advanced | 55 |
+| 6 | mathematics | Mathematical Modelling (Math Elective II, C) | Data, Uncertainty and Communication | Case Study, a Dengue Outbreak in Bengaluru | mathematical-modelling-m3-l3 | advanced | 60 |
 | 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | The Singular Value Decomposition — Least Squares, Rank and Compression | mathematics-lab-using-python-iii-m1-l1 | intermediate | 50 |
 | 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Sparse Matrices and the Conjugate Gradient Method | mathematics-lab-using-python-iii-m1-l2 | intermediate | 50 |
 | 6 | mathematics | Mathematics Lab using Python III | Advanced Scientific Computing in Python — SVD, Transforms and Optimisation | Fourier Transforms — Spectra, Parseval and Filtering with the FFT | mathematics-lab-using-python-iii-m1-l3 | intermediate | 50 |
@@ -300,6 +408,15 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 6 | mathematics | Operations Research (Math Elective I, C) | Integer Programming, Sensitivity and Applications | Integer Programming and Branch-and-Bound | operations-research-m3-l7 | advanced | 55 |
 | 6 | mathematics | Operations Research (Math Elective I, C) | Integer Programming, Sensitivity and Applications | Sensitivity Analysis — How Long the Answer Stays True | operations-research-m3-l8 | advanced | 55 |
 | 6 | mathematics | Operations Research (Math Elective I, C) | Integer Programming, Sensitivity and Applications | Capstone — Modelling a Real Operation | operations-research-m3-l9 | advanced | 55 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Dirac Formalism and Quantum Dynamics | Hilbert Space, Bra-Ket Notation and Operators | advanced-quantum-mechanics-m1-l1 | intermediate | 55 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Dirac Formalism and Quantum Dynamics | Postulates, Measurement and the Pictures of Quantum Dynamics | advanced-quantum-mechanics-m1-l2 | intermediate | 55 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Dirac Formalism and Quantum Dynamics | The Harmonic Oscillator by Ladder Operators and Coherent States | advanced-quantum-mechanics-m1-l3 | intermediate | 55 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Angular Momentum and Identical Particles | Angular Momentum Algebra, Spin-1/2 and Pauli Matrices | advanced-quantum-mechanics-m2-l1 | advanced | 60 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Angular Momentum and Identical Particles | Addition of Angular Momenta and Clebsch–Gordan Coefficients | advanced-quantum-mechanics-m2-l2 | advanced | 60 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Angular Momentum and Identical Particles | Identical Particles, Exchange Symmetry and the Helium Atom | advanced-quantum-mechanics-m2-l3 | advanced | 60 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Approximation Methods and Scattering | Time-Independent Perturbation Theory and the Variational Method | advanced-quantum-mechanics-m3-l1 | advanced | 60 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Approximation Methods and Scattering | WKB Approximation, Time-Dependent Perturbation Theory and Fermi's Golden Rule | advanced-quantum-mechanics-m3-l2 | advanced | 60 |
+| 6 | physics | Advanced Quantum Mechanics (Physics Option C) | Approximation Methods and Scattering | Scattering Theory, Born Approximation and Partial Waves | advanced-quantum-mechanics-m3-l3 | advanced | 60 |
 | 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Quantum Eigenvalue Problems by Matrix Diagonalisation | advanced-quantum-mechanics-lab-m1-l1 | intermediate | 50 |
 | 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Bound States of the Finite Well — the Shooting Method | advanced-quantum-mechanics-lab-m1-l2 | intermediate | 50 |
 | 6 | physics | Advanced Quantum Mechanics Lab (Option C) | Numerical Quantum Mechanics — Eigenvalues, Dynamics and Scattering | Wavepacket Propagation — Time Evolution with Crank–Nicolson | advanced-quantum-mechanics-lab-m1-l3 | intermediate | 50 |
@@ -321,6 +438,15 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 6 | physics | Atomic and Molecular Physics Lab | Atomic Spectroscopy, Lasers, and Molecular Physics | Molecular Spectroscopy — Rotational, Vibrational, and Raman | atomic-and-molecular-physics-lab-m1-l4 | advanced | 50 |
 | 6 | physics | Atomic and Molecular Physics Lab | Atomic Spectroscopy, Lasers, and Molecular Physics | Molecular Electronic Spectra, Fluorescence, and Phosphorescence | atomic-and-molecular-physics-lab-m1-l5 | advanced | 50 |
 | 6 | physics | Atomic and Molecular Physics Lab | Atomic Spectroscopy, Lasers, and Molecular Physics | Uncertainty, Advanced Data Analysis, and the Viva | atomic-and-molecular-physics-lab-m1-l6 | advanced | 55 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Measurement Fundamentals and Sensors | Measurement Characteristics, Errors and Uncertainty Propagation | electronic-instrumentation-m1-l1 | foundation | 55 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Measurement Fundamentals and Sensors | Temperature Sensors: Thermocouples, RTDs and Thermistors | electronic-instrumentation-m1-l2 | intermediate | 55 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Measurement Fundamentals and Sensors | Strain, Displacement, Optical and Magnetic Sensors | electronic-instrumentation-m1-l3 | intermediate | 55 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Signal Conditioning and Amplification | The Wheatstone Bridge and AC Bridges | electronic-instrumentation-m2-l1 | intermediate | 55 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Signal Conditioning and Amplification | Instrumentation Amplifiers, CMRR, Isolation and Anti-aliasing Filters | electronic-instrumentation-m2-l2 | advanced | 60 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Signal Conditioning and Amplification | Lock-in Amplification, Grounding and Shielding | electronic-instrumentation-m2-l3 | advanced | 60 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Digitisation, Noise and Calibration | ADC and DAC Specifications, Resolution and Architectures | electronic-instrumentation-m3-l1 | intermediate | 55 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Digitisation, Noise and Calibration | Noise Sources, Noise Figure, Averaging and Signal-to-Noise Ratio | electronic-instrumentation-m3-l2 | advanced | 60 |
+| 6 | physics | Electronic Instrumentation (Physics Option B) | Digitisation, Noise and Calibration | Calibration, Traceability, Uncertainty Budgets and Python Data Acquisition | electronic-instrumentation-m3-l3 | intermediate | 60 |
 | 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Sensor Calibration and the Error Budget | electronic-instrumentation-lab-m1-l1 | intermediate | 50 |
 | 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Wheatstone Bridge and Strain Gauge Measurement | electronic-instrumentation-lab-m1-l2 | intermediate | 50 |
 | 6 | physics | Electronic Instrumentation Lab (Option B) | Sensor Calibration, Bridge Circuits, and Amplification | Operational Amplifier Circuits and Instrumentation Amplifiers | electronic-instrumentation-lab-m1-l3 | intermediate | 50 |
@@ -342,6 +468,15 @@ Regenerate with `bun run scripts/generate-course-catalog.ts`.
 | 6 | physics | Nuclear Physics Lab | Radioactivity, Counting, and Nuclear Spectra | Half-Life Measurement and the Decay Curve | nuclear-physics-lab-m1-l4 | intermediate | 50 |
 | 6 | physics | Nuclear Physics Lab | Radioactivity, Counting, and Nuclear Spectra | Coincidence Counting, Angular Correlation, and the Level Scheme | nuclear-physics-lab-m1-l5 | advanced | 50 |
 | 6 | physics | Nuclear Physics Lab | Radioactivity, Counting, and Nuclear Spectra | Radiation Safety, Report Writing, and the Viva | nuclear-physics-lab-m1-l6 | intermediate | 55 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Energy Fundamentals and Solar Energy | Global and Indian Energy Context, Units and Energy Flows | renewable-energy-and-applications-m1-l1 | foundation | 50 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Energy Fundamentals and Solar Energy | Solar Radiation, Insolation and Solar Thermal Collectors | renewable-energy-and-applications-m1-l2 | intermediate | 55 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Energy Fundamentals and Solar Energy | Photovoltaic Conversion, the Shockley–Queisser Limit and Arrays | renewable-energy-and-applications-m1-l3 | advanced | 55 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Wind Power and Other Renewable Sources | Wind Resource, Power Density and the Betz Limit | renewable-energy-and-applications-m2-l1 | intermediate | 50 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Wind Power and Other Renewable Sources | Power Curves, Tip-Speed Ratio and Weibull Annual Yield | renewable-energy-and-applications-m2-l2 | advanced | 55 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Wind Power and Other Renewable Sources | Hydro, Tidal, Biomass and Geothermal Energy and the Carnot Bound | renewable-energy-and-applications-m2-l3 | intermediate | 55 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Storage, Grid Integration and System Design | Energy Storage: Batteries, Pumped Hydro and Hydrogen | renewable-energy-and-applications-m3-l1 | intermediate | 55 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Storage, Grid Integration and System Design | Grid Integration, Inverters, Net Metering and LCOE | renewable-energy-and-applications-m3-l2 | advanced | 55 |
+| 6 | physics | Renewable Energy and Applications (Physics Option A) | Storage, Grid Integration and System Design | Lifecycle Analysis, Energy Payback and a Rooftop Design Case | renewable-energy-and-applications-m3-l3 | advanced | 60 |
 | 6 | physics | Renewable Energy and Applications Lab (Option A) | Solar Cells, Energy Conversion, and Storage | Solar Cell I-V Characteristics and Efficiency | renewable-energy-lab-m1-l1 | intermediate | 50 |
 | 6 | physics | Renewable Energy and Applications Lab (Option A) | Solar Cells, Energy Conversion, and Storage | Spectral Response and Quantum Efficiency | renewable-energy-lab-m1-l2 | advanced | 50 |
 | 6 | physics | Renewable Energy and Applications Lab (Option A) | Solar Cells, Energy Conversion, and Storage | Temperature and Irradiance Dependence | renewable-energy-lab-m1-l3 | intermediate | 50 |
